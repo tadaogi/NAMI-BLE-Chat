@@ -15,6 +15,7 @@ struct MainView: View {
             ContentView()
                 .environmentObject(User())
                 .environmentObject(Log())
+                .environmentObject(Devices())
                 .tabItem{
                     Text("Debug")
                 }

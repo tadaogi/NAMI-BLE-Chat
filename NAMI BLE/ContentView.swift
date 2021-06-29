@@ -19,6 +19,7 @@ class User: ObservableObject {
 
 struct ContentView: View {
     @EnvironmentObject var log : Log
+    @EnvironmentObject var devices : Devices
 
     @ObservedObject var bleCentral = BLECentral()
     @ObservedObject var blePeripheral = BLEPeripheral()
@@ -52,7 +53,7 @@ struct ContentView: View {
                         if (runflag == false) {
                             
                             if (user.CentralMode) {
-                                bleCentral.startCentralManager(log: self.log)
+                                bleCentral.startCentralManager(log: self.log, devices: self.devices)
                             }
                             if (user.PeripheralMode) {
                                 blePeripheral.startPeripheralManager(log: self.log)
@@ -91,7 +92,16 @@ struct ContentView: View {
                     .font(.headline)
                 
                 ScrollView(.vertical,showsIndicators: true) {
-                    Text(dummy)
+                    //Text(dummy)
+                    
+                    ForEach(self.devices.devicelist, id: \.code) { deviceitem in
+                        HStack {
+                            Text(deviceitem.deviceName+","+deviceitem.uuidString)
+                                .padding([.leading], 15)
+                            Spacer()
+                        }
+                    }
+                    
                 }.background(Color("lightBackground"))
                 .foregroundColor(Color.black)
 
@@ -134,6 +144,7 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
             .environmentObject(user)
             .environmentObject(Log())
+            .environmentObject(Devices())
             .environmentObject(UserMessage())
     }
 }

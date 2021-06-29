@@ -39,6 +39,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
 
     //@EnvironmentObject var log : Log
     var log : Log!
+    var devices : Devices!
     
     var userMessage: UserMessage!
     var connectedPeripheral: CBPeripheral! = nil
@@ -56,9 +57,11 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         self.userMessage.addItem(userMessageText: "myinit is called") // shoud be log
     }
     
-    func startCentralManager(log: Log) {
+    func startCentralManager(log: Log, devices: Devices) {
         self.log = log
         self.log.addItem(logText:"startCentralManager")
+        self.devices = devices
+        
         // この処理が正しいのかどうか不明
         if self.centralManager == nil {
             print("centralManger is nil")
@@ -147,6 +150,8 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         } else {
             //print("this peripheral is disconnected")
         }
+        
+        self.devices.addDevice(deviceName: peripheral.name ?? "unknown", uuidString: peripheral.identifier.uuidString)
 
         
         let LocalName = advertisementData["kCBAdvDataLocalName"] ?? "unknown"

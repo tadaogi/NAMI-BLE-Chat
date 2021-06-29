@@ -14,6 +14,7 @@ struct BLEcommTest0App: App {
             MainView()
                 .environmentObject(User())
                 .environmentObject(Log())
+                .environmentObject(Devices())
                 .environmentObject(UserMessage())
         }
     }

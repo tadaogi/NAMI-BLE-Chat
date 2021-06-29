@@ -10,7 +10,6 @@
 		324BF7FD268AF46100BEC254 /* test.txt in Resources */ = {isa = PBXBuildFile; fileRef = 324BF7FC268AF46100BEC254 /* test.txt */; };
 		32626E9425B2421B00BEE892 /* BLEcommTest0App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32626E9325B2421B00BEE892 /* BLEcommTest0App.swift */; };
 		32626E9625B2421B00BEE892 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32626E9525B2421B00BEE892 /* ContentView.swift */; };
-		32626E9825B2421C00BEE892 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 32626E9725B2421C00BEE892 /* Assets.xcassets */; };
 		32626E9B25B2421C00BEE892 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 32626E9A25B2421C00BEE892 /* Preview Assets.xcassets */; };
 		32626EA425B24C4B00BEE892 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 32626EA325B24C4B00BEE892 /* Colors.xcassets */; };
 		32626EA725B24FB300BEE892 /* SettingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32626EA625B24FB300BEE892 /* SettingView.swift */; };
@@ -20,6 +19,8 @@
 		32EBD21825CA08210032F3AF /* MessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32EBD21725CA08210032F3AF /* MessageView.swift */; };
 		32EBD21B25CA09330032F3AF /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32EBD21A25CA09330032F3AF /* MainView.swift */; };
 		32F090B125B83D7B005F311A /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32F090B025B83D7B005F311A /* Log.swift */; };
+		32F1DF88268B11CC006493C4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 32F1DF87268B11CC006493C4 /* Assets.xcassets */; };
+		32F1DF8A268B31B0006493C4 /* Device.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32F1DF89268B31B0006493C4 /* Device.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,7 +28,6 @@
 		32626E9025B2421B00BEE892 /* NAMI BLE.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "NAMI BLE.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		32626E9325B2421B00BEE892 /* BLEcommTest0App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEcommTest0App.swift; sourceTree = "<group>"; };
 		32626E9525B2421B00BEE892 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		32626E9725B2421C00BEE892 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		32626E9A25B2421C00BEE892 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		32626E9C25B2421C00BEE892 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		32626EA325B24C4B00BEE892 /* Colors.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Colors.xcassets; sourceTree = "<group>"; };
@@ -38,6 +38,8 @@
 		32EBD21725CA08210032F3AF /* MessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageView.swift; sourceTree = "<group>"; };
 		32EBD21A25CA09330032F3AF /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		32F090B025B83D7B005F311A /* Log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Log.swift; sourceTree = "<group>"; };
+		32F1DF87268B11CC006493C4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		32F1DF89268B31B0006493C4 /* Device.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Device.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,14 +75,15 @@
 				32626EA925B3055900BEE892 /* BLE.swift */,
 				32626E9325B2421B00BEE892 /* BLEcommTest0App.swift */,
 				32626E9525B2421B00BEE892 /* ContentView.swift */,
+				32F1DF89268B31B0006493C4 /* Device.swift */,
 				32F090B025B83D7B005F311A /* Log.swift */,
 				32EBD21025CA00870032F3AF /* Message.swift */,
 				32EBD21A25CA09330032F3AF /* MainView.swift */,
 				32EBD21725CA08210032F3AF /* MessageView.swift */,
 				32EBD21425CA03210032F3AF /* Hello.swift */,
 				32626EA625B24FB300BEE892 /* SettingView.swift */,
-				32626E9725B2421C00BEE892 /* Assets.xcassets */,
 				32626EA325B24C4B00BEE892 /* Colors.xcassets */,
+				32F1DF87268B11CC006493C4 /* Assets.xcassets */,
 				32626E9C25B2421C00BEE892 /* Info.plist */,
 				32626E9925B2421C00BEE892 /* Preview Content */,
 				324BF7FC268AF46100BEC254 /* test.txt */,
@@ -155,8 +158,8 @@
 			files = (
 				32626EA425B24C4B00BEE892 /* Colors.xcassets in Resources */,
 				32626E9B25B2421C00BEE892 /* Preview Assets.xcassets in Resources */,
+				32F1DF88268B11CC006493C4 /* Assets.xcassets in Resources */,
 				324BF7FD268AF46100BEC254 /* test.txt in Resources */,
-				32626E9825B2421C00BEE892 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -176,6 +179,7 @@
 				32EBD21525CA03210032F3AF /* Hello.swift in Sources */,
 				32626E9425B2421B00BEE892 /* BLEcommTest0App.swift in Sources */,
 				32626EAA25B3055900BEE892 /* BLE.swift in Sources */,
+				32F1DF8A268B31B0006493C4 /* Device.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
