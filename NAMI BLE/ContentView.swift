@@ -11,9 +11,11 @@ class User: ObservableObject {
     @Published var CentralMode = true
     @Published var PeripheralMode = false
     @Published var myID = "tmp"
+    @Published var timerInterval = "300"
     
     init() {
         self.myID = UserDefaults.standard.object(forKey: "myID") as? String ?? "tmp2"
+        self.timerInterval = UserDefaults.standard.object(forKey: "timerInterval") as? String ?? "300"
     }
 }
 
@@ -32,17 +34,19 @@ struct ContentView: View {
 
     @State var buttontext = "Start"
     @State var runflag = false
+//    var devicetext = ""
+
     
     init() {
         //print("ContentView init is called")
         //print(self.log)
         //self.bleCentral.myinit(message: self.message)
         // ここでは失敗する。早すぎるみたい。
- 
+        
     }
     
     var body: some View {
-        let dummy = "2021/01/16 06:58:00.000: some a a a a a messages comes here\n"
+//        let dummy = "2021/01/16 06:58:00.000: some a a a a a messages comes here\n"
         
         NavigationView {
 
@@ -54,12 +58,15 @@ struct ContentView: View {
                             
                             if (user.CentralMode) {
                                 bleCentral.startCentralManager(log: self.log, devices: self.devices)
+                                
+                                log.timerStart(bleCentral: bleCentral, timerIntervalString: self.user.timerInterval)
+
                             }
                             if (user.PeripheralMode) {
                                 blePeripheral.startPeripheralManager(log: self.log)
                             }
                             blePeripheral.peripheralMode = user.PeripheralMode
-                            self.log.addItem(logText:"start button")
+                            self.log.addItem(logText:"startButton,")
                             buttontext = "running"
                             runflag = true
                             
@@ -69,18 +76,21 @@ struct ContentView: View {
                             
                             userMessage.initBLE(bleCentral: self.bleCentral, blePeripheral: self.blePeripheral)
                             
+                            //log.timerFunc(bleCentral: bleCentral)
+                            
                         } else {
                             if (user.CentralMode) {
                                 bleCentral.stopCentralManager()
+                                log.timerStop()
                             }
                             if (user.PeripheralMode) {
                                 blePeripheral.stopPeripheralManager()
                             }
                             blePeripheral.peripheralMode = user.PeripheralMode
-                            self.log.addItem(logText:"stop button")
+                            self.log.addItem(logText:"stopButton,")
                             buttontext = "Start(again)"
                             runflag = false
-                        }
+                         }
                     }) {
                         Text(buttontext)
                     }
@@ -96,8 +106,10 @@ struct ContentView: View {
                     
                     ForEach(self.devices.devicelist, id: \.code) { deviceitem in
                         HStack {
-                            Text(deviceitem.deviceName+","+deviceitem.uuidString)
-                                .padding([.leading], 15)
+                            Text(deviceitem.deviceName).padding([.leading],10)
+                            Text(deviceitem.uuidString)
+                            Text(String(describing: deviceitem.rssi))
+                            
                             Spacer()
                         }
                     }
@@ -105,9 +117,14 @@ struct ContentView: View {
                 }.background(Color("lightBackground"))
                 .foregroundColor(Color.black)
 
-                Text("Messages")
+                Text("Log Messages")
                     .font(.headline)
                 ScrollView(.vertical,showsIndicators: true) {
+                    // これがないと、最初に書いたテキストの幅に固定されてしまう
+                    Rectangle()
+                        .fill(Color.white)
+                        .frame(minWidth: 0.0, maxWidth: .infinity)
+                        .frame(height: 0)
                     ForEach(self.log.loglist, id: \.code) { logitem in
                         HStack {
                             Text(logitem.logtext)
@@ -118,21 +135,28 @@ struct ContentView: View {
                     //Text(dummy)
                 }.background(Color("lightBackground"))
                 .foregroundColor(Color.black)
-                Text("Central:\(String(user.CentralMode)),Peripheral:\(String(user.PeripheralMode)),myID:\(user.myID)")
+            Text("Central:\(String(user.CentralMode)),Peripheral:\(String(user.PeripheralMode)),myID:\(user.myID),TimerInterval:\(user.timerInterval)")
             }
             .padding(5)
             .navigationBarTitle("Debug", displayMode: .inline)
             .navigationBarItems(
                 trailing:
-                    NavigationLink( destination: SettingView()) {
+                    NavigationLink( destination: SettingView( uploadfname: "dummy.log")) {
                         Text("setting")
                         
                     }
             )
         }
+        // 以下の行で、iPad と iPhone と同じ表示になる
+        .navigationViewStyle(StackNavigationViewStyle())
         .onAppear(perform: {
             UserDefaults.standard.set(user.myID, forKey: "myID")
+            UserDefaults.standard.set(user.timerInterval, forKey: "timerInterval")
+            UIApplication.shared.isIdleTimerDisabled = true
         })
+        .onDisappear(perform: {
+            UIApplication.shared.isIdleTimerDisabled = false }
+        )
     }
 }
 
@@ -141,10 +165,18 @@ struct ContentView_Previews: PreviewProvider {
     static var user = User()
     
     static var previews: some View {
-        ContentView()
-            .environmentObject(user)
-            .environmentObject(Log())
-            .environmentObject(Devices())
-            .environmentObject(UserMessage())
+        Group {
+            /// 以下の行を追加
+            ForEach(["iPhone SE (2nd generation)", "iPhone 6s Plus", "iPad Pro (9.7-inch)"], id: \.self) { deviceName in
+                ContentView()
+                    .environmentObject(user)
+                    .environmentObject(Log())
+                    .environmentObject(Devices())
+                    .environmentObject(UserMessage())
+                    /// 以下の2行を追加
+                    .previewDevice(PreviewDevice(rawValue: deviceName))
+                    .previewDisplayName(deviceName)
+            }
+        }
     }
 }

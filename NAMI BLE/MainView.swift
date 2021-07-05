@@ -14,8 +14,9 @@ struct MainView: View {
                 .tabItem{Text("First")}
             ContentView()
                 .environmentObject(User())
-                .environmentObject(Log())
+               // .environmentObject(Log()) // 使い方が分かっていないかも
                 .environmentObject(Devices())
+                .environmentObject(UserMessage())
                 .tabItem{
                     Text("Debug")
                 }
@@ -26,5 +27,9 @@ struct MainView: View {
 struct MainView_Previews: PreviewProvider {
     static var previews: some View {
         MainView()
+            .environmentObject(User())
+            .environmentObject(Log())
+            .environmentObject(Devices())
+            .environmentObject(UserMessage())
     }
 }

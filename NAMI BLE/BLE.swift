@@ -59,7 +59,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     
     func startCentralManager(log: Log, devices: Devices) {
         self.log = log
-        self.log.addItem(logText:"startCentralManager")
+        self.log.addItem(logText:"startCentralManager,")
         self.devices = devices
         
         // この処理が正しいのかどうか不明
@@ -87,9 +87,23 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         print("startScan")
         // 本当は、サービスのUUIDを指定するのが正しいはずだがうまく動かない
         self.centralManager.scanForPeripherals(withServices: nil, options: nil)
-        //let UUID = CBUUID(string: "73C98F4C-F74F-4918-9B0A-5EF4C6C021C6")
+        // 以下の方法ならうまくいく。ただし、FD6Fが入るとNG
+        /*
+        let UUID0 = CBUUID(string: "180D") // heart rate
+        let UUID1 = CBUUID(string: "2A19") // battery level
+        let UUID2 = CBUUID(string: "1809") // health thermo
+        
+        let UUID3 = CBUUID(string: "FD60") // covid FD6F FD6Fがあると全体的にうまくいかない
+         
+        let UUID3 = CBUUID(string: "0000FD6F-0000-1000-8000-00805f9b34fb")
+        
+        let UUID4 = CBUUID(string: "416DFC7B-D6E2-4373-9299-D81ACD3CC728")
+        let UUID5 = CBUUID(string: "0E2FD244-2114-466C-9F18-2D493CD70407")
+        let UUID6 = CBUUID(string: "90FA7ABE-FAB6-485E-B700-1A17804CAA13")
         //let UUID_Read = CBUUID(string: "1BE31CB9-9E07-4892-AA26-30E87ABE9F70")
-        //self.centralManager.scanForPeripherals(withServices: [UUID,UUID_Read], options: nil)
+        
+        self.centralManager.scanForPeripherals(withServices: [UUID0, UUID1, UUID2, UUID0], options: nil)
+        */
     }
     
     func stopScan() {
@@ -134,13 +148,16 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
         
         //print("didDiscover peripheral. NOT implemented yet.")
-        //print("didDiscoverPeripheral\n")
-        //print("name: \(String(describing: peripheral.name))\n")
-        //print("UUID: \(peripheral.identifier.uuidString)")
-        //print("advertisementData: \(advertisementData)")
-        //print("kCBAdvDataLocalName:",advertisementData["kCBAdvDataLocalName"] ?? "unknown")
+        print("didDiscoverPeripheral\n")
+        print("name: \(String(describing: peripheral.name))\n")
+        print("UUID: \(peripheral.identifier.uuidString)")
+        print("advertisementData: \(advertisementData)")
+        print("kCBAdvDataLocalName:",advertisementData["kCBAdvDataLocalName"] ?? "unknown")
+        print("peripheral.services:",peripheral.services ?? "unknown")
         //print("RSSI: \(RSSI)")
         //self.message.addItem(messageText: "didDiscover peripheral is called")
+        self.log.addItem(logText: "didDiscoverPeripheral: \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(RSSI), \(advertisementData),")
+        
         
         if peripheral.state != CBPeripheralState.disconnected {
             // disconnected でなくても、didDiscover は呼ばれる。もしかしたら、設定で変えられるかもしれない。
@@ -151,13 +168,16 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             //print("this peripheral is disconnected")
         }
         
-        self.devices.addDevice(deviceName: peripheral.name ?? "unknown", uuidString: peripheral.identifier.uuidString)
+        self.devices.addDevice(deviceName: peripheral.name ?? "unknown", uuidString: peripheral.identifier.uuidString,
+                               rssi: RSSI, state: peripheral.state)
 
         
         let LocalName = advertisementData["kCBAdvDataLocalName"] ?? "unknown"
-        if LocalName as! String  == "BLEcommTest0" {
-            print("I got BLEcommTest0")
-        
+        // すべてのデバイスをコネクトに行く
+        //if LocalName as! String  == "BLEcommTest0" {
+        //    print("I got BLEcommTest0")
+        if true {
+            print("LocalName:",LocalName)
         
             // BLEtest2のロジックを、コメントも含めてそのままコピペ
             /*
@@ -216,6 +236,8 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             if         connectedPeripheral == nil {
                 self.centralManager.connect(peripheral, options: nil)
             } else {
+                // このロジックだと、コネクトして良いのは１台だけになる。本当は複数可能
+                // でも、情報は得られているのでとりあえずいじらない。
                 print("some one else is already connected. Don't connect")
                 print(connectedPeripheral)
                 switch connectedPeripheral.state {
@@ -243,16 +265,28 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
                         didConnect peripheral: CBPeripheral)
     {
         // 複数台の時に lock 処理が必要
-        print("C: connection success!")
+        let pname = peripheral.name ?? "unknown"
+        print("C: connection success for \(pname)")
+        print("UUID: \(peripheral.identifier.uuidString)")
+        self.log.addItem(logText: "didConnect, \(pname), \(peripheral.identifier.uuidString),")
         // デリゲートの設定
         peripheral.delegate = self
         
         // 覚えておく 2021/2/6 T.Ogino
         // 上位の関数が、peripheralを使えるように（writeが呼べるように）
+        // 複数台とコネクトすると、上書きになってしまう。要確認。
+        // peripheral 毎なので大丈夫な気がする
         connectedPeripheral = peripheral
         // 4-1. 利用可能Serviceの探索開始
-        let UUID_Service = BLEcommService.UUID_Service
-        peripheral.discoverServices([UUID_Service])
+        //let UUID_Service = BLEcommService.UUID_Service
+        print("call discoverServices with nil")
+        
+        //peripheral.discoverServices([UUID_Service])
+        peripheral.discoverServices(nil)
+        
+        // RSSI が読めるか確認
+        peripheral.readRSSI()
+
     }
     // 3-2. Peripheralへの接続結果の受信(失敗時)
     public func centralManager(_ central: CBCentralManager,
@@ -265,6 +299,9 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     // disconnectの検出（できるのか？）
     public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         print("didDisconnectPeripheral is called") // ペリフェラルが切れると呼ばれる。確認済。
+        let uuid = peripheral.identifier.uuidString
+        let name = peripheral.name ?? "unknown"
+        self.log.addItem(logText: "didDisconnectPeripheral,\(name), \(uuid),")
         
         // 処理全体をリセットしたいが、転送中のTransferCとかはどうするのか？
         connectedPeripheral = nil
@@ -284,6 +321,18 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         print("connectionEventDidOccur")
     }
     
+    public func peripheral(_ peripheral: CBPeripheral, didReadRSSI RSSI: NSNumber, error: Error?) {
+        print("didReadRSSI")
+        if (error != nil) {
+            print("error: \(String(describing: error))")
+            return
+        }
+        print("RSSI=\(RSSI)")
+        let devicename = peripheral.name ?? "unknown"
+        let deviceUUID = peripheral.identifier.uuidString
+        self.log.addItem(logText:"didReadRSSI, \(devicename), \(deviceUUID), \(RSSI)")
+
+    }
     
     // 4-2. Service探索結果の受信
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
@@ -293,13 +342,21 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             return
         }
         
-        print("C: search service")
+        print("C: search service for ",peripheral.name ?? "unknown")
         print("Found \(peripheral.services!.count) services! : \(String(describing: peripheral.services))")
 
         for service in peripheral.services!
         {
             print("C: find service")
             print("C: \(service)")
+            
+            let devicename = peripheral.name ?? "unknown"
+            let deviceUUID = peripheral.identifier.uuidString
+            let serviceUUID0 = service.uuid
+            let serviceUUID1 = service.uuid.uuidString
+            
+            self.log.addItem(logText:"didDiscoverServices, \(devicename), \(deviceUUID), \(serviceUUID0), \(serviceUUID1)")
+
             
             self.serviceArray.append(service as CBService)
             
@@ -309,11 +366,20 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             //let UUID_Read = CBUUID(string: "1BE31CB9-9E07-4892-AA26-30E87ABE9F70")
             //let UUID_Write = CBUUID(string: "0C136FCC-3381-4F1E-9602-E2A3F8B70CEB")
 
-
-            peripheral.discoverCharacteristics([UUID_Read,UUID_Write], for:service as CBService)
+            print("Not call discover characteristics")
+            
+            //peripheral.discoverCharacteristics([UUID_Read,UUID_Write], for:service as CBService)
             // peripheral.discoverCharacteristics(nil, forService:service as CBService)
             /* ↑の第1引数はnilは非推奨。*/
         }
+        
+        // 一応ここでもRSSI確認
+        peripheral.readRSSI()
+        
+        // NAMIの場合は、ここでdisconnectを出す
+        // 上のreadRSSIが返ってこないかもしれない
+        centralManager.cancelPeripheralConnection(peripheral)
+
     }
     
     
@@ -358,6 +424,9 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         // とりあえず呼ばれるかどうか確認する -> 呼ばれない -> 終了処理は、Message.swift 側でやる
         // これ以外の処理が必要だけど、まだやっていない。落ちるかもしれない。
         print("didDisconnectedPeripheral is called")
+        let devname = peripheral.name
+        let devUUID = peripheral.identifier.uuidString
+        self.log.addItem(logText: "didDisconnectedPeripheral,\(devname ?? "unknown"), \(devUUID)")
     }
 
     
@@ -493,6 +562,24 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     public func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
         print("didModifyServices called")
     
+    }
+    
+    public func timerFunc() {
+        print("BLECentral.timerFunc is called")
+        self.log.addItem(logText: "BLECentral.timerFunc,")
+        
+        self.stopScan()
+        
+        for peripheral in peripheralInfoArray {
+            centralManager.cancelPeripheralConnection(peripheral.peripheral)
+            // connect されていない peripheral も呼ばれる。status を見れば避けれるかもしれない
+        }
+        peripheralInfoArray = [PeripheralInfo]()
+        
+        self.centralManager = CBCentralManager.init(delegate: self, queue: nil)
+        // 他で central manager を使っていると、値が変わってしまうのでおかしくなる可能性がある。
+        self.startScan()
+        
     }
 }
 

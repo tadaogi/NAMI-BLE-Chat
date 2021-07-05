@@ -15,18 +15,25 @@ struct MessageView: View {
         
         VStack(alignment: .leading) {
             Text("UserMessages")
+
             ScrollView(.vertical,showsIndicators: true) {
+                // これがないと、最初に書いたテキストの幅に固定されてしまう
+                Rectangle()
+                    .fill(Color.white)
+                    .frame(minWidth: 0.0, maxWidth: .infinity)
+                    .frame(height: 0)
                 ForEach(self.userMessage.userMessageList, id: \.code) { messageitem in
                     //HStack {
-                        Text(messageitem.userMessageID) // for debug
-
-                        Text(messageitem.userMessageText)
+                    var tmptext = messageitem.userMessageID+","+messageitem.userMessageText
+                    Text(tmptext)
                             .padding([.leading], 15)
-                        Spacer()
+                    //Spacer()
                     //}
                 }
+ 
             }.background(Color("lightBackground"))
             .foregroundColor(Color.black)
+        
             Text("Comment")
             // HStack(){
                 ScrollView(.vertical,showsIndicators: true) {
@@ -56,7 +63,13 @@ struct MessageView: View {
 
 struct MessageView_Previews: PreviewProvider {
     static var previews: some View {
-        MessageView()
-            .environmentObject(UserMessage())
+        /// 以下の行を追加
+        ForEach(["iPhone SE (2nd generation)", "iPhone 6s Plus", "iPad Pro (9.7-inch)"], id: \.self) { deviceName in
+            MessageView()
+                .environmentObject(UserMessage())
+                /// 以下の2行を追加
+                .previewDevice(PreviewDevice(rawValue: deviceName))
+                .previewDisplayName(deviceName)
+        }
     }
 }

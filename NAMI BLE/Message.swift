@@ -37,8 +37,8 @@ public class UserMessage: ObservableObject {
     var blePeripheral : BLEPeripheral!
 
     @Published var userMessageList : [UserMessageItem] = [ // array の方が正式名称らしいがとりあえずそのまま
-        UserMessageItem(userMessageID: "20210101235900000-0000-NONE", userMessageText: "--- message start ---"),
-        UserMessageItem(userMessageID: "20210101235900000-0001-NONE", userMessageText: "message2")
+        //UserMessageItem(userMessageID: "  ", userMessageText: "                                                                                        a"),
+        //UserMessageItem(userMessageID: "20210101235900000-0001-NONE", userMessageText: "message2")
     ]
 
     var userMessageCount = 0
@@ -99,7 +99,7 @@ public class UserMessage: ObservableObject {
     public func analyzeText(protocolMessageText: String) {
         print("message.analyzeText is called")
         let command:[String] = protocolMessageText.components(separatedBy:"\n")
-        self.blePeripheral.log.addItem(logText:"command \(command[0])")
+        self.blePeripheral.log.addItem(logText:"command \(command[0]),")
         switch command[0] {
         case "BEGIN0":
             print("BEGIN0")
@@ -115,7 +115,7 @@ public class UserMessage: ObservableObject {
             // more actions are needed !!!
             addItemExternal(protocolMessageCommand: command)
             transferP!.ack()
-            self.blePeripheral.log.addItem(logText:"P send ACK for MSGH")
+            self.blePeripheral.log.addItem(logText:"P send ACK for MSGH,")
             print("P sent ACK for MSG")
 
             
@@ -133,7 +133,7 @@ public class UserMessage: ObservableObject {
             transferP!.appendReceiveMessage(receiveProtocolMessage: protocolMessageText)
             
         case "DEBUG":
-            self.blePeripheral.log.addItem(logText:protocolMessageText)
+            self.blePeripheral.log.addItem(logText:"DEBUG analyzeText \(protocolMessageText),")
         default:
             print("OTHER COMMAND")
         }
@@ -285,7 +285,7 @@ class TransferC {
 
             case "MSG":
                 print("receive MSG (not implemented yet) \(receiveCommand[1])")
-                self.bleCentral.log.addItem(logText:"transferC received MSG")
+                self.bleCentral.log.addItem(logText:"transferC received MSG,")
 
                 self.bleCentral.userMessage.addItemExternal(protocolMessageCommand: receiveCommand)
                 // for debug
@@ -359,7 +359,7 @@ class TransferP {
     }
     
     func begin0(){
-        self.blePeripheral.log.addItem(logText:"transferP.begin0")
+        self.blePeripheral.log.addItem(logText:"transferP.begin0,")
         write2C(writeData: "ACK\n")
     }
     
@@ -407,7 +407,7 @@ class TransferP {
     }
     
     func ihave(userMessageID: String) {
-        self.blePeripheral.log.addItem(logText:"transferP.ihave \(userMessageID)")
+        self.blePeripheral.log.addItem(logText:"transferP.ihave, \(userMessageID),")
         
         for userMessage in blePeripheral.userMessage.userMessageList {
             if userMessage.userMessageID == userMessageID {
@@ -423,7 +423,7 @@ class TransferP {
     }
     
     func begin1() {
-        self.blePeripheral.log.addItem(logText:"transferP.begin1")
+        self.blePeripheral.log.addItem(logText:"transferP.begin1,")
 
         for userMessage in blePeripheral.userMessage.userMessageList {
             print("I(P) have \(userMessage.userMessageID)")
@@ -449,14 +449,14 @@ class TransferP {
         }
         
         write2C(writeData: "END1\n")
-        self.blePeripheral.log.addItem(logText:"P sent END1")
+        self.blePeripheral.log.addItem(logText:"P sent END1,")
 
 
     }
     
     func begin1_sendmsg(userMessageID: String){
         print("begin1_sendmsg \(userMessageID)")
-        self.blePeripheral.log.addItem(logText:"transferP.begin1_sendmsg \(userMessageID)")
+        self.blePeripheral.log.addItem(logText:"transferP.begin1_sendmsg \(userMessageID),")
     
         for userMessage in blePeripheral.userMessage.userMessageList {
             if userMessage.userMessageID == userMessageID {
@@ -468,7 +468,7 @@ class TransferP {
         }
         
         print("Protocol error in begin1_sendmsg")
-        self.blePeripheral.log.addItem(logText:"Protocol error in begin1_sendmsg")
+        self.blePeripheral.log.addItem(logText:"Protocol error in begin1_sendmsg,")
 
     }
 }
