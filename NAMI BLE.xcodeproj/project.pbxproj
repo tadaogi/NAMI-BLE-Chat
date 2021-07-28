@@ -14,6 +14,8 @@
 		32626EA425B24C4B00BEE892 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 32626EA325B24C4B00BEE892 /* Colors.xcassets */; };
 		32626EA725B24FB300BEE892 /* SettingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32626EA625B24FB300BEE892 /* SettingView.swift */; };
 		32626EAA25B3055900BEE892 /* BLE.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32626EA925B3055900BEE892 /* BLE.swift */; };
+		326DA13E2696C65A004F0442 /* GPS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 326DA13D2696C65A004F0442 /* GPS.swift */; };
+		326DA1412696C744004F0442 /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 326DA1402696C744004F0442 /* CoreLocation.framework */; };
 		32EBD21125CA00870032F3AF /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32EBD21025CA00870032F3AF /* Message.swift */; };
 		32EBD21525CA03210032F3AF /* Hello.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32EBD21425CA03210032F3AF /* Hello.swift */; };
 		32EBD21825CA08210032F3AF /* MessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32EBD21725CA08210032F3AF /* MessageView.swift */; };
@@ -33,6 +35,8 @@
 		32626EA325B24C4B00BEE892 /* Colors.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Colors.xcassets; sourceTree = "<group>"; };
 		32626EA625B24FB300BEE892 /* SettingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingView.swift; sourceTree = "<group>"; };
 		32626EA925B3055900BEE892 /* BLE.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLE.swift; sourceTree = "<group>"; };
+		326DA13D2696C65A004F0442 /* GPS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPS.swift; sourceTree = "<group>"; };
+		326DA1402696C744004F0442 /* CoreLocation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreLocation.framework; path = System/Library/Frameworks/CoreLocation.framework; sourceTree = SDKROOT; };
 		32EBD21025CA00870032F3AF /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
 		32EBD21425CA03210032F3AF /* Hello.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Hello.swift; sourceTree = "<group>"; };
 		32EBD21725CA08210032F3AF /* MessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageView.swift; sourceTree = "<group>"; };
@@ -47,6 +51,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				326DA1412696C744004F0442 /* CoreLocation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -58,6 +63,7 @@
 			children = (
 				32626E9225B2421B00BEE892 /* NAMI BLE */,
 				32626E9125B2421B00BEE892 /* Products */,
+				326DA13F2696C744004F0442 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -77,6 +83,7 @@
 				32626E9525B2421B00BEE892 /* ContentView.swift */,
 				32F1DF89268B31B0006493C4 /* Device.swift */,
 				32F090B025B83D7B005F311A /* Log.swift */,
+				326DA13D2696C65A004F0442 /* GPS.swift */,
 				32EBD21025CA00870032F3AF /* Message.swift */,
 				32EBD21A25CA09330032F3AF /* MainView.swift */,
 				32EBD21725CA08210032F3AF /* MessageView.swift */,
@@ -97,6 +104,14 @@
 				32626E9A25B2421C00BEE892 /* Preview Assets.xcassets */,
 			);
 			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		326DA13F2696C744004F0442 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				326DA1402696C744004F0442 /* CoreLocation.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -170,6 +185,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				326DA13E2696C65A004F0442 /* GPS.swift in Sources */,
 				32626EA725B24FB300BEE892 /* SettingView.swift in Sources */,
 				32EBD21B25CA09330032F3AF /* MainView.swift in Sources */,
 				32626E9625B2421B00BEE892 /* ContentView.swift in Sources */,

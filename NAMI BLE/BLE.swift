@@ -28,6 +28,7 @@ struct BLEcommService {
 // Centralとして動く時の処理はこちら
 
 public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, ObservableObject {
+    @EnvironmentObject var user: User
     
     var centralManager: CBCentralManager!
     var peripheralInfoArray = [PeripheralInfo]()
@@ -44,6 +45,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     var userMessage: UserMessage!
     var connectedPeripheral: CBPeripheral! = nil
     var foundCharacteristicR: CBCharacteristic! = nil
+    var obsoleteInterval: String = "600"
 
     override init() {
         //self.centralManager = CBCentralManager()
@@ -55,6 +57,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         print("BLECentral myinit is called")
         self.userMessage = userMessage
         self.userMessage.addItem(userMessageText: "myinit is called") // shoud be log
+
     }
     
     func startCentralManager(log: Log, devices: Devices) {
@@ -153,12 +156,18 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         print("UUID: \(peripheral.identifier.uuidString)")
         print("advertisementData: \(advertisementData)")
         print("kCBAdvDataLocalName:",advertisementData["kCBAdvDataLocalName"] ?? "unknown")
+        print("CBAdvertisementDataTxPowerLevelKey:",advertisementData["CBAdvertisementDataTxPowerLevelKey"] ?? "unknown")
+        let TxLevel = advertisementData["CBAdvertisementDataTxPowerLevelKey"] ?? "unknown"
+        CBAdvertisementDataTxPowerLevelKey
         print("peripheral.services:",peripheral.services ?? "unknown")
         //print("RSSI: \(RSSI)")
         //self.message.addItem(messageText: "didDiscover peripheral is called")
-        self.log.addItem(logText: "didDiscoverPeripheral: \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(RSSI), \(advertisementData),")
+        self.log.addItem(logText: "didDiscoverPeripheral, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(RSSI), \(TxLevel)")
         
-        
+        // devices に追加。uuidがあるかどうかは、addDeviceの中でチェック
+        self.devices.addDevice(peripheral: peripheral,rssi: RSSI)
+
+        // 以下のロジックが本当に必要なのか確認要
         if peripheral.state != CBPeripheralState.disconnected {
             // disconnected でなくても、didDiscover は呼ばれる。もしかしたら、設定で変えられるかもしれない。
             // すでに connect されているデバイスなので、何もしない。
@@ -168,11 +177,9 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             //print("this peripheral is disconnected")
         }
         
-        self.devices.addDevice(deviceName: peripheral.name ?? "unknown", uuidString: peripheral.identifier.uuidString,
-                               rssi: RSSI, state: peripheral.state)
-
-        
         let LocalName = advertisementData["kCBAdvDataLocalName"] ?? "unknown"
+        self.log.addItem(logText: "kCBAdvDataLocalName, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(LocalName),")
+        
         // すべてのデバイスをコネクトに行く
         //if LocalName as! String  == "BLEcommTest0" {
         //    print("I got BLEcommTest0")
@@ -193,23 +200,18 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
                 peripheralInfoArray[index!].peripheral = peripheral
             }
             print("index: \(index ?? -1)")
-            /*
-            if index == nil {
-                self.peripheralArray.append(peripheral as CBPeripheral)
-                self.tableView.reloadData()
-            }
-            */
+
+            // uuid が見つからなかった場合
             if index == nil {
                 print("index is nil ???")
                 let currentDate = Date()
-                let peripheralInfo = PeripheralInfo(peripheral: peripheral, rssi: RSSI,     username: "unknown", firstDate: currentDate, lastDate: currentDate)
+                let peripheralInfo = PeripheralInfo(peripheral: peripheral, rssi: RSSI,     username: peripheral.name ?? "unknown", firstDate: currentDate, lastDate: currentDate)
                 self.peripheralInfoArray.append(peripheralInfo as PeripheralInfo)
                 //self.tableView.reloadData()
                 print("new peripheralInfo.firstDate    \(peripheralInfo.firstDate)")
                 print("new peripheralInfo.lastDate    \(peripheralInfo.lastDate)")
-
             }
-        
+            // uuidが見つかった場合
             if index != nil {
                 let currentDate = Date()
                 peripheralInfoArray[index!].lastDate = currentDate
@@ -219,10 +221,10 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
                
                 print("peripheralInfoArray[index].firstDate    \(peripheralInfoArray[index!].firstDate)")
                 print("peripheralInfoArray[index].lastDate    \(peripheralInfoArray[index!].lastDate)")
-                
-
             }
 
+            
+            
             // 3-1. 指定したPeripheralへ接続開始
             // 本当は、コネクションが貼られていない時だけ接続処理に行くべき。後で要修正
             
@@ -269,6 +271,10 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         print("C: connection success for \(pname)")
         print("UUID: \(peripheral.identifier.uuidString)")
         self.log.addItem(logText: "didConnect, \(pname), \(peripheral.identifier.uuidString),")
+        
+        // devices の更新。
+        self.devices.updateDevice(peripheral: peripheral)
+        
         // デリゲートの設定
         peripheral.delegate = self
         
@@ -294,6 +300,10 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
                                                    error: Error?)
     {
         print("connection failed")
+        
+        // devices の更新。
+        self.devices.updateDevice(peripheral: peripheral)
+
     }
     
     // disconnectの検出（できるのか？）
@@ -302,7 +312,9 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         let uuid = peripheral.identifier.uuidString
         let name = peripheral.name ?? "unknown"
         self.log.addItem(logText: "didDisconnectPeripheral,\(name), \(uuid),")
-        
+        // devices の更新。
+        self.devices.updateDevice(peripheral: peripheral)
+
         // 処理全体をリセットしたいが、転送中のTransferCとかはどうするのか？
         connectedPeripheral = nil
         
@@ -319,6 +331,10 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     }
     public func centralManager(_ central: CBCentralManager, connectionEventDidOccur event: CBConnectionEvent, for peripheral: CBPeripheral) {
         print("connectionEventDidOccur")
+        
+        // devices の更新。
+        self.devices.updateDevice(peripheral: peripheral)
+
     }
     
     public func peripheral(_ peripheral: CBPeripheral, didReadRSSI RSSI: NSNumber, error: Error?) {
@@ -331,6 +347,9 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         let devicename = peripheral.name ?? "unknown"
         let deviceUUID = peripheral.identifier.uuidString
         self.log.addItem(logText:"didReadRSSI, \(devicename), \(deviceUUID), \(RSSI)")
+        
+        // devices の更新。
+        self.devices.updateDevicewithRSSI(peripheral: peripheral, rssi: RSSI)
 
     }
     
@@ -344,6 +363,10 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         
         print("C: search service for ",peripheral.name ?? "unknown")
         print("Found \(peripheral.services!.count) services! : \(String(describing: peripheral.services))")
+
+        
+        // devices の更新。
+        self.devices.updateDevice(peripheral: peripheral)
 
         for service in peripheral.services!
         {
@@ -366,7 +389,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             //let UUID_Read = CBUUID(string: "1BE31CB9-9E07-4892-AA26-30E87ABE9F70")
             //let UUID_Write = CBUUID(string: "0C136FCC-3381-4F1E-9602-E2A3F8B70CEB")
 
-            print("Not call discover characteristics")
+            print("Not call discover characteristics") // 呼んでも良いような気はする
             
             //peripheral.discoverCharacteristics([UUID_Read,UUID_Write], for:service as CBService)
             // peripheral.discoverCharacteristics(nil, forService:service as CBService)
@@ -392,6 +415,9 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         let characteristics = service.characteristics!
         print("Found \(characteristics.count) characteristics! : \(characteristics)")
         
+        // devices の更新。
+        self.devices.updateDevice(peripheral: peripheral)
+
         for characteristic in characteristics
         {
             if characteristic.uuid == UUID_Read {
@@ -418,6 +444,9 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
              
 
         }
+        
+        // 一応ここでもRSSI確認
+        peripheral.readRSSI()
     }
 
     public func peripheral(_ peripheral: CBPeripheral, didDisconnectedPeripheral service: CBService, error: Error?) {
@@ -511,6 +540,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         print("enter writeData")
         print("data \(data)")
         print(peripheral.services)
+        
         for service in peripheral.services! {
             if service.uuid == UUID_Service {
                 print("find UUID_Service")
@@ -564,10 +594,15 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     
     }
     
+    // この処理はいらないのではないか？
+    // 同じデバイスもscanで見つかっているように見える
+    // peripheralとcentralを切り替える時はいるかもしれない
+    
     public func timerFunc() {
         print("BLECentral.timerFunc is called")
         self.log.addItem(logText: "BLECentral.timerFunc,")
-        
+        let obsoleteInterval = Int(UserDefaults.standard.object(forKey: "obsoleteInterval") as? String ?? "600")
+
         self.stopScan()
         
         for peripheral in peripheralInfoArray {
@@ -575,6 +610,8 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             // connect されていない peripheral も呼ばれる。status を見れば避けれるかもしれない
         }
         peripheralInfoArray = [PeripheralInfo]()
+        
+        self.devices.clearObsoleteDevice(period: obsoleteInterval! as NSNumber)
         
         self.centralManager = CBCentralManager.init(delegate: self, queue: nil)
         // 他で central manager を使っていると、値が変わってしまうのでおかしくなる可能性がある。

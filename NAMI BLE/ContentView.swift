@@ -6,16 +6,19 @@
 //
 
 import SwiftUI
+import CoreBluetooth
 
 class User: ObservableObject {
     @Published var CentralMode = true
     @Published var PeripheralMode = false
     @Published var myID = "tmp"
     @Published var timerInterval = "300"
-    
+    @Published var obsoleteInterval = "600"
+
     init() {
         self.myID = UserDefaults.standard.object(forKey: "myID") as? String ?? "tmp2"
         self.timerInterval = UserDefaults.standard.object(forKey: "timerInterval") as? String ?? "300"
+        self.obsoleteInterval = UserDefaults.standard.object(forKey: "obsoleteInterval") as? String ?? "600"
     }
 }
 
@@ -35,6 +38,7 @@ struct ContentView: View {
     @State var buttontext = "Start"
     @State var runflag = false
 //    var devicetext = ""
+    var gps = GPS()
 
     
     init() {
@@ -45,6 +49,27 @@ struct ContentView: View {
         
     }
     
+    func Date2String(date: Date)->String {
+        let formatter = DateFormatter()
+        formatter.setLocalizedDateFormatFromTemplate("HmsS")
+        return(formatter.string(from: date))
+    }
+    
+    func state2String(state: CBPeripheralState)->String {
+        switch state {
+        case CBPeripheralState.connected :
+            return "connected"
+        case CBPeripheralState.connecting :
+            return "connecting"
+        case CBPeripheralState.disconnected :
+            return "disconnected"
+        case CBPeripheralState.disconnecting :
+            return "disconnecting"
+        @unknown default:
+            return "unknown state"
+        }
+    }
+
     var body: some View {
 //        let dummy = "2021/01/16 06:58:00.000: some a a a a a messages comes here\n"
         
@@ -102,13 +127,21 @@ struct ContentView: View {
                     .font(.headline)
                 
                 ScrollView(.vertical,showsIndicators: true) {
-                    //Text(dummy)
-                    
+                    // これがないと、最初に書いたテキストの幅に固定されてしまう
+                    Rectangle()
+                        .fill(Color.white)
+                        .frame(minWidth: 0.0, maxWidth: .infinity)
+                        .frame(height: 0)
+
                     ForEach(self.devices.devicelist, id: \.code) { deviceitem in
+                        
                         HStack {
-                            Text(deviceitem.deviceName).padding([.leading],10)
-                            Text(deviceitem.uuidString)
-                            Text(String(describing: deviceitem.rssi))
+                            
+                            let deviceText = "\(deviceitem.deviceName), \(deviceitem.uuidString), \(deviceitem.rssi!), \(Date2String(date: deviceitem.firstDate)), \(Date2String(date: deviceitem.lastDate)), \(state2String(state: deviceitem.state))"
+                            Text(deviceText).padding([.leading],10)
+                            //Text(deviceitem.deviceName).padding([.leading],10)
+                            //Text(deviceitem.uuidString)
+                            //Text(String(describing: deviceitem.rssi))
                             
                             Spacer()
                         }
@@ -135,7 +168,7 @@ struct ContentView: View {
                     //Text(dummy)
                 }.background(Color("lightBackground"))
                 .foregroundColor(Color.black)
-            Text("Central:\(String(user.CentralMode)),Peripheral:\(String(user.PeripheralMode)),myID:\(user.myID),TimerInterval:\(user.timerInterval)")
+            Text("C:\(String(user.CentralMode)),P:\(String(user.PeripheralMode)),ID:\(user.myID),T:\(user.timerInterval),O:\(user.obsoleteInterval)")
             }
             .padding(5)
             .navigationBarTitle("Debug", displayMode: .inline)
@@ -152,6 +185,7 @@ struct ContentView: View {
         .onAppear(perform: {
             UserDefaults.standard.set(user.myID, forKey: "myID")
             UserDefaults.standard.set(user.timerInterval, forKey: "timerInterval")
+            UserDefaults.standard.set(user.obsoleteInterval, forKey: "obsoleteInterval")
             UIApplication.shared.isIdleTimerDisabled = true
         })
         .onDisappear(perform: {

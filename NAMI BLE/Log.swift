@@ -9,6 +9,17 @@ import Foundation
 import Combine
 import SwiftUI
 
+class GlobalVar {
+    private init() {
+        
+    }
+    static let shared = GlobalVar()
+    
+    var gLog: Log?
+}
+
+
+
 struct LogItem {
     var code = UUID()
     var logtext: String
@@ -31,6 +42,7 @@ class Log : ObservableObject {
     //}
     
     init() {
+        GlobalVar.shared.gLog = self
         addItem(logText: "NAMI BLE started,")
     }
     
@@ -50,7 +62,7 @@ class Log : ObservableObject {
                 LogItem(logtext: "--- log deleted ---"),
             ]
         }
-        let text = "\(currenttime)[\(self.logcount)]: \(logText)"
+        let text = "\(currenttime), [\(self.logcount)], \(logText)"
         loglist.append(LogItem(logtext: text))
         
         // デバッグのために書かないで見る -> 関係なさそうなのでもとに戻す
@@ -139,12 +151,22 @@ class Log : ObservableObject {
         request.httpMethod = "POST"
         // header
         request.addValue("Bearer 53t8RlQgs0cAAAAAAAAAAe3UGhe_0W0rW03zdeSlEVM2Ubl9fRtuVICTFBg8OGDo", forHTTPHeaderField: "Authorization")
-        request.addValue("{\"path\": \"/NAMIupload/\(fname)\",\"mode\": \"add\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}",forHTTPHeaderField: "Dropbox-API-Arg")
-        request.addValue("application/octet-stream",forHTTPHeaderField: "Content-Type")
         
+        // パス名に日本語が入っていると４００で失敗する
+        var encodedfname: String = ""
+        for c in fname.utf16 {
+            encodedfname = encodedfname + String(format: "\\u%04X",c)
+        }
+        //let encodedfname = fname.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
+        //print(encodedfname)
+        //request.addValue("{\"path\": \"/NAMIupload/\(encodedfname)\",\"mode\": \"add\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}",forHTTPHeaderField: "Dropbox-API-Arg")
+        request.addValue("{\"path\": \"/NAMIupload/\(encodedfname)\",\"mode\": \"add\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}",forHTTPHeaderField: "Dropbox-API-Arg")
+        request.addValue("application/octet-stream",forHTTPHeaderField: "Content-Type")
+        //print(request)
+        //return
         // POSTするデータをBodyとして設定
         request.httpBody = readlocal(fname: "NAMI.log").data(using: .utf8)
-        print(request)
+        
         
         let session = URLSession.shared
         session.dataTask(with: request) { (data, response, error) in
@@ -153,7 +175,7 @@ class Log : ObservableObject {
                 print("Content-Type: \(response.allHeaderFields["Content-Type"] ?? "")")
                 // HTTPステータスコード
                 print("statusCode: \(response.statusCode)")
-                print(String(data: data, encoding: .utf8) ?? "")
+                //print(String(data: data, encoding: .utf8) ?? "")
             }
         }.resume()
     }

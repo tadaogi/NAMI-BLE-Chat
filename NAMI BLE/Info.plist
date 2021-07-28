@@ -22,6 +22,12 @@
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>use BLE</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>use GPS</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>use GPS</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>use GPS</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -33,6 +39,8 @@
 	<array>
 		<string>bluetooth-central</string>
 		<string>bluetooth-peripheral</string>
+		<string>location</string>
+		<string>processing</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict/>

@@ -13,21 +13,27 @@ struct SettingView: View {
     @State var uploadfname : String
     
     var body: some View {
-        
+        ScrollView([.vertical, .horizontal],showsIndicators: true) {
         VStack {
-            HStack {
+            HStack() {
                 Text("Central Mode")
-                Spacer()
                 Toggle(isOn: $user.CentralMode) {
                     EmptyView()
                 }
+                Rectangle()
+                    .fill(Color.white)
+                    .frame(minWidth: 0.0, maxWidth: .infinity)
+                    .frame(height: 0)
             }
-            HStack {
+            HStack() {
                 Text("Peripheral Mode")
-                Spacer()
                 Toggle(isOn: $user.PeripheralMode) {
                     EmptyView()
                 }
+                Rectangle()
+                    .fill(Color.white)
+                    .frame(minWidth: 0.0, maxWidth: .infinity)
+                    .frame(height: 0)
             }
             HStack {
                 Text("MyID")
@@ -47,12 +53,23 @@ struct SettingView: View {
                           onCommit: {
                             print("onCommit")
                             print(user.timerInterval)
-                            UserDefaults.standard.set(user.myID, forKey: "myID")
+                            UserDefaults.standard.set(user.timerInterval, forKey: "timerInterval")
+                          })
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+            }
+            HStack {
+                Text("ObsoluteInterval")
+                Spacer()
+                TextField("", text: $user.obsoleteInterval,
+                          onCommit: {
+                            print("onCommit")
+                            print(user.obsoleteInterval)
+                            UserDefaults.standard.set(user.obsoleteInterval, forKey: "obsoleteInterval")
                           })
                     .textFieldStyle(RoundedBorderTextFieldStyle())
             }
 
-            HStack {
+            
                 Button (action: {
                     self.log.upload(fname: uploadfname)
                 }) {
@@ -69,7 +86,7 @@ struct SettingView: View {
                         print("uploadfname:\(uploadfname)")
                       })
                     .textFieldStyle(RoundedBorderTextFieldStyle())
-            }
+            
             Button (action: {
                 self.log.rmlocal(fname: "NAMI.log")
             }) {
@@ -80,13 +97,14 @@ struct SettingView: View {
                         RoundedRectangle(cornerRadius: 20)
                             .stroke(Color.yellow, lineWidth: 2)
                     )}
+        }
         }.padding(5)
         .onAppear(perform: {
             let now = Date() // 現在日時の取得
             let dateFormatter = DateFormatter()
             dateFormatter.locale = Locale(identifier: "ja_JP") // ロケールの設定
             dateFormatter.dateFormat = "yyyyMMddHHmmssSSS"
-            let logfname = dateFormatter.string(from: now)+".log" // -> 20210120195717234.log
+            let logfname = dateFormatter.string(from: now)+"-"+user.myID+".log" // -> 20210120195717234.log
             print(logfname)
             uploadfname = logfname
         })
@@ -94,6 +112,7 @@ struct SettingView: View {
             print("onDisappear called in SettingView")
             UserDefaults.standard.set(user.myID, forKey: "myID")
             UserDefaults.standard.set(user.timerInterval, forKey: "timerInterval")
+            UserDefaults.standard.set(user.obsoleteInterval, forKey: "obsoluteInterval")
         })
     }
 }

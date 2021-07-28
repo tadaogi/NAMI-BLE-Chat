@@ -59,6 +59,7 @@ struct MessageView: View {
             //}
         }
     }
+    
 }
 
 struct MessageView_Previews: PreviewProvider {
