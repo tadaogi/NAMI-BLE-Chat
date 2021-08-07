@@ -69,7 +69,7 @@ struct SettingView: View {
                     .textFieldStyle(RoundedBorderTextFieldStyle())
             }
 
-            
+            HStack {
                 Button (action: {
                     self.log.upload(fname: uploadfname)
                 }) {
@@ -80,6 +80,19 @@ struct SettingView: View {
                             RoundedRectangle(cornerRadius: 20)
                                 .stroke(Color.yellow, lineWidth: 2)
                         )}
+ 
+            Button (action: {
+                self.log.writeToFile(fname: uploadfname)
+            }) {
+                Text("WriteToFile")
+                    // テキストのサイズを指定
+                    .frame(width: 140, height: 40, alignment: .center)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(Color.yellow, lineWidth: 2)
+                    )}
+            }
+
                 TextField("file name",
                       text: $uploadfname,
                       onCommit: {

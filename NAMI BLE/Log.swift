@@ -180,6 +180,19 @@ class Log : ObservableObject {
         }.resume()
     }
     
+    func writeToFile(fname: String) {
+        print("Log.writeToFile()")
+        let stringToSave = "The string I want to save"
+        let path = FileManager.default.urls(
+            for: .documentDirectory,
+            in: .userDomainMask)[0].appendingPathComponent("myFile")
+
+        if let stringData = stringToSave.data(using: .utf8) {
+            try? stringData.write(to: path)
+        }
+     
+    }
+    
     func timerStart (bleCentral: BLECentral, timerIntervalString: String) {
         print("Log.timerStart()")
         let timerInterval = Int(timerIntervalString)
