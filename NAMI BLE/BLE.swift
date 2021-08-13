@@ -158,7 +158,6 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         print("kCBAdvDataLocalName:",advertisementData["kCBAdvDataLocalName"] ?? "unknown")
         print("CBAdvertisementDataTxPowerLevelKey:",advertisementData["CBAdvertisementDataTxPowerLevelKey"] ?? "unknown")
         let TxLevel = advertisementData["CBAdvertisementDataTxPowerLevelKey"] ?? "unknown"
-        CBAdvertisementDataTxPowerLevelKey
         print("peripheral.services:",peripheral.services ?? "unknown")
         //print("RSSI: \(RSSI)")
         //self.message.addItem(messageText: "didDiscover peripheral is called")
@@ -614,6 +613,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         self.devices.clearObsoleteDevice(period: obsoleteInterval! as NSNumber)
         
         self.centralManager = CBCentralManager.init(delegate: self, queue: nil)
+        
         // 他で central manager を使っていると、値が変わってしまうのでおかしくなる可能性がある。
         self.startScan()
         

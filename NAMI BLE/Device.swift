@@ -22,7 +22,12 @@ struct DeviceItem {
 
 class Devices : ObservableObject {
     @Published var devicelist : [DeviceItem] = []
-    
+//    @Published var debugnum : Int = 3
+    @Published var closeDeviceCount = 0
+    @Published var closeLongDeviceCount = 0
+    @Published var closeDeviceScore = 1
+    @Published var closeLongDeviceScore = 1
+
     var devicecount = 0
     
     //public func addDevice(deviceName: String, uuidString: String, rssi: NSNumber, state: CBPeripheralState) {
@@ -87,6 +92,58 @@ class Devices : ObservableObject {
                 devicecount = devicecount - 1
             }
         }
+        // 上のループと一緒にできるけど、外出しの関数にする可能性もあるので、とりあえずもう一度計算する
+        var TmpCloseDeviceCount = 0
+        var TmpCloseLongDeviceCount = 0
+        for device in devicelist {
+            let rssi = device.rssi ?? (-100) // nil だったら -100  にしておく。
+            // 濃厚接触者は、1m以内に15分以上
+            if Int(truncating: rssi) > -60 { // 1m以内
+                // 最初の検出から 900 秒以上たっていて、
+                // 最後の検出から 90 秒以上たっていない
+                if (now.timeIntervalSince1970 - device.lastDate.timeIntervalSince1970 < 90)
+                    && (now.timeIntervalSince1970 - device.firstDate.timeIntervalSince1970 > 900) {
+                    TmpCloseLongDeviceCount = TmpCloseLongDeviceCount + 1
+                }
+            }
+            // 密接の範囲、3m以内に90秒以内に
+            if Int(truncating: rssi) > -80 { // 3m以内
+                // 最後の検出から 90 秒以上たっていない
+                if (now.timeIntervalSince1970 - device.lastDate.timeIntervalSince1970 < 90) {
+                    TmpCloseDeviceCount = TmpCloseDeviceCount + 1
+                }
+
+            }
+        }
+        closeDeviceCount = TmpCloseDeviceCount
+        closeLongDeviceCount = TmpCloseLongDeviceCount
+        closeDeviceScore = calcCloseDeviceScore(closeDeviceCount: closeDeviceCount)
+        closeLongDeviceScore = calcCloseLongDeviceScore(closeLongDeviceCount: closeLongDeviceCount)
+
+        if let glog = GlobalVar.shared.gLog {
+            glog.addItem(logText: "DeviceCount, Alarm, 0000, \(devicecount)")
+            glog.addItem(logText: "CloseDeviceCount, Alarm, 0000, \(closeDeviceCount), \(closeDeviceScore)")
+            glog.addItem(logText: "CloseLongDeviceCount, Alarm, 0000, \(closeLongDeviceCount), \(closeLongDeviceScore)")
+        }
     }
     
+    func calcCloseDeviceScore(closeDeviceCount: Int)->Int {
+        if closeDeviceCount > 30 {
+            return 3
+        } else if closeDeviceCount > 15 {
+            return 2
+        } else {
+            return 1
+        }
+    }
+    
+    func calcCloseLongDeviceScore(closeLongDeviceCount: Int)->Int {
+        if closeLongDeviceCount > 10 {
+            return 3
+        } else if closeLongDeviceCount > 5 {
+            return 2
+        } else {
+            return 1
+        }
+    }
 }

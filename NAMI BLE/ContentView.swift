@@ -12,13 +12,13 @@ class User: ObservableObject {
     @Published var CentralMode = true
     @Published var PeripheralMode = false
     @Published var myID = "tmp"
-    @Published var timerInterval = "300"
-    @Published var obsoleteInterval = "600"
+    @Published var timerInterval = "30" // <- 300
+    @Published var obsoleteInterval = "900" // <-600
 
     init() {
         self.myID = UserDefaults.standard.object(forKey: "myID") as? String ?? "tmp2"
-        self.timerInterval = UserDefaults.standard.object(forKey: "timerInterval") as? String ?? "300"
-        self.obsoleteInterval = UserDefaults.standard.object(forKey: "obsoleteInterval") as? String ?? "600"
+        self.timerInterval = UserDefaults.standard.object(forKey: "timerInterval") as? String ?? "30"
+        self.obsoleteInterval = UserDefaults.standard.object(forKey: "obsoleteInterval") as? String ?? "900"
     }
 }
 

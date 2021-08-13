@@ -11,15 +11,18 @@ struct MainView: View {
     var body: some View {
         TabView {
             MessageView()
-                .tabItem{Text("First")}
+                .tabItem{Text("Message")}
             ContentView()
                 .environmentObject(User())
                // .environmentObject(Log()) // 使い方が分かっていないかも
-                .environmentObject(Devices())
+                // ThreeCsViewを作ったときに以下の行があると同期されなかったのでコメントアウトした
+                //.environmentObject(Devices())
                 .environmentObject(UserMessage())
                 .tabItem{
                     Text("Debug")
                 }
+            ThreeCsView()
+                .tabItem{Text("3Cs")}
         }
     }
 }
