@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreBluetooth
+import AudioToolbox //追加インポート
 
 struct DeviceItem {
     var code = UUID()
@@ -27,6 +28,8 @@ class Devices : ObservableObject {
     @Published var closeLongDeviceCount = 0
     @Published var closeDeviceScore = 1
     @Published var closeLongDeviceScore = 1
+    @Published var showAlert = false
+    @Published var showLongAlert = false
 
     var devicecount = 0
     
@@ -129,6 +132,27 @@ class Devices : ObservableObject {
     
     func calcCloseDeviceScore(closeDeviceCount: Int)->Int {
         if closeDeviceCount > 30 {
+            if showAlert == false {
+                //アラーム音を鳴らす
+                //AudioServicesPlayAlertSoundWithCompletion(1151, nil)
+                
+                // SystemSoundIDは0にしてurlの音源を再生する
+                var soundIdRing:SystemSoundID = 0
+                 
+                if let soundUrl = URL(string:
+                                  "/System/Library/Audio/UISounds/nano/HealthNotificationUrgent.caf"){
+                    AudioServicesCreateSystemSoundID(soundUrl as CFURL, &soundIdRing)
+                    AudioServicesPlaySystemSound(soundIdRing)
+                    print(soundIdRing)
+                }
+                
+                //バイブレーションを作動させる
+                AudioServicesPlayAlertSoundWithCompletion(SystemSoundID(kSystemSoundID_Vibrate)) {}
+                
+                showAlert = true
+                
+            }
+
             return 3
         } else if closeDeviceCount > 15 {
             return 2
@@ -138,7 +162,28 @@ class Devices : ObservableObject {
     }
     
     func calcCloseLongDeviceScore(closeLongDeviceCount: Int)->Int {
+    
         if closeLongDeviceCount > 10 {
+            if showLongAlert == false {
+                //アラーム音を鳴らす
+                //AudioServicesPlayAlertSoundWithCompletion(1151, nil)
+                
+                // SystemSoundIDは0にしてurlの音源を再生する
+                var soundIdRing:SystemSoundID = 0
+                 
+                if let soundUrl = URL(string:
+                                  "/System/Library/Audio/UISounds/nano/HealthNotificationUrgent.caf"){
+                    AudioServicesCreateSystemSoundID(soundUrl as CFURL, &soundIdRing)
+                    AudioServicesPlaySystemSound(soundIdRing)
+                    print(soundIdRing)
+                }
+                
+                //バイブレーションを作動させる
+                AudioServicesPlayAlertSoundWithCompletion(SystemSoundID(kSystemSoundID_Vibrate)) {}
+                
+                showLongAlert = true
+                
+            }
             return 3
         } else if closeLongDeviceCount > 5 {
             return 2

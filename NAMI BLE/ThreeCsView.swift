@@ -81,6 +81,10 @@ struct ThreeCsView: View {
                 Text("Close Devices : ")
                 Text(String(format: "%d,%d", devices.closeDeviceCount,devices.closeDeviceScore))
             }
+            .alert(isPresented: $devices.showAlert) {  // ③アラートの表示条件設定
+                Alert(title: Text("Close alert"))     // ④アラートの定義
+            }
+
             GeometryReader { bodyView in
 // AlertBarだと、変数をうまくわたせないので直接書いてみた
 //                AlertBar(i:$devices.closeDevceScore, width:Int(bodyView.size.width))
@@ -118,6 +122,9 @@ struct ThreeCsView: View {
                 Text(String(format: "%d,%d", devices.closeLongDeviceCount, devices.closeLongDeviceScore))
                 
                 
+            }
+            .alert(isPresented: $devices.showLongAlert) {  // ③アラートの表示条件設定
+                Alert(title: Text("Close and Long alert"))     // ④アラートの定義
             }
             GeometryReader { bodyView in
 //                AlertBar(i:3, width:Int(bodyView.size.width))
