@@ -34,7 +34,17 @@ class Devices : ObservableObject {
     var devicecount = 0
     
     //public func addDevice(deviceName: String, uuidString: String, rssi: NSNumber, state: CBPeripheralState) {
-    public func addDevice(peripheral: CBPeripheral, rssi: NSNumber?=nil) { // rssi は分からなければ nil
+    public func addDevice(peripheral: CBPeripheral, tmprssi: NSNumber?=nil) { // rssi は分からなければ nil
+        // エラーの時に rssi=127 になるので、修正
+        var rssi: NSNumber?=nil
+        if tmprssi == nil {
+            rssi = nil
+        } else if tmprssi as! Int > 0 { // 実際は 127 だけのはずだけど正の時にしておく
+            rssi = nil
+        } else {
+            rssi = tmprssi
+        }
+        
         let deviceName = peripheral.name ?? "unknown"
         let uuidString = peripheral.identifier.uuidString
         let state = peripheral.state
