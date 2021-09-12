@@ -47,6 +47,7 @@ struct ThreeCsView: View {
 
     var body: some View {
         NavigationView {
+            ScrollView(.vertical,showsIndicators: true) {
         VStack {
             /*
             Text("Three Cs View")
@@ -175,6 +176,7 @@ struct ThreeCsView: View {
                 .background(Color(red:0.7, green:0.7, blue:0.7, opacity:1.0))
                 .padding(.horizontal)
             }
+        }
         }
                     .navigationBarTitle("3Cs alarm", displayMode: .inline)
         }

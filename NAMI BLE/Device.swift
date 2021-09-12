@@ -88,12 +88,12 @@ class Devices : ObservableObject {
     
     public func updateDevice(peripheral: CBPeripheral) {
         print("updateDevice \(peripheral.name ?? "unknown") \(peripheral.identifier.uuidString)")
-        addDevice(peripheral: peripheral, rssi: nil)
+        addDevice(peripheral: peripheral, tmprssi: nil)
     }
 
     public func updateDevicewithRSSI(peripheral: CBPeripheral, rssi: NSNumber) {
         print("updateDevicewithRSSI \(peripheral.name ?? "unknown") \(peripheral.identifier.uuidString)")
-        addDevice(peripheral: peripheral, rssi: rssi)
+        addDevice(peripheral: peripheral, tmprssi: rssi)
     }
 
     public func clearObsoleteDevice(period: NSNumber) {

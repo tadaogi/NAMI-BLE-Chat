@@ -164,7 +164,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         self.log.addItem(logText: "didDiscoverPeripheral, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(RSSI), \(TxLevel)")
         
         // devices に追加。uuidがあるかどうかは、addDeviceの中でチェック
-        self.devices.addDevice(peripheral: peripheral,rssi: RSSI)
+        self.devices.addDevice(peripheral: peripheral,tmprssi: RSSI)
 
         // 以下のロジックが本当に必要なのか確認要
         if peripheral.state != CBPeripheralState.disconnected {
