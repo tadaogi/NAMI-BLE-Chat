@@ -20,6 +20,11 @@ struct SettingView: View {
                 Toggle(isOn: $user.CentralMode) {
                     EmptyView()
                 }
+                Text("Connect")
+                Toggle(isOn: $user.ConnectMode) {
+                    EmptyView()
+                }
+
                 Rectangle()
                     .fill(Color.white)
                     .frame(minWidth: 0.0, maxWidth: .infinity)
@@ -120,12 +125,14 @@ struct SettingView: View {
             let logfname = dateFormatter.string(from: now)+"-"+user.myID+".log" // -> 20210120195717234.log
             print(logfname)
             uploadfname = logfname
+            user.ConnectMode = ConnectMode
         })
         .onDisappear(perform: {
             print("onDisappear called in SettingView")
             UserDefaults.standard.set(user.myID, forKey: "myID")
             UserDefaults.standard.set(user.timerInterval, forKey: "timerInterval")
             UserDefaults.standard.set(user.obsoleteInterval, forKey: "obsoluteInterval")
+            ConnectMode = user.ConnectMode
         })
     }
 }

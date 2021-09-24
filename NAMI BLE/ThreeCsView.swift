@@ -48,137 +48,137 @@ struct ThreeCsView: View {
     var body: some View {
         NavigationView {
             ScrollView(.vertical,showsIndicators: true) {
-        VStack {
-            /*
-            Text("Three Cs View")
-                .font(.title)
-                //.multilineTextAlignment(.center)
-                .padding()
-            */
-            VStack {
-            HStack() {
-                Text("Information")
-                    .font(.title2)
-                    .offset(x: 10)
-                Spacer()
-            }
-            
-            HStack() {
-                Text("Num of Devices : ")
-                let count = devices.devicelist.count
-                Text(String(format: "%d",count))
-            }
-            //.padding()
-            }
-            HStack() {
-                
-                Text("Crowded")
-                    .font(.title2)
-                    .offset(x: 10)
-                Spacer()
-            }
-            .padding(.top)
-            HStack() {
-                Text("Close Devices : ")
-                Text(String(format: "%d,%d", devices.closeDeviceCount,devices.closeDeviceScore))
-            }
-            .alert(isPresented: $devices.showAlert) {  // ③アラートの表示条件設定
-                Alert(title: Text("Close alert"))     // ④アラートの定義
-            }
-
-            GeometryReader { bodyView in
-// AlertBarだと、変数をうまくわたせないので直接書いてみた
-//                AlertBar(i:$devices.closeDevceScore, width:Int(bodyView.size.width))
-                ZStack (alignment: .trailing) {
-                    HStack(spacing: 0) {
-                        if devices.closeDeviceScore == 1 {
-                            Text("")
-                                .frame(width: CGFloat(bodyView.size.width) , height: 30)
-                                .background(Color.blue)
-                        } else if devices.closeDeviceScore == 2 {
-                            Text("")
-                                .frame(width: CGFloat(bodyView.size.width), height: 30)
-                                .background(Color.yellow)
-                        } else {
-                            Text("")
-                                .frame(width: CGFloat(bodyView.size.width), height: 30)
-                                .background(Color.red)
+                VStack {
+                    /*
+                     Text("Three Cs View")
+                     .font(.title)
+                     //.multilineTextAlignment(.center)
+                     .padding()
+                     */
+                    VStack {
+                        HStack() {
+                            Text("Information")
+                                .font(.title2)
+                                .offset(x: 10)
+                            Spacer()
+                        }
+                        
+                        HStack() {
+                            Text("Num of Devices : ")
+                            let count = devices.devicelist.count
+                            Text(String(format: "%d",count))
+                        }
+                        //.padding()
+                    }
+                    HStack() {
+                        
+                        Text("Crowded")
+                            .font(.title2)
+                            .offset(x: 10)
+                        Spacer()
+                    }
+                    .padding(.top)
+                    HStack() {
+                        Text("Close Devices : ")
+                        Text(String(format: "%d,%d", devices.closeDeviceCount,devices.closeDeviceScore))
+                    }
+                    .alert(isPresented: $devices.showAlert) {  // ③アラートの表示条件設定
+                        Alert(title: Text("Close alert"))     // ④アラートの定義
+                    }
+                    
+                    GeometryReader { bodyView in
+                        // AlertBarだと、変数をうまくわたせないので直接書いてみた
+                        //                AlertBar(i:$devices.closeDevceScore, width:Int(bodyView.size.width))
+                        ZStack (alignment: .trailing) {
+                            HStack(spacing: 0) {
+                                if devices.closeDeviceScore == 1 {
+                                    Text("")
+                                        .frame(width: CGFloat(bodyView.size.width) , height: 30)
+                                        .background(Color.blue)
+                                } else if devices.closeDeviceScore == 2 {
+                                    Text("")
+                                        .frame(width: CGFloat(bodyView.size.width), height: 30)
+                                        .background(Color.yellow)
+                                } else {
+                                    Text("")
+                                        .frame(width: CGFloat(bodyView.size.width), height: 30)
+                                        .background(Color.red)
+                                }
+                            }
+                            Rectangle()
+                                .foregroundColor(.white)
+                                .frame(width:CGFloat(CGFloat(bodyView.size.width)*CGFloat(3-devices.closeDeviceScore))/3, height: 30)
                         }
                     }
-                    Rectangle()
-                        .foregroundColor(.white)
-                        .frame(width:CGFloat(CGFloat(bodyView.size.width)*CGFloat(3-devices.closeDeviceScore))/3, height: 30)
-            }
-            }
-            .padding(.horizontal)
-            HStack() {
-                Text("Close-contact")
-                    .font(.title2)
-                    .offset(x: 10)
-                Spacer()
-            }
-            .padding(.top)
-            HStack() {
-                Text("Close and Long Devices : ")
-                Text(String(format: "%d,%d", devices.closeLongDeviceCount, devices.closeLongDeviceScore))
-                
-                
-            }
-            .alert(isPresented: $devices.showLongAlert) {  // ③アラートの表示条件設定
-                Alert(title: Text("Close and Long alert"))     // ④アラートの定義
-            }
-            GeometryReader { bodyView in
-//                AlertBar(i:3, width:Int(bodyView.size.width))
-                ZStack (alignment: .trailing) {
-                    HStack(spacing: 0) {
-                        if devices.closeLongDeviceScore == 1 {
-                            Text("")
-                                .frame(width: CGFloat(bodyView.size.width) , height: 30)
-                                .background(Color.blue)
-                        } else if devices.closeLongDeviceScore == 2 {
-                            Text("")
-                                .frame(width: CGFloat(bodyView.size.width), height: 30)
-                                .background(Color.yellow)
-                        } else {
-                            Text("")
-                                .frame(width: CGFloat(bodyView.size.width), height: 30)
-                                .background(Color.red)
+                    .padding(.horizontal)
+                    HStack() {
+                        Text("Close-contact")
+                            .font(.title2)
+                            .offset(x: 10)
+                        Spacer()
+                    }
+                    .padding(.top)
+                    HStack() {
+                        Text("Close and Long Devices : ")
+                        Text(String(format: "%d,%d", devices.closeLongDeviceCount, devices.closeLongDeviceScore))
+                        
+                        
+                    }
+                    .alert(isPresented: $devices.showLongAlert) {  // ③アラートの表示条件設定
+                        Alert(title: Text("Close and Long alert"))     // ④アラートの定義
+                    }
+                    GeometryReader { bodyView in
+                        //                AlertBar(i:3, width:Int(bodyView.size.width))
+                        ZStack (alignment: .trailing) {
+                            HStack(spacing: 0) {
+                                if devices.closeLongDeviceScore == 1 {
+                                    Text("")
+                                        .frame(width: CGFloat(bodyView.size.width) , height: 30)
+                                        .background(Color.blue)
+                                } else if devices.closeLongDeviceScore == 2 {
+                                    Text("")
+                                        .frame(width: CGFloat(bodyView.size.width), height: 30)
+                                        .background(Color.yellow)
+                                } else {
+                                    Text("")
+                                        .frame(width: CGFloat(bodyView.size.width), height: 30)
+                                        .background(Color.red)
+                                }
+                            }
+                            Rectangle()
+                                .foregroundColor(.white)
+                                .frame(width:CGFloat(CGFloat(bodyView.size.width)*CGFloat(3-devices.closeLongDeviceScore))/3, height: 30)
                         }
                     }
-                    Rectangle()
-                        .foregroundColor(.white)
-                        .frame(width:CGFloat(CGFloat(bodyView.size.width)*CGFloat(3-devices.closeLongDeviceScore))/3, height: 30)
+                    .padding(.horizontal)
+                    
+                    //Spacer()
+                    HStack() {
+                        Text("Closed spaces")
+                            .font(.title2)
+                            .offset(x: 10)
+                        Spacer()
+                    }
+                    .padding(.top)
+                    //HStack {
+                    Text("Not implemented yet... ")
+                    //    Text(String(format: ""))
+                    //}
+                    /*
+                     GeometryReader { bodyView in
+                     AlertBar(i:0, width:Int(bodyView.size.width))
+                     }
+                     .padding(.horizontal)
+                     */
+                    GeometryReader { bodyView in
+                        Text("")
+                            .frame(width: CGFloat(bodyView.size.width*0.9), height: 30)
+                            .background(Color(red:0.7, green:0.7, blue:0.7, opacity:1.0))
+                            .padding(.horizontal)
+                    }
+                }
             }
-            }
-            .padding(.horizontal)
-
-            //Spacer()
-            HStack() {
-                Text("Closed spaces")
-                    .font(.title2)
-                    .offset(x: 10)
-                Spacer()
-            }
-            .padding(.top)
-            //HStack {
-                Text("Not implemented yet... ")
-            //    Text(String(format: ""))
-            //}
-            /*
-            GeometryReader { bodyView in
-                AlertBar(i:0, width:Int(bodyView.size.width))
-            }
-            .padding(.horizontal)
-            */
-            GeometryReader { bodyView in
-            Text("")
-                .frame(width: CGFloat(bodyView.size.width*0.9), height: 30)
-                .background(Color(red:0.7, green:0.7, blue:0.7, opacity:1.0))
-                .padding(.horizontal)
-            }
-        }
-        }
-                    .navigationBarTitle("3Cs alarm", displayMode: .inline)
+            .navigationBarTitle("3Cs alarm", displayMode: .inline)
         }
     }
 }

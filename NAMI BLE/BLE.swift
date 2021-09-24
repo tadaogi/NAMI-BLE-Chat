@@ -26,6 +26,7 @@ struct BLEcommService {
     static let UUID_Write = CBUUID(string: "0C136FCC-3381-4F1E-9602-E2A3F8B70CEB")
 }
 // Centralとして動く時の処理はこちら
+var ConnectMode : Bool = true
 
 public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, ObservableObject {
     @EnvironmentObject var user: User
@@ -41,6 +42,8 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     //@EnvironmentObject var log : Log
     var log : Log!
     var devices : Devices!
+    
+    
     
     var userMessage: UserMessage!
     var connectedPeripheral: CBPeripheral! = nil
@@ -235,17 +238,23 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             // https://qiita.com/hirotakan/items/569b4d63c95a3491b677
             // 厳密には lock が要る（connect request して、戻ってくる前に次のデバイスへのconnectが出るかも）
             if         connectedPeripheral == nil {
-                self.centralManager.connect(peripheral, options: nil)
+                // 設定でオンにしないと、コネクトに行かない
+                if (ConnectMode==true) {
+                    self.centralManager.connect(peripheral, options: nil)
+                }
             } else {
                 // このロジックだと、コネクトして良いのは１台だけになる。本当は複数可能
                 // でも、情報は得られているのでとりあえずいじらない。
                 print("some one else is already connected. Don't connect")
-                print(connectedPeripheral)
+                print(connectedPeripheral as Any)
                 switch connectedPeripheral.state {
                 case CBPeripheralState.disconnected:
                     print("disconnected")
                     // とりあえず、この場合は connect に行ってみる
-                    self.centralManager.connect(peripheral, options: nil)
+                    // 設定でオンにしないと、コネクトに行かない
+                    if (ConnectMode==true) {
+                        self.centralManager.connect(peripheral, options: nil)
+                    }
 
                 case CBPeripheralState.connecting:
                     print("connecting")
@@ -361,6 +370,12 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         }
         
         print("C: search service for ",peripheral.name ?? "unknown")
+        
+        if (peripheral.services == nil) {
+            print("error: periphera.services is nil")
+            return
+        }
+
         print("Found \(peripheral.services!.count) services! : \(String(describing: peripheral.services))")
 
         
@@ -410,8 +425,14 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             print("didDiscoverCharacteristeicsForService error: \(error)")
             return
         }
-        
+
+        if (service.characteristics == nil) {
+            print("error: characteristics is nil")
+            return
+        }
+
         let characteristics = service.characteristics!
+        
         print("Found \(characteristics.count) characteristics! : \(characteristics)")
         
         // devices の更新。
@@ -473,8 +494,13 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             print("Failed... error: \(error)")
             return
         }
+        
+        if (characteristic.value == nil) {
+            print("error: characteristic.value is nil")
+            return
+        }
         let characteristicvalue: Data = characteristic.value!
-        print("Succeeded! service uuid: \(characteristic.service.uuid), characteristic uuid: \(characteristic.uuid), value: \(characteristicvalue)")
+        print("Succeeded! service uuid: \(String(describing: characteristic.service?.uuid)), characteristic uuid: \(characteristic.uuid), value: \(characteristicvalue)")
         let newStr = String(describing: characteristic.value!)
         print("newStr \(newStr)")
 
@@ -538,11 +564,22 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     func writeData(_ data: String, peripheral: CBPeripheral) {
         print("enter writeData")
         print("data \(data)")
-        print(peripheral.services)
+        
+        if (peripheral.services == nil) {
+            print("error: peripheral.services is nil")
+            return
+        }
+
+        print(peripheral.services ?? "no service")
         
         for service in peripheral.services! {
             if service.uuid == UUID_Service {
                 print("find UUID_Service")
+                if (service.characteristics == nil) {
+                    print("error: service.characteristics is nil")
+                    return
+                }
+
                 for characteristic in service.characteristics! {
                      if characteristic.uuid == UUID_Write {
                         print("find UUID_Write and write value")
@@ -556,6 +593,10 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
                         //let udata = Data(_: byteArray)
                         //print(udata)
                         let udata = data.data(using: String.Encoding(rawValue: String.Encoding.utf8.rawValue), allowLossyConversion:true)
+                         if (udata == nil) {
+                             print("error: udata is nil")
+                             return
+                         }
                         peripheral.writeValue(udata!, for: characteristic, type: CBCharacteristicWriteType.withResponse)
                      }
                 }

@@ -10,6 +10,7 @@ import CoreBluetooth
 
 class User: ObservableObject {
     @Published var CentralMode = true
+    @Published var ConnectMode = true
     @Published var PeripheralMode = false
     @Published var myID = "tmp"
     @Published var timerInterval = "30" // <- 300

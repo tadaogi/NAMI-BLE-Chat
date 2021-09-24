@@ -36,11 +36,12 @@ class Devices : ObservableObject {
     //public func addDevice(deviceName: String, uuidString: String, rssi: NSNumber, state: CBPeripheralState) {
     public func addDevice(peripheral: CBPeripheral, tmprssi: NSNumber?=nil) { // rssi は分からなければ nil
         // エラーの時に rssi=127 になるので、修正
-        var rssi: NSNumber?=nil
+        // rssiがnilだと、表示のところでエラーになるので、とりあえず -128 にしておく 2021/9/24
+        var rssi: NSNumber? = -128
         if tmprssi == nil {
-            rssi = nil
+            rssi = -128
         } else if tmprssi as! Int > 0 { // 実際は 127 だけのはずだけど正の時にしておく
-            rssi = nil
+            rssi = -128
         } else {
             rssi = tmprssi
         }

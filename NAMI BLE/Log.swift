@@ -170,7 +170,7 @@ class Log : ObservableObject {
         
         let session = URLSession.shared
         session.dataTask(with: request) { (data, response, error) in
-            if error == nil, let data = data, let response = response as? HTTPURLResponse {
+            if error == nil, let response = response as? HTTPURLResponse {
                 // HTTPヘッダの取得
                 print("Content-Type: \(response.allHeaderFields["Content-Type"] ?? "")")
                 // HTTPステータスコード

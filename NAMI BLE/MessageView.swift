@@ -24,7 +24,7 @@ struct MessageView: View {
                     .frame(height: 0)
                 ForEach(self.userMessage.userMessageList, id: \.code) { messageitem in
                     //HStack {
-                    var tmptext = messageitem.userMessageID+","+messageitem.userMessageText
+                    let tmptext = messageitem.userMessageID+","+messageitem.userMessageText
                     Text(tmptext)
                             .padding([.leading], 15)
                     //Spacer()
