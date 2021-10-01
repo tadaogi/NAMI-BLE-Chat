@@ -126,6 +126,9 @@ struct SettingView: View {
             print(logfname)
             uploadfname = logfname
             user.ConnectMode = ConnectMode
+            
+            self.log.addItem(logText: "enterSetting, INFO, 0000, , \(user.timerInterval), \(user.obsoleteInterval)")
+
         })
         .onDisappear(perform: {
             print("onDisappear called in SettingView")
@@ -133,6 +136,9 @@ struct SettingView: View {
             UserDefaults.standard.set(user.timerInterval, forKey: "timerInterval")
             UserDefaults.standard.set(user.obsoleteInterval, forKey: "obsoluteInterval")
             ConnectMode = user.ConnectMode
+            
+            self.log.addItem(logText: "exitSetting, INFO, 0000, , \(user.timerInterval), \(user.obsoleteInterval)")
+
         })
     }
 }

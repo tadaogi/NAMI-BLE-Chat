@@ -43,7 +43,10 @@ class Log : ObservableObject {
     
     init() {
         GlobalVar.shared.gLog = self
-        addItem(logText: "NAMI BLE started,")
+        
+        let versiontext = Bundle.main.infoDictionary!["CFBundleVersion"]
+        print(versiontext!)
+        addItem(logText: "NAMI BLE (ver.\(versiontext!)) started,")
     }
     
     func addItem(logText: String) {
