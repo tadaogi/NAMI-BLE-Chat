@@ -403,11 +403,16 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             //let UUID_Read = CBUUID(string: "1BE31CB9-9E07-4892-AA26-30E87ABE9F70")
             //let UUID_Write = CBUUID(string: "0C136FCC-3381-4F1E-9602-E2A3F8B70CEB")
 
-            print("Not call discover characteristics") // 呼んでも良いような気はする
+            if (serviceUUID1=="180A") {
+                print("C: call discoverCharacteristics for 180A")
+                peripheral.discoverCharacteristics(nil, for:service as CBService)
+            } else {
+                print("Not call discover characteristics") // 呼んでも良いような気はする
             
-            //peripheral.discoverCharacteristics([UUID_Read,UUID_Write], for:service as CBService)
-            // peripheral.discoverCharacteristics(nil, forService:service as CBService)
-            /* ↑の第1引数はnilは非推奨。*/
+                //peripheral.discoverCharacteristics([UUID_Read,UUID_Write], for:service as CBService)
+                // peripheral.discoverCharacteristics(nil, forService:service as CBService)
+                /* ↑の第1引数はnilは非推奨。*/
+            }
         }
         
         // 一応ここでもRSSI確認
@@ -415,7 +420,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         
         // NAMIの場合は、ここでdisconnectを出す
         // 上のreadRSSIが返ってこないかもしれない
-        centralManager.cancelPeripheralConnection(peripheral)
+        //centralManager.cancelPeripheralConnection(peripheral)
 
     }
     
@@ -434,12 +439,16 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         let characteristics = service.characteristics!
         
         print("Found \(characteristics.count) characteristics! : \(characteristics)")
+        /* 180Aの時
+         Found 2 characteristics! : [<CBCharacteristic: 0x280054420, UUID = Manufacturer Name String, properties = 0x2, value = (null), notifying = NO>, <CBCharacteristic: 0x280054600, UUID = Model Number String, properties = 0x2, value = (null), notifying = NO>]
+        */
         
         // devices の更新。
         self.devices.updateDevice(peripheral: peripheral)
 
         for characteristic in characteristics
         {
+            print("found characteristics.uuid = \(characteristic.uuid)")
             if characteristic.uuid == UUID_Read {
                 print("find UUID_Read and read value")
                 // 値を読む
@@ -461,7 +470,21 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
                     self.userMessage.startTransfer(connectedPeripheral: self.connectedPeripheral)
                 }
             }
-             
+            
+            let UUID_Manu = CBUUID(string: "0x2a29") // Manufacturer Name String
+            if characteristic.uuid == UUID_Manu {
+                print("UUID_Manu")
+                peripheral.readValue(for: characteristic)
+                foundCharacteristicR = characteristic // save
+
+            }
+            
+            let UUID_Model = CBUUID(string: "0x2a24") //Model Number String
+            if characteristic.uuid == UUID_Model {
+                print("UUID_Model")
+                peripheral.readValue(for: characteristic)
+                foundCharacteristicR = characteristic // save
+            }
 
         }
         
@@ -550,6 +573,40 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             //peripheral.writeValue(data , for: characteristic, type: .withResponse)
             //writeData("abcdefg", peripheral: peripheral)
         }
+        
+        let UUID_Manu = CBUUID(string: "0x2a29") //
+        if characteristic.uuid == UUID_Manu {
+            var readMessage: NSString
+        
+            if let tmpMessage = NSString(data: characteristic.value!, encoding: String.Encoding.utf8.rawValue) as String? {
+                
+                readMessage = tmpMessage as NSString
+            } else {
+                //print("not a valid UTF-8 sequence")
+                readMessage = "MESSAGEERROR\n"
+            }
+            
+            print(readMessage)
+            self.log.addItem(logText: "didUpdateValueFor, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(characteristic.uuid), \(readMessage)")
+        }
+        
+        let UUID_Model = CBUUID(string: "0x2a24") //Model Number String
+        if characteristic.uuid == UUID_Model {
+            var readMessage: NSString
+        
+            if let tmpMessage = NSString(data: characteristic.value!, encoding: String.Encoding.utf8.rawValue) as String? {
+                
+                readMessage = tmpMessage as NSString
+            } else {
+                //print("not a valid UTF-8 sequence")
+                readMessage = "MESSAGEERROR\n"
+            }
+            
+            print(readMessage)
+            self.log.addItem(logText: "didUpdateValueFor, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(characteristic.uuid), \(readMessage)")
+        }
+
+        
     }
     
     public func writecurrent () {
