@@ -24,6 +24,9 @@ struct LogItem {
     var code = UUID()
     var logtext: String
 }
+
+var versiontext:String = ""
+
 class Log : ObservableObject {
     //@Published var logtext: String = "initial\n1\n2\n3\n4\n5\n6\n"
     //@Published var loglist : [LogItem] = [
@@ -44,9 +47,9 @@ class Log : ObservableObject {
     init() {
         GlobalVar.shared.gLog = self
         
-        let versiontext = Bundle.main.infoDictionary!["CFBundleVersion"]
-        print(versiontext!)
-        addItem(logText: "NAMI BLE (ver.\(versiontext!)) started,")
+        versiontext = Bundle.main.infoDictionary!["CFBundleVersion"] as! String
+        print(versiontext)
+        addItem(logText: "NAMI BLE (ver.\(versiontext)) started,")
     }
     
     func addItem(logText: String) {

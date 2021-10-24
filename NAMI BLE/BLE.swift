@@ -576,32 +576,38 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         
         let UUID_Manu = CBUUID(string: "0x2a29") //
         if characteristic.uuid == UUID_Manu {
-            var readMessage: NSString
+            var readMessage: String
         
             if let tmpMessage = NSString(data: characteristic.value!, encoding: String.Encoding.utf8.rawValue) as String? {
                 
-                readMessage = tmpMessage as NSString
+                readMessage = tmpMessage as String
             } else {
                 //print("not a valid UTF-8 sequence")
                 readMessage = "MESSAGEERROR\n"
             }
             
             print(readMessage)
+            readMessage = readMessage.replacingOccurrences(of: "\0", with: "")
+            readMessage = readMessage.replacingOccurrences(of: ",", with: ".")
+            print(readMessage)
             self.log.addItem(logText: "didUpdateValueFor, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(characteristic.uuid), \(readMessage)")
         }
         
         let UUID_Model = CBUUID(string: "0x2a24") //Model Number String
         if characteristic.uuid == UUID_Model {
-            var readMessage: NSString
+            var readMessage: String
         
             if let tmpMessage = NSString(data: characteristic.value!, encoding: String.Encoding.utf8.rawValue) as String? {
                 
-                readMessage = tmpMessage as NSString
+                readMessage = tmpMessage as String
             } else {
                 //print("not a valid UTF-8 sequence")
                 readMessage = "MESSAGEERROR\n"
             }
             
+            print(readMessage)
+            readMessage = readMessage.replacingOccurrences(of: "\0", with: "")
+            readMessage = readMessage.replacingOccurrences(of: ",", with: ".")
             print(readMessage)
             self.log.addItem(logText: "didUpdateValueFor, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(characteristic.uuid), \(readMessage)")
         }
