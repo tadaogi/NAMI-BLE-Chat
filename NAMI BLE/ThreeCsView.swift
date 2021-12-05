@@ -68,6 +68,12 @@ struct ThreeCsView: View {
                             let count = devices.devicelist.count
                             Text(String(format: "%d",count))
                         }
+                        
+                        HStack() {
+                            Text("Num of iPhone : ")
+                            let count = devices.countiPhone()
+                            Text(String(format: "%d",count))
+                        }
                         //.padding()
                     }
                     HStack() {

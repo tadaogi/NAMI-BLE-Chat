@@ -12,6 +12,7 @@ class User: ObservableObject {
     @Published var CentralMode = true
     @Published var ConnectMode = true
     @Published var PeripheralMode = false
+    @Published var iPhoneMode = false
     @Published var myID = "tmp"
     @Published var timerInterval = "30" // <- 300
     @Published var obsoleteInterval = "900" // <-600
@@ -20,6 +21,8 @@ class User: ObservableObject {
         self.myID = UserDefaults.standard.object(forKey: "myID") as? String ?? "tmp2"
         self.timerInterval = UserDefaults.standard.object(forKey: "timerInterval") as? String ?? "30"
         self.obsoleteInterval = UserDefaults.standard.object(forKey: "obsoleteInterval") as? String ?? "900"
+        self.iPhoneMode = UserDefaults.standard.object(forKey: "iPhoneMode") as? Bool ?? true
+
     }
 }
 
@@ -136,16 +139,25 @@ struct ContentView: View {
 
                     ForEach(self.devices.devicelist, id: \.code) { deviceitem in
                         
-                        HStack {
+                        // iPhoneだけ表示するために、HStackを取ってみる。
+                        //HStack {
                             
-                            let deviceText = "\(deviceitem.deviceName), \(deviceitem.uuidString), \(deviceitem.rssi!), \(Date2String(date: deviceitem.firstDate)), \(Date2String(date: deviceitem.lastDate)), \(state2String(state: deviceitem.state))"
+                            let deviceText = "\(deviceitem.deviceName), \(deviceitem.uuidString),\(deviceitem.real_rssi0),\(deviceitem.real_rssi1),\(deviceitem.real_rssi2),\(deviceitem.average_rssi), \(Date2String(date: deviceitem.firstDate)), \(Date2String(date: deviceitem.lastDate)), \(state2String(state: deviceitem.state))"
+                        if iPhoneMode {
+                            if deviceText.contains("iPhone") {
+                                Text(deviceText).padding([.leading],10)
+                                Spacer()
+                            }
+                        } else {
                             Text(deviceText).padding([.leading],10)
+                            Spacer()
+                        }
                             //Text(deviceitem.deviceName).padding([.leading],10)
                             //Text(deviceitem.uuidString)
                             //Text(String(describing: deviceitem.rssi))
                             
-                            Spacer()
-                        }
+                            //Spacer()
+                        //}
                     }
                     
                 }.background(Color("lightBackground"))
@@ -187,6 +199,7 @@ struct ContentView: View {
             UserDefaults.standard.set(user.myID, forKey: "myID")
             UserDefaults.standard.set(user.timerInterval, forKey: "timerInterval")
             UserDefaults.standard.set(user.obsoleteInterval, forKey: "obsoleteInterval")
+            UserDefaults.standard.set(user.iPhoneMode, forKey: "iPhoneMode")
             UIApplication.shared.isIdleTimerDisabled = true
         })
         .onDisappear(perform: {

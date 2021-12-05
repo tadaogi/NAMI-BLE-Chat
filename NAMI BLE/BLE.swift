@@ -27,6 +27,7 @@ struct BLEcommService {
 }
 // Centralとして動く時の処理はこちら
 var ConnectMode : Bool = true
+var iPhoneMode : Bool = false
 
 public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, ObservableObject {
     @EnvironmentObject var user: User
@@ -48,11 +49,12 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     var userMessage: UserMessage!
     var connectedPeripheral: CBPeripheral! = nil
     var foundCharacteristicR: CBCharacteristic! = nil
-    var obsoleteInterval: String = "600"
+    //var obsoleteInterval: String = "600" // これはなくても大丈なのではないか？
 
     override init() {
         //self.centralManager = CBCentralManager()
         //self.peripheralManager = CBPeripheralManager()
+        iPhoneMode = UserDefaults.standard.bool(forKey: "iPhoneMode")
         print("BLECentral init is called")
     }
     
