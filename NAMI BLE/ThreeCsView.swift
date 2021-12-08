@@ -185,6 +185,14 @@ struct ThreeCsView: View {
                 }
             }
             .navigationBarTitle("3Cs alarm", displayMode: .inline)
+            .navigationBarItems(
+                trailing:
+                    NavigationLink( destination: AlarmSettingView()) {
+                        Text("AlarmSetting")
+                        
+                    }
+            )
+
         }
     }
 }

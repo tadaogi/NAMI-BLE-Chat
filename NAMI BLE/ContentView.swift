@@ -16,12 +16,16 @@ class User: ObservableObject {
     @Published var myID = "tmp"
     @Published var timerInterval = "30" // <- 300
     @Published var obsoleteInterval = "900" // <-600
+    @Published var rssi1m = -60
+    @Published var rssi3m = -70
 
     init() {
         self.myID = UserDefaults.standard.object(forKey: "myID") as? String ?? "tmp2"
         self.timerInterval = UserDefaults.standard.object(forKey: "timerInterval") as? String ?? "30"
         self.obsoleteInterval = UserDefaults.standard.object(forKey: "obsoleteInterval") as? String ?? "900"
         self.iPhoneMode = UserDefaults.standard.object(forKey: "iPhoneMode") as? Bool ?? true
+        self.rssi1m = UserDefaults.standard.object(forKey: "rssi1m") as? Int ?? -60
+        self.rssi3m = UserDefaults.standard.object(forKey: "rssi3m") as? Int ?? -70
 
     }
 }

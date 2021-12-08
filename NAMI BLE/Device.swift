@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreBluetooth
+import SwiftUI
 import AudioToolbox //追加インポート
 
 struct DeviceItem {
@@ -25,6 +26,9 @@ struct DeviceItem {
 
 }
 
+var RSSI1mth = UserDefaults.standard.integer(forKey: "rssi1m")
+var RSSI3mth = UserDefaults.standard.integer(forKey: "rssi3m")
+
 class Devices : ObservableObject {
     @Published var devicelist : [DeviceItem] = []
 //    @Published var debugnum : Int = 3
@@ -34,7 +38,19 @@ class Devices : ObservableObject {
     @Published var closeLongDeviceScore = 1
     @Published var showAlert = false
     @Published var showLongAlert = false
-
+    
+    //@EnvironmentObject var user: User
+    init() {
+        if RSSI1mth==0 {
+            RSSI1mth = -60
+            UserDefaults.standard.set(RSSI1mth, forKey: "rssi1m")
+        }
+        if RSSI3mth==0 {
+            RSSI3mth = -70
+            UserDefaults.standard.set(RSSI3mth, forKey: "rssi3m")
+        }
+    }
+    
     var devicecount = 0
     
     //public func addDevice(deviceName: String, uuidString: String, rssi: NSNumber, state: CBPeripheralState) {
@@ -171,7 +187,10 @@ class Devices : ObservableObject {
                     continue;
                 }
             }
-            if device.average_rssi > -60 {
+            print(RSSI1mth)
+            print(RSSI3mth)
+            //if device.average_rssi > -60 {
+            if device.average_rssi > Double(RSSI1mth) {
                 // 最初の検出から 900 秒以上たっていて、
                 // 最後の検出から 90 秒以上たっていない
                 if (now.timeIntervalSince1970 - device.lastDate.timeIntervalSince1970 < 90)
@@ -181,7 +200,8 @@ class Devices : ObservableObject {
             }
             // 密接の範囲、3m以内に90秒以内に
             //if Int(truncating: rssi) > -80 { // 3m以内
-            if device.average_rssi > -70     {
+            //if device.average_rssi > -70     {
+            if device.average_rssi > Double(RSSI3mth)     {
                 // 最後の検出から 90 秒以上たっていない
                 if (now.timeIntervalSince1970 - device.lastDate.timeIntervalSince1970 < 90) {
                     TmpCloseDeviceCount = TmpCloseDeviceCount + 1

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		321DC427275D833400497385 /* AlarmSettingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 321DC426275D833400497385 /* AlarmSettingView.swift */; };
 		324BF7FD268AF46100BEC254 /* test.txt in Resources */ = {isa = PBXBuildFile; fileRef = 324BF7FC268AF46100BEC254 /* test.txt */; };
 		32626E9425B2421B00BEE892 /* BLEcommTest0App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32626E9325B2421B00BEE892 /* BLEcommTest0App.swift */; };
 		32626E9625B2421B00BEE892 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32626E9525B2421B00BEE892 /* ContentView.swift */; };
@@ -27,6 +28,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		321DC426275D833400497385 /* AlarmSettingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmSettingView.swift; sourceTree = "<group>"; };
 		324BF7FC268AF46100BEC254 /* test.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = test.txt; sourceTree = "<group>"; };
 		32626E9025B2421B00BEE892 /* NAMI BLE.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "NAMI BLE.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		32626E9325B2421B00BEE892 /* BLEcommTest0App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEcommTest0App.swift; sourceTree = "<group>"; };
@@ -80,6 +82,7 @@
 		32626E9225B2421B00BEE892 /* NAMI BLE */ = {
 			isa = PBXGroup;
 			children = (
+				321DC426275D833400497385 /* AlarmSettingView.swift */,
 				32626EA925B3055900BEE892 /* BLE.swift */,
 				32626E9325B2421B00BEE892 /* BLEcommTest0App.swift */,
 				32626E9525B2421B00BEE892 /* ContentView.swift */,
@@ -188,6 +191,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				321DC427275D833400497385 /* AlarmSettingView.swift in Sources */,
 				326DA13E2696C65A004F0442 /* GPS.swift in Sources */,
 				328C353726C0ADCF007EA122 /* ThreeCsView.swift in Sources */,
 				32626EA725B24FB300BEE892 /* SettingView.swift in Sources */,
