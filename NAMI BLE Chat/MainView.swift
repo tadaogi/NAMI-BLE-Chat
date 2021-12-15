@@ -17,13 +17,15 @@ struct MainView: View {
                // .environmentObject(Log()) // 使い方が分かっていないかも
                 // ThreeCsViewを作ったときに以下の行があると同期されなかったのでコメントアウトした
                 //.environmentObject(Devices())
-                .environmentObject(UserMessage())
+                //.environmentObject(UserMessage())
                 .tabItem{
                     Text("Debug")
                 }
             ThreeCsView()
                 .tabItem{Text("3Cs")}
         }
+        .environmentObject(UserMessage())
+        .environmentObject(UserDefine())
     }
 }
 
@@ -33,6 +35,6 @@ struct MainView_Previews: PreviewProvider {
             .environmentObject(User())
             .environmentObject(Log())
             .environmentObject(Devices())
-            .environmentObject(UserMessage())
+            //.environmentObject(UserMessage())
     }
 }

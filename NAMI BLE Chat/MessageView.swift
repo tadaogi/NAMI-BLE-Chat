@@ -14,8 +14,12 @@ struct MessageView: View {
     var body: some View {
         
         VStack(alignment: .leading) {
-            Text("UserMessages")
-
+            HStack {
+                Text("UserMessages")
+                Spacer()
+                Text(userMessage.pStatus)
+            }
+            
             ScrollView(.vertical,showsIndicators: true) {
                 // これがないと、最初に書いたテキストの幅に固定されてしまう
                 Rectangle()

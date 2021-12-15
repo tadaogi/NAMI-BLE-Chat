@@ -20,8 +20,9 @@ struct PeripheralInfo {
     var lastDate: Date
 }
 
+var UUID_Service_str = "73C98F4C-F74F-4918-9B0A-5EF4C6C021C6"
 struct BLEcommService {
-    static let UUID_Service = CBUUID(string: "73C98F4C-F74F-4918-9B0A-5EF4C6C021C6")
+    static let UUID_Service = CBUUID(string: UUID_Service_str)
     static let UUID_Read = CBUUID(string: "1BE31CB9-9E07-4892-AA26-30E87ABE9F70")
     static let UUID_Write = CBUUID(string: "0C136FCC-3381-4F1E-9602-E2A3F8B70CEB")
 }
@@ -47,8 +48,10 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     
     
     var userMessage: UserMessage!
-    var connectedPeripheral: CBPeripheral! = nil
-    var foundCharacteristicR: CBCharacteristic! = nil
+    
+    // 修正 2021/12/15
+    //var connectedPeripheral: CBPeripheral! = nil
+    //var foundCharacteristicR: CBCharacteristic! = nil
     //var obsoleteInterval: String = "600" // これはなくても大丈なのではないか？
 
     override init() {
@@ -96,22 +99,25 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         // 本当は、サービスのUUIDを指定するのが正しいはずだがうまく動かない
         self.centralManager.scanForPeripherals(withServices: nil, options: nil)
         // 以下の方法ならうまくいく。ただし、FD6Fが入るとNG
-        /*
-        let UUID0 = CBUUID(string: "180D") // heart rate
-        let UUID1 = CBUUID(string: "2A19") // battery level
-        let UUID2 = CBUUID(string: "1809") // health thermo
         
-        let UUID3 = CBUUID(string: "FD60") // covid FD6F FD6Fがあると全体的にうまくいかない
+        //let UUID0 = CBUUID(string: "180D") // heart rate
+        //let UUID1 = CBUUID(string: "2A19") // battery level
+        //let UUID2 = CBUUID(string: "1809") // health thermo
+        
+        //let UUID3 = CBUUID(string: "FD60") // covid FD6F FD6Fがあると全体的にうまくいかない
          
-        let UUID3 = CBUUID(string: "0000FD6F-0000-1000-8000-00805f9b34fb")
+        //let UUID3 = CBUUID(string: "0000FD6F-0000-1000-8000-00805f9b34fb")
         
-        let UUID4 = CBUUID(string: "416DFC7B-D6E2-4373-9299-D81ACD3CC728")
-        let UUID5 = CBUUID(string: "0E2FD244-2114-466C-9F18-2D493CD70407")
-        let UUID6 = CBUUID(string: "90FA7ABE-FAB6-485E-B700-1A17804CAA13")
-        //let UUID_Read = CBUUID(string: "1BE31CB9-9E07-4892-AA26-30E87ABE9F70")
+        //let UUID4 = CBUUID(string: "416DFC7B-D6E2-4373-9299-D81ACD3CC728")
+        //let UUID5 = CBUUID(string: "0E2FD244-2114-466C-9F18-2D493CD70407")
+        //let UUID6 = CBUUID(string: "90FA7ABE-FAB6-485E-B700-1A17804CAA13")
+        //let UUID_180A = CBUUID(string: "180A")
+        //let UUID_180F = CBUUID(string: "180F")
         
-        self.centralManager.scanForPeripherals(withServices: [UUID0, UUID1, UUID2, UUID0], options: nil)
-        */
+        //let UUID_str = CBUUID(string: UUID_Service_str)
+        
+        //self.centralManager.scanForPeripherals(withServices: [UUID_180F], options: nil)
+        
     }
     
     func stopScan() {
@@ -185,8 +191,10 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         self.log.addItem(logText: "kCBAdvDataLocalName, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(LocalName),")
         
         // すべてのデバイスをコネクトに行く
+        // debug のために、一旦 BLECommTest0 に制限する。 2021/12/14
+        // 戻す 2021/12/15
         //if LocalName as! String  == "BLEcommTest0" {
-        //    print("I got BLEcommTest0")
+        //    print("I got BLEcommTest0 (** for debug ***)")
         if true {
             print("LocalName:",LocalName)
         
@@ -239,6 +247,9 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             // 複数台接続の記事
             // https://qiita.com/hirotakan/items/569b4d63c95a3491b677
             // 厳密には lock が要る（connect request して、戻ってくる前に次のデバイスへのconnectが出るかも）
+            
+            // ロジック見直し 2021/12/15
+            /*
             if         connectedPeripheral == nil {
                 // 設定でオンにしないと、コネクトに行かない
                 if (ConnectMode==true) {
@@ -268,6 +279,29 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
                     print("unknown")
                 }
             }
+            */
+            var doconnect = false
+            switch peripheral.state {
+            case CBPeripheralState.disconnected:
+                print("disconnected")
+                doconnect = true
+            case CBPeripheralState.connecting:
+                print("connecting")
+            case CBPeripheralState.connected:
+                print("connected")
+            case CBPeripheralState.disconnecting:
+                print("disconnecting")
+                doconnect = true
+            default:
+                print("unknown")
+                doconnect = true // OK?
+            }
+            if doconnect {
+                // 設定でオンにしないと、コネクトに行かない
+                if (ConnectMode==true) {
+                    self.centralManager.connect(peripheral, options: nil)
+                }
+            }
         }
     }
     
@@ -292,13 +326,16 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         // 上位の関数が、peripheralを使えるように（writeが呼べるように）
         // 複数台とコネクトすると、上書きになってしまう。要確認。
         // peripheral 毎なので大丈夫な気がする
-        connectedPeripheral = peripheral
+        //connectedPeripheral = peripheral
         // 4-1. 利用可能Serviceの探索開始
         //let UUID_Service = BLEcommService.UUID_Service
         print("call discoverServices with nil")
         
-        //peripheral.discoverServices([UUID_Service])
-        peripheral.discoverServices(nil)
+        //let UUID_180A = CBUUID(string: "180A")
+        let UUID_str = CBUUID(string: UUID_Service_str)
+        peripheral.discoverServices([UUID_str])
+        //peripheral.discoverServices([UUID_180A,UUID_str])
+        //peripheral.discoverServices(nil)
         
         // RSSI が読めるか確認
         peripheral.readRSSI()
@@ -326,7 +363,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         self.devices.updateDevice(peripheral: peripheral)
 
         // 処理全体をリセットしたいが、転送中のTransferCとかはどうするのか？
-        connectedPeripheral = nil
+        // connectedPeripheral = nil
         
         print("transferList \(transferCList)")
         print("disconnected peripheral \(peripheral)")
@@ -368,6 +405,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         print("didDiscoverServices")
         if (error != nil) {
             print("error: \(String(describing: error))")
+            centralManager.cancelPeripheralConnection(peripheral)
             return
         }
         
@@ -375,6 +413,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         
         if (peripheral.services == nil) {
             print("error: periphera.services is nil")
+            centralManager.cancelPeripheralConnection(peripheral)
             return
         }
 
@@ -384,6 +423,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         // devices の更新。
         self.devices.updateDevice(peripheral: peripheral)
 
+        var cancancel = true // このあとの処理が不要なデバイスならキャンセルできるようにする
         for service in peripheral.services!
         {
             print("C: find service")
@@ -408,6 +448,11 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             if (serviceUUID1=="180A") {
                 print("C: call discoverCharacteristics for 180A")
                 peripheral.discoverCharacteristics(nil, for:service as CBService)
+                cancancel = false
+            } else if (serviceUUID1 == UUID_Service_str) { // chat 用
+                print("C: call discoverCharacteristics for UUID_Service")
+                peripheral.discoverCharacteristics(nil, for:service as CBService)
+                cancancel = false
             } else {
                 print("Not call discover characteristics") // 呼んでも良いような気はする
             
@@ -422,7 +467,9 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         
         // NAMIの場合は、ここでdisconnectを出す
         // 上のreadRSSIが返ってこないかもしれない
-        //centralManager.cancelPeripheralConnection(peripheral)
+        if cancancel {
+            centralManager.cancelPeripheralConnection(peripheral)
+        }
 
     }
     
@@ -430,11 +477,13 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         if let error = error {
             print("didDiscoverCharacteristeicsForService error: \(error)")
+            centralManager.cancelPeripheralConnection(peripheral)
             return
         }
 
         if (service.characteristics == nil) {
             print("error: characteristics is nil")
+            centralManager.cancelPeripheralConnection(peripheral)
             return
         }
 
@@ -448,6 +497,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         // devices の更新。
         self.devices.updateDevice(peripheral: peripheral)
 
+        var cancancel = true // このあとの処理が不要なデバイスならキャンセルできるようにする
         for characteristic in characteristics
         {
             print("found characteristics.uuid = \(characteristic.uuid)")
@@ -456,7 +506,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
                 // 値を読む
                 print("don't read for debug")
                 //peripheral.readValue(for: characteristic)
-                foundCharacteristicR = characteristic // save
+                //foundCharacteristicR = characteristic // save
             }
             
             if characteristic.uuid == UUID_Write {
@@ -468,8 +518,13 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
                 //writeData("debugWrite", peripheral: peripheral)
                 
                 // とりあえずUUID_Writeが見つかったら、メッセージのTransferを開始する。
+                print(peripheral.name!)
+                //print(connectedPeripheral)
                 if self.userMessage != nil {
-                    self.userMessage.startTransfer(connectedPeripheral: self.connectedPeripheral)
+                    // connectedPeripheralではなく、peripheralを渡す。2021/12/15
+                    //self.userMessage.startTransfer(connectedPeripheral: self.connectedPeripheral)
+                    self.userMessage.startTransfer(connectedPeripheral: peripheral)
+                    cancancel = false
                 }
             }
             
@@ -477,7 +532,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             if characteristic.uuid == UUID_Manu {
                 print("UUID_Manu")
                 peripheral.readValue(for: characteristic)
-                foundCharacteristicR = characteristic // save
+                //foundCharacteristicR = characteristic // save
 
             }
             
@@ -485,15 +540,23 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             if characteristic.uuid == UUID_Model {
                 print("UUID_Model")
                 peripheral.readValue(for: characteristic)
-                foundCharacteristicR = characteristic // save
+                //foundCharacteristicR = characteristic // save
             }
 
         }
         
         // 一応ここでもRSSI確認
         peripheral.readRSSI()
+        
+        // 上のreadRSSIが返ってこないかもしれない
+        // startTransfer していなければキャンセルしても良いはず
+        if cancancel {
+            centralManager.cancelPeripheralConnection(peripheral)
+        }
     }
 
+    // 同じ処理が 321行目付近にあるので、こちらはコメントアウトする 2021/12/13
+    /*
     public func peripheral(_ peripheral: CBPeripheral, didDisconnectedPeripheral service: CBService, error: Error?) {
         // とりあえず呼ばれるかどうか確認する -> 呼ばれない -> 終了処理は、Message.swift 側でやる
         // これ以外の処理が必要だけど、まだやっていない。落ちるかもしれない。
@@ -502,15 +565,45 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         let devUUID = peripheral.identifier.uuidString
         self.log.addItem(logText: "didDisconnectedPeripheral,\(devname ?? "unknown"), \(devUUID)")
     }
+    */
 
-    
+    // writeDataのロジックを参考に書き換える 2021/12/15
     public func readfromP(peripheral: CBPeripheral){
         print("enter readfromP")
-        peripheral.readValue(for: foundCharacteristicR)
+        //peripheral.readValue(for: foundCharacteristicR)
+        
+        // ここからが書き換えた後
+        if (peripheral.services == nil) {
+            print("error: peripheral.services is nil (reeadfromP)")
+            return
+        }
+        // 他にもエラーがあると思うが、それは発見してから修正する。
 
+        print(peripheral.services ?? "no service")
+        
+        for service in peripheral.services! {
+            if service.uuid == UUID_Service {
+                print("find UUID_Service (reeadfromP)")
+                if (service.characteristics == nil) {
+                    print("error: service.characteristics is nil (reeadfromP)")
+                    return
+                }
+
+                for characteristic in service.characteristics! {
+                     if characteristic.uuid == UUID_Read {
+                        print("find UUID_Read  (reeadfromP)")
+                        peripheral.readValue(for: characteristic)
+                        return
+                     }
+                }
+                print("error: characteristic UUID_Read is not found (reeadfromP)")
+
+            }
+        }
+        print("error: service UUID_Service is not found (reeadfromP)")
     }
-    // 値を読みに行った結果の到着
     
+    // 値を読みに行った結果の到着
     public func peripheral(_ peripheral: CBPeripheral,
                     didUpdateValueFor characteristic: CBCharacteristic,
                                                     error: Error?)
@@ -616,7 +709,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
 
         
     }
-    
+    /*
     public func writecurrent () {
         print("write current is called")
         if self.connectedPeripheral != nil {
@@ -625,6 +718,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             print("debug connectedPeripheral is nil")
         }
     }
+    */
     
     func writeData(_ data: String, peripheral: CBPeripheral) {
         print("enter writeData")
@@ -687,7 +781,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     
     public func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor descriptor: CBDescriptor, error: Error?) {
         if let error = error {
-            print("didUpdaateValue fail...error: \(error)")
+            print("didUpdateValue fail...error: \(error)")
             return
         }
         print("didUpdateValue is called")
@@ -706,8 +800,16 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     public func timerFunc() {
         print("BLECentral.timerFunc is called")
         self.log.addItem(logText: "BLECentral.timerFunc,")
-        let obsoleteInterval = Int(UserDefaults.standard.object(forKey: "obsoleteInterval") as? String ?? "600")
+        
+        // 以下は、BLE Chat と同じに修正
+        // 使っていない
+        //let obsoleteInterval = Int(UserDefaults.standard.object(forKey: "obsoleteInterval") as? String ?? "600")
 
+        print("do nothing in BLECentral.timerFunc for **debug**")
+        self.log.addItem(logText: "do nothing in BLECentral.timerFunc for **debug**")
+
+        /*
+        
         self.stopScan()
         
         for peripheral in peripheralInfoArray {
@@ -722,7 +824,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         
         // 他で central manager を使っていると、値が変わってしまうのでおかしくなる可能性がある。
         self.startScan()
-        
+        */
     }
 }
 

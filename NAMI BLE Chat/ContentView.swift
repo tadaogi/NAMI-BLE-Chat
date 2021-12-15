@@ -224,7 +224,7 @@ struct ContentView_Previews: PreviewProvider {
                     .environmentObject(user)
                     .environmentObject(Log())
                     .environmentObject(Devices())
-                    .environmentObject(UserMessage())
+                    // .environmentObject(UserMessage())
                     /// 以下の2行を追加
                     .previewDevice(PreviewDevice(rawValue: deviceName))
                     .previewDisplayName(deviceName)

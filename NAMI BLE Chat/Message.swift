@@ -21,6 +21,10 @@ class UserMessageItem {
     }
 }
 
+public class UserDefine: ObservableObject {
+    @Published var pStatus: String = "i"
+}
+
 /*
 var messagelist : [MessageItem] = [ // array の方が正式名称らしいがとりあえずそのまま
     MessageItem(messagetext: "--- message start ---"),
@@ -40,6 +44,7 @@ public class UserMessage: ObservableObject {
         //UserMessageItem(userMessageID: "  ", userMessageText: "                                                                                        a"),
         //UserMessageItem(userMessageID: "20210101235900000-0001-NONE", userMessageText: "message2")
     ]
+    @Published var pStatus: String = "i"
 
     var userMessageCount = 0
 
@@ -67,12 +72,22 @@ public class UserMessage: ObservableObject {
         userMessageList.append(UserMessageItem(userMessageID: userMessageID, userMessageText: "\(currenttime)[\(userMessageCount)]: \(userMessageText)"))
         
         // debug
+        // 相手が決まらないとかけなくなるので、コメントアウト 2021/12/15
+        /*
         if bleCentral != nil {
             let connectedPeripheral = self.bleCentral.connectedPeripheral
             print("debug \(String(describing: connectedPeripheral))")
             if connectedPeripheral != nil {
                 self.bleCentral.writecurrent()
             }
+        }
+        */
+        
+        // 画面表示を変えないとredrawできないので、姑息な手段で書き換える。
+        if pStatus == "|" {
+            pStatus="-"
+        } else {
+            pStatus="|"
         }
     }
     
@@ -83,7 +98,11 @@ public class UserMessage: ObservableObject {
     // と思ったが、開始はCentralからしか来ないので、相手はperipheral
     public func startTransfer(connectedPeripheral: CBPeripheral) {
         print("startTransfer is called")
-        
+        if pStatus == "|" {
+            pStatus="-"
+        } else {
+            pStatus="|"
+        }
         // ここで、validでないTransferCをクリアする
         transferCList.removeAll(where:{$0.valid == false})
         
@@ -198,7 +217,7 @@ class TransferC {
             // 変数の初期化（connectedPeripheral だけで良いのか？）
             self.valid = false
             self.bleCentral.centralManager.cancelPeripheralConnection(self.connectedPeripheral)
-            self.bleCentral.connectedPeripheral = nil
+            //self.bleCentral.connectedPeripheral = nil
 
             print("end of TransferC.start.async 1")
             
@@ -212,7 +231,7 @@ class TransferC {
         print("errorReset()")
         self.bleCentral.centralManager.cancelPeripheralConnection(self.connectedPeripheral)
         self.valid = false
-        self.bleCentral.connectedPeripheral = nil
+        //self.bleCentral.connectedPeripheral = nil
     }
     
     func sendMessageLoop(){
