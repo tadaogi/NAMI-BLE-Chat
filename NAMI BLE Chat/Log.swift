@@ -38,6 +38,7 @@ class Log : ObservableObject {
     var logcount = 0
     
     var timer: Timer? = nil
+    fileprivate let loglock = NSLock()
     
     //func add() {
     //    count = count + 1
@@ -63,13 +64,17 @@ class Log : ObservableObject {
         logcount = logcount + 1
         
         // デバッグのために、10件ごとにログを消す
-        if logcount%10 == 0 {
+        if logcount%100 == 0 {
             loglist = [
                 LogItem(logtext: "--- log deleted ---"),
             ]
         }
         let text = "\(currenttime), [\(self.logcount)], \(logText)"
-        loglist.append(LogItem(logtext: text))
+        //loglock.lock()
+        DispatchQueue.main.async {
+            self.loglist.append(LogItem(logtext: text))
+        }
+        //loglock.unlock()
         
         // デバッグのために書かないで見る -> 関係なさそうなのでもとに戻す
         appendlocal(fname: "NAMI.log", text: text+"\n")

@@ -193,7 +193,7 @@ class Devices : ObservableObject {
             if device.average_rssi > Double(RSSI1mth) {
                 // 最初の検出から 900 秒以上たっていて、
                 // 最後の検出から 90 秒以上たっていない
-                if (now.timeIntervalSince1970 - device.lastDate.timeIntervalSince1970 < 90)
+                if (now.timeIntervalSince1970 - device.lastDate.timeIntervalSince1970 < 300) /* for debug 90 -> 300 */
                     && (now.timeIntervalSince1970 - device.firstDate.timeIntervalSince1970 > 900) {
                     TmpCloseLongDeviceCount = TmpCloseLongDeviceCount + 1
                 }
@@ -203,7 +203,7 @@ class Devices : ObservableObject {
             //if device.average_rssi > -70     {
             if device.average_rssi > Double(RSSI3mth)     {
                 // 最後の検出から 90 秒以上たっていない
-                if (now.timeIntervalSince1970 - device.lastDate.timeIntervalSince1970 < 90) {
+                if (now.timeIntervalSince1970 - device.lastDate.timeIntervalSince1970 < 300) { /* for debug 90 -> 300 */
                     TmpCloseDeviceCount = TmpCloseDeviceCount + 1
                 }
 

@@ -802,8 +802,8 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         self.log.addItem(logText: "BLECentral.timerFunc,")
         
         // 以下は、BLE Chat と同じに修正
-        // 使っていない
-        //let obsoleteInterval = Int(UserDefaults.standard.object(forKey: "obsoleteInterval") as? String ?? "600")
+        // 使っていない -> 下で使っている
+        let obsoleteInterval = Int(UserDefaults.standard.object(forKey: "obsoleteInterval") as? String ?? "600")
 
         print("do nothing in BLECentral.timerFunc for **debug**")
         self.log.addItem(logText: "do nothing in BLECentral.timerFunc for **debug**")
@@ -817,9 +817,12 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             // connect されていない peripheral も呼ばれる。status を見れば避けれるかもしれない
         }
         peripheralInfoArray = [PeripheralInfo]()
-        
+        */
+        // これをしないと、カウントがアップデートされない 2021/12/15
+        // ハングするので、一旦コメントアウト
         self.devices.clearObsoleteDevice(period: obsoleteInterval! as NSNumber)
         
+        /*
         self.centralManager = CBCentralManager.init(delegate: self, queue: nil)
         
         // 他で central manager を使っていると、値が変わってしまうのでおかしくなる可能性がある。
