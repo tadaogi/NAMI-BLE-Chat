@@ -48,6 +48,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     
     
     var userMessage: UserMessage!
+    let connect_semaphore = DispatchSemaphore(value: 1)
     
     // 修正 2021/12/15
     //var connectedPeripheral: CBPeripheral! = nil
@@ -169,10 +170,12 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         print("kCBAdvDataLocalName:",advertisementData["kCBAdvDataLocalName"] ?? "unknown")
         print("CBAdvertisementDataTxPowerLevelKey:",advertisementData["CBAdvertisementDataTxPowerLevelKey"] ?? "unknown")
         let TxLevel = advertisementData["CBAdvertisementDataTxPowerLevelKey"] ?? "unknown"
+        //let TxLevel2 = advertisementData["kCBAdvDataTxPowerLevelKey"] // これは駄目
+        let isConnectable = advertisementData["kCBAdvDataIsConnectable"] // Documentと違うがこれでうまくいく
         print("peripheral.services:",peripheral.services ?? "unknown")
         //print("RSSI: \(RSSI)")
         //self.message.addItem(messageText: "didDiscover peripheral is called")
-        self.log.addItem(logText: "didDiscoverPeripheral, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(RSSI), \(TxLevel)")
+        self.log.addItem(logText: "didDiscoverPeripheral, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(RSSI), \(TxLevel), \(isConnectable)")
         
         // devices に追加。uuidがあるかどうかは、addDeviceの中でチェック
         self.devices.addDevice(peripheral: peripheral,tmprssi: RSSI)
@@ -299,7 +302,30 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             if doconnect {
                 // 設定でオンにしないと、コネクトに行かない
                 if (ConnectMode==true) {
-                    self.centralManager.connect(peripheral, options: nil)
+                    // connect に行く条件
+                    // chat の相手
+                    // または
+                    // （name が unknown
+                    // かつ、connectable）
+                    if (LocalName as! String  == "BLEcommTest0") ||
+                       (peripheral.name == nil && isConnectable as! Int == 1) {
+                        switch connect_semaphore.wait(timeout: .now()) {
+                        case .success:
+                            // 時間内に結果が帰ってきた時
+                            print(peripheral.name)
+                            self.centralManager.connect(peripheral, options: nil)
+                            // logに残す 2021/12/18
+                            self.log.addItem(logText: "requestConnect, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(LocalName),")
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 30.0) {
+                                self.connect_semaphore.signal()
+                                self.log.addItem(logText: "signalSemaphore, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(LocalName),")
+
+                            }
+                        case .timedOut:
+                            // 時間切れの時
+                            self.log.addItem(logText: "FailConnectSemaphore, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(LocalName),")
+                        }
+                    }
                 }
             }
         }
@@ -347,6 +373,10 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
                                                    error: Error?)
     {
         print("connection failed")
+        let pname = peripheral.name ?? "unknown"
+        self.log.addItem(logText: "didFailToConnect, \(pname), \(peripheral.identifier.uuidString),")
+        //connect_semaphore.signal()
+        // 呼ばれないような感じ
         
         // devices の更新。
         self.devices.updateDevice(peripheral: peripheral)
@@ -361,6 +391,8 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         self.log.addItem(logText: "didDisconnectPeripheral,\(name), \(uuid),")
         // devices の更新。
         self.devices.updateDevice(peripheral: peripheral)
+        //connect_semaphore.signal()
+        // connect のところで、遅延実行にした。
 
         // 処理全体をリセットしたいが、転送中のTransferCとかはどうするのか？
         // connectedPeripheral = nil
