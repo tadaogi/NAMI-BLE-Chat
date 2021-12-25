@@ -47,11 +47,12 @@ public class UserMessage: ObservableObject {
     @Published var pStatus: String = "i"
 
     var userMessageCount = 0
-
+    var PmessageLoopLock = NSLock()
     
     func initBLE(bleCentral:BLECentral, blePeripheral:BLEPeripheral) {
         self.bleCentral = bleCentral
         self.blePeripheral = blePeripheral
+        
         print("Message.initBLE() is called")
     }
     
@@ -68,26 +69,29 @@ public class UserMessage: ObservableObject {
         let myID:String = (UserDefaults.standard.string(forKey: "myID") ?? "NONE") as String
         let userMessageID = currenttime + "-" + sValue + "-" + myID
         
-        userMessageCount = userMessageCount + 1
-        userMessageList.append(UserMessageItem(userMessageID: userMessageID, userMessageText: "\(currenttime)[\(userMessageCount)]: \(userMessageText)"))
+        DispatchQueue.main.async {
+            self.userMessageCount = self.userMessageCount + 1
+            self.userMessageList.append(UserMessageItem(userMessageID: userMessageID, userMessageText: "\(currenttime)[\(self.userMessageCount)]: \(userMessageText)"))
         
-        // debug
-        // 相手が決まらないとかけなくなるので、コメントアウト 2021/12/15
-        /*
-        if bleCentral != nil {
-            let connectedPeripheral = self.bleCentral.connectedPeripheral
-            print("debug \(String(describing: connectedPeripheral))")
-            if connectedPeripheral != nil {
-                self.bleCentral.writecurrent()
+            
+            // debug
+            // 相手が決まらないとかけなくなるので、コメントアウト 2021/12/15
+            /*
+             if bleCentral != nil {
+             let connectedPeripheral = self.bleCentral.connectedPeripheral
+             print("debug \(String(describing: connectedPeripheral))")
+             if connectedPeripheral != nil {
+             self.bleCentral.writecurrent()
+             }
+             }
+             */
+            
+            // 画面表示を変えないとredrawできないので、姑息な手段で書き換える。
+            if self.pStatus == "|" {
+                self.pStatus="-"
+            } else {
+                self.pStatus="|"
             }
-        }
-        */
-        
-        // 画面表示を変えないとredrawできないので、姑息な手段で書き換える。
-        if pStatus == "|" {
-            pStatus="-"
-        } else {
-            pStatus="|"
         }
     }
     
@@ -122,17 +126,28 @@ public class UserMessage: ObservableObject {
         switch command[0] {
         case "BEGIN0":
             print("BEGIN0")
+            PmessageLoopLock.lock()
             transferP = TransferP(blePeripheral: self.blePeripheral)
+            // ここで transferPがnilということはない
             transferP!.begin0()
         
         case "IHAVE":
             // error check が必要か？
+            if transferP == nil {
+                self.blePeripheral.log.addItem(logText:"protocolErro (analyzeText:IHAVE)")
+                return
+            }
             transferP!.ihave(userMessageID: command[1])
             
         case "MSG":
             print("receive MSG")
             // more actions are needed !!!
             addItemExternal(protocolMessageCommand: command)
+            
+            if transferP == nil {
+                self.blePeripheral.log.addItem(logText:"protocolErro (analyzeText:MSG)")
+                return
+            }
             transferP!.ack()
             self.blePeripheral.log.addItem(logText:"P send ACK for MSGH,")
             print("P sent ACK for MSG")
@@ -140,21 +155,47 @@ public class UserMessage: ObservableObject {
             
         case "BEGIN1":
             print("receive BEGIN1")
+            
+            if transferP == nil {
+                self.blePeripheral.log.addItem(logText:"protocolErro (analyzeText:BEGIN1)")
+                return
+            }
+
             transferP!.begin1()
+            // この時点で、ループは終了なので、transferPをnilにしていいはず
+            self.blePeripheral.log.addItem(logText:"after BEGIN1, finish loop")
+            transferP = nil // ここで、nil にしてしまうと、まだ相手がメッセージを読んでないのでエラーになる。-> 修正した（はず）
+            PmessageLoopLock.unlock()
+
             
         case "ACK":
             print("P receive ACK")
-            transferP!.appendReceiveMessage(receiveProtocolMessage: protocolMessageText)
             
+            if transferP == nil {
+                self.blePeripheral.log.addItem(logText:"protocolError (analyzeText:ACK)")
+                return
+            }
+
+            transferP!.appendReceiveMessage(receiveProtocolMessage: protocolMessageText)
             
         case "INEED":
             print("P receive INEED")
+            
+            if transferP == nil {
+                self.blePeripheral.log.addItem(logText:"protocolErro (analyzeText:INEED)")
+                return
+            }
+
             transferP!.appendReceiveMessage(receiveProtocolMessage: protocolMessageText)
             
         case "DEBUG":
             self.blePeripheral.log.addItem(logText:"DEBUG analyzeText \(protocolMessageText),")
+            
         default:
-            print("OTHER COMMAND")
+            print("OTHER COMMAND (ERROR)")
+            transferP = nil
+            PmessageLoopLock.unlock()
+
         }
 
     }
@@ -163,8 +204,18 @@ public class UserMessage: ObservableObject {
     // これらをどうするかちゃんと決めないといけない
     // とりあえずそのまま表示
     func addItemExternal(protocolMessageCommand: [String]) {
-        userMessageCount = userMessageCount + 1 // これを増やす必要があるか不明
-        userMessageList.append(UserMessageItem(userMessageID: protocolMessageCommand[1], userMessageText: protocolMessageCommand[2]))
+        DispatchQueue.main.async {
+            self.userMessageCount = self.userMessageCount + 1 // これを増やす必要があるか不明
+
+            self.userMessageList.append(UserMessageItem(userMessageID: protocolMessageCommand[1], userMessageText: protocolMessageCommand[2]))
+            
+            // 画面表示を変えないとredrawできないので、姑息な手段で書き換える。
+            if self.pStatus == "|" {
+                self.pStatus="-"
+            } else {
+                self.pStatus="|"
+            }
+        }
     }
 }
 
@@ -198,6 +249,7 @@ class TransferC {
         let queue = DispatchQueue.global(qos:.default)
         queue.async {
             print("transfer.start is called")
+            
         
             // send BEGIN0
             self.bleCentral.writeData("BEGIN0\n", peripheral: self.connectedPeripheral)
@@ -362,6 +414,7 @@ class TransferP {
     var protocolMessageQueue:[String]
     var protocolMessageIndex: Int
     var protocolMessageSemaphore: DispatchSemaphore
+    var protocolMessageSyncSemaphore: DispatchSemaphore
     var receiveMessageQueue:[String]
     var receiveMessageIndex: Int
     var receiveMessageSemaphore: DispatchSemaphore
@@ -372,6 +425,7 @@ class TransferP {
         self.protocolMessageQueue = [] // from transfer to BLE
         self.protocolMessageIndex = 0
         self.protocolMessageSemaphore = DispatchSemaphore(value: 0)
+        self.protocolMessageSyncSemaphore = DispatchSemaphore(value: 0)
         self.receiveMessageQueue = []
         self.receiveMessageIndex = 0
         self.receiveMessageSemaphore = DispatchSemaphore(value: 0)
@@ -394,6 +448,16 @@ class TransferP {
         // 本当はここでLockをかけるべき
         self.protocolMessageQueue.append(writeData)
         self.protocolMessageSemaphore.signal()
+        switch(self.protocolMessageSyncSemaphore.wait(timeout: .now() + 30)) {
+        case .success:
+            print("success in write2C")
+            
+        case .timedOut:
+            print("timedout in write2C")
+
+            self.blePeripheral.log.addItem(logText:"timedOut in write2C")
+            
+        }
 
     }
     
@@ -411,6 +475,8 @@ class TransferP {
         }
         let retMessage = self.protocolMessageQueue[self.protocolMessageIndex]
         self.protocolMessageIndex = self.protocolMessageIndex + 1
+        
+        //self.protocolMessageSyncSemaphore.signal() // 早すぎないか？ -> BLE の didReceiveRead に移動
         return retMessage
     }
     

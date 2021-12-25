@@ -13,6 +13,7 @@ class User: ObservableObject {
     @Published var ConnectMode = true
     @Published var PeripheralMode = false
     @Published var iPhoneMode = false
+    @Published var debugLogMode = true
     @Published var myID = "tmp"
     @Published var timerInterval = "30" // <- 300
     @Published var obsoleteInterval = "900" // <-600
@@ -175,11 +176,13 @@ struct ContentView: View {
                         .fill(Color.white)
                         .frame(minWidth: 0.0, maxWidth: .infinity)
                         .frame(height: 0)
-                    ForEach(self.log.loglist, id: \.code) { logitem in
-                        HStack {
-                            Text(logitem.logtext)
-                                .padding([.leading], 15)
-                            Spacer()
+                    if debugLogMode {
+                        ForEach(self.log.loglist, id: \.code) { logitem in
+                            HStack {
+                                Text(logitem.logtext)
+                                    .padding([.leading], 15)
+                                Spacer()
+                            }
                         }
                     }
                     //Text(dummy)

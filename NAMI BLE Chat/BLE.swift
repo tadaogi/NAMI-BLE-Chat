@@ -29,6 +29,7 @@ struct BLEcommService {
 // Centralとして動く時の処理はこちら
 var ConnectMode : Bool = true
 var iPhoneMode : Bool = false
+var debugLogMode : Bool = true
 
 public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, ObservableObject {
     @EnvironmentObject var user: User
@@ -65,7 +66,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     public func myinit(userMessage: UserMessage) {
         print("BLECentral myinit is called")
         self.userMessage = userMessage
-        self.userMessage.addItem(userMessageText: "myinit is called") // shoud be log
+        self.userMessage.addItem(userMessageText: "BLECentral.myinit is called") // shoud be log
 
     }
     
@@ -307,8 +308,14 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
                     // または
                     // （name が unknown
                     // かつ、connectable）
+                    
+                    var rssi = Int(truncating: RSSI)
+                    if rssi == 128 {
+                        rssi = -127
+                    }
+                    
                     if (LocalName as! String  == "BLEcommTest0") ||
-                       (peripheral.name == nil && isConnectable as! Int == 1) {
+                       (peripheral.name == nil && rssi > RSSI3mth && isConnectable as! Int == 1) {
                         switch connect_semaphore.wait(timeout: .now()) {
                         case .success:
                             // 時間内に結果が帰ってきた時
@@ -316,7 +323,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
                             self.centralManager.connect(peripheral, options: nil)
                             // logに残す 2021/12/18
                             self.log.addItem(logText: "requestConnect, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(LocalName),")
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 30.0) {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 30.0) { // connect 失敗がわからないので、タイムアウトにした。
                                 self.connect_semaphore.signal()
                                 self.log.addItem(logText: "signalSemaphore, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(LocalName),")
 
@@ -896,7 +903,18 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
     public func stopPeripheralManager() {
         print("stopPeripheralManager called. Not implemented yet.")
         // stop advertise
+        //stopAdvertise()
+        stopPeripheral()
+        
+       
+    }
+    
+    public func stopPeripheral() {
+        // stop advertise
         stopAdvertise()
+        
+        self.userMessage.PmessageLoopLock.lock() // lockが取れたなら、transferP は nil
+        
     }
 
     // この辺は、BLETest2 からコピー
@@ -1008,6 +1026,11 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
             
                 // リクエストに応答
                 self.peripheralManager.respond(to: request, withResult: .success)
+                
+                if transferP != nil {
+                    transferP?.protocolMessageSyncSemaphore.signal()
+                }
+                
             }
         } else {
             print("unknown UUID")
@@ -1045,6 +1068,8 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
         
     }
     
+    // これは呼ばれないのではないか？
+    /*
     func analyzeText(messageText: String) {
         let command:[String] = messageText.components(separatedBy:"\n")
         self.log.addItem(logText:"command \(command[0])")
@@ -1057,4 +1082,5 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
             print("OTHER COMMAND")
         }
     }
+    */
 }

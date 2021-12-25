@@ -50,6 +50,16 @@ struct SettingView: View {
                         .frame(minWidth: 0.0, maxWidth: .infinity)
                         .frame(height: 0)
                 }
+                HStack() {
+                    Text("Debug Log")
+                    Toggle(isOn: $user.debugLogMode) {
+                        EmptyView()
+                    }
+                    Rectangle()
+                        .fill(Color.white)
+                        .frame(minWidth: 0.0, maxWidth: .infinity)
+                        .frame(height: 0)
+                }
                 HStack {
                     Text("MyID")
                     Spacer()
@@ -141,7 +151,8 @@ struct SettingView: View {
                 uploadfname = logfname
                 user.ConnectMode = ConnectMode
                 user.iPhoneMode = iPhoneMode
-                
+                user.debugLogMode = debugLogMode
+
                 self.log.addItem(logText: "enterSetting, INFO, 0000, , \(user.timerInterval), \(user.obsoleteInterval)")
                 
             })
@@ -151,8 +162,10 @@ struct SettingView: View {
                 UserDefaults.standard.set(user.timerInterval, forKey: "timerInterval")
                 UserDefaults.standard.set(user.obsoleteInterval, forKey: "obsoluteInterval")
                 UserDefaults.standard.set(user.iPhoneMode, forKey: "iPhoneMode")
+                UserDefaults.standard.set(user.debugLogMode, forKey: "debugLogMode")
                 ConnectMode = user.ConnectMode
                 iPhoneMode = user.iPhoneMode
+                debugLogMode = user.debugLogMode
                 
                 self.log.addItem(logText: "exitSetting, INFO, 0000, , \(user.timerInterval), \(user.obsoleteInterval)")
                 
