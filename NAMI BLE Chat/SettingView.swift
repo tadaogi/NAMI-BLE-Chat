@@ -51,6 +51,10 @@ struct SettingView: View {
                         .frame(height: 0)
                 }
                 HStack() {
+                    Text("Auto Mode")
+                    Toggle(isOn: $user.AutoMode) {
+                        EmptyView()
+                    }
                     Text("Debug Log")
                     Toggle(isOn: $user.debugLogMode) {
                         EmptyView()

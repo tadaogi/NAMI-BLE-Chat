@@ -9,6 +9,7 @@ import SwiftUI
 import CoreBluetooth
 
 class User: ObservableObject {
+    @Published var AutoMode = false
     @Published var CentralMode = true
     @Published var ConnectMode = true
     @Published var PeripheralMode = false
@@ -48,7 +49,7 @@ struct ContentView: View {
     @State var runflag = false
 //    var devicetext = ""
     var gps = GPS()
-
+    @State var autoCPflag = false
     
     init() {
         //print("ContentView init is called")
@@ -79,6 +80,49 @@ struct ContentView: View {
         }
     }
 
+    func CtoP(log: Log, devices: Devices, userMessage: UserMessage) {
+        if runflag {
+            print("CtoP")
+            log.addItem(logText: "CtoP")
+            bleCentral.stopCentral()
+            user.CentralMode = false
+            blePeripheral.startPeripheral(log: log, userMessage: userMessage)
+            user.PeripheralMode = true
+            DispatchQueue.main.asyncAfter(deadline: .now()+300) {
+                PtoC(log: log, devices: devices, userMessage: userMessage)
+            }
+        } else {
+            print("Stop in CtoP")
+            log.addItem(logText: "Stop in CtoP")        }
+    }
+    
+    func PtoC(log: Log, devices: Devices, userMessage: UserMessage) {
+        if runflag {
+            print("PtoC")
+            log.addItem(logText: "PtoC")
+            blePeripheral.stopPeripheral()
+            user.PeripheralMode = false
+            bleCentral.startCentral(log: log, devices: devices, user: user)
+            user.CentralMode = true
+            DispatchQueue.main.asyncAfter(deadline: .now()+300) {
+                CtoP(log: log, devices: devices, userMessage: userMessage)
+            }
+        } else {
+            print("Stop in PtoC")
+            log.addItem(logText: "stop in PtoC")
+        }
+    }
+    
+    func autoCPrun (log: Log, devices: Devices, userMessage: UserMessage) {
+        runflag = true
+        ConnectMode = true // ConnectModeはいつでもtrueで良いような気がする
+        PtoC(log: log, devices: devices, userMessage: userMessage) // or startC
+    }
+    
+    func autoCPstop () {
+        runflag = false
+    }
+    
     var body: some View {
 //        let dummy = "2021/01/16 06:58:00.000: some a a a a a messages comes here\n"
         
@@ -89,15 +133,27 @@ struct ContentView: View {
                     Spacer()
                     Button (action: {
                         if (runflag == false) {
+                            // 先にやっておく
+                            bleCentral.myinit(userMessage: self.userMessage)
+                            blePeripheral.myinit(userMessage: self.userMessage)
                             
+                            userMessage.initBLE(bleCentral: self.bleCentral, blePeripheral: self.blePeripheral)
+                            
+                            if (user.AutoMode) {
+                                autoCPrun(log: log, devices: devices, userMessage: userMessage)
+                            }
                             if (user.CentralMode) {
-                                bleCentral.startCentralManager(log: self.log, devices: self.devices)
+                                bleCentral.startCentralManager(log: self.log, devices: self.devices, user: self.user)
                                 
+                                // startCentralManager に移行したので、コメントアウト
+                                /*
                                 log.timerStart(bleCentral: bleCentral, timerIntervalString: self.user.timerInterval)
-
+                                
+                                bleCentral.state = BLECentralState.running
+                                */
                             }
                             if (user.PeripheralMode) {
-                                blePeripheral.startPeripheralManager(log: self.log)
+                                blePeripheral.startPeripheralManager(log: self.log, userMessage: self.userMessage)
                             }
                             blePeripheral.peripheralMode = user.PeripheralMode
                             self.log.addItem(logText:"startButton,")
@@ -105,17 +161,24 @@ struct ContentView: View {
                             runflag = true
                             
                             //何故か、なくても動く。駄目かな？ないと駄目
+                            // 上に移動
+                            /*
                             bleCentral.myinit(userMessage: self.userMessage)
                             blePeripheral.myinit(userMessage: self.userMessage)
                             
                             userMessage.initBLE(bleCentral: self.bleCentral, blePeripheral: self.blePeripheral)
+                             */
                             
                             //log.timerFunc(bleCentral: bleCentral)
                             
                         } else {
+                            if (user.AutoMode) {
+                                autoCPstop()
+                            }
                             if (user.CentralMode) {
                                 bleCentral.stopCentralManager()
-                                log.timerStop()
+                                //log.timerStop()
+                                // stopCentralに移行
                             }
                             if (user.PeripheralMode) {
                                 blePeripheral.stopPeripheralManager()
@@ -188,7 +251,7 @@ struct ContentView: View {
                     //Text(dummy)
                 }.background(Color("lightBackground"))
                 .foregroundColor(Color.black)
-            Text("C:\(String(user.CentralMode)),P:\(String(user.PeripheralMode)),ID:\(user.myID),T:\(user.timerInterval),O:\(user.obsoleteInterval)")
+            Text("A:\(String(user.AutoMode)),C:\(String(user.CentralMode)),P:\(String(user.PeripheralMode)),ID:\(user.myID),T:\(user.timerInterval),O:\(user.obsoleteInterval)")
             }
             .padding(5)
             .navigationBarTitle("Debug", displayMode: .inline)

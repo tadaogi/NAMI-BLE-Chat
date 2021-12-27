@@ -31,8 +31,14 @@ var ConnectMode : Bool = true
 var iPhoneMode : Bool = false
 var debugLogMode : Bool = true
 
+
+enum BLECentralState {
+    case running
+    case stop
+}
+
 public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, ObservableObject {
-    @EnvironmentObject var user: User
+    //@EnvironmentObject var user: User
     
     var centralManager: CBCentralManager!
     var peripheralInfoArray = [PeripheralInfo]()
@@ -45,12 +51,14 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     //@EnvironmentObject var log : Log
     var log : Log!
     var devices : Devices!
+    var user : User!
     
     
     
     var userMessage: UserMessage!
     let connect_semaphore = DispatchSemaphore(value: 1)
     
+    var state: BLECentralState
     // 修正 2021/12/15
     //var connectedPeripheral: CBPeripheral! = nil
     //var foundCharacteristicR: CBCharacteristic! = nil
@@ -59,6 +67,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     override init() {
         //self.centralManager = CBCentralManager()
         //self.peripheralManager = CBPeripheralManager()
+        self.state = BLECentralState.stop
         iPhoneMode = UserDefaults.standard.bool(forKey: "iPhoneMode")
         print("BLECentral init is called")
     }
@@ -70,10 +79,15 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
 
     }
     
-    func startCentralManager(log: Log, devices: Devices) {
+    func startCentralManager(log: Log, devices: Devices, user: User) {
+        startCentral(log: log, devices: devices, user: user)
+    }
+            
+    func startCentral(log: Log, devices: Devices, user: User) {
         self.log = log
         self.log.addItem(logText:"startCentralManager,")
         self.devices = devices
+        self.user = user
         
         // この処理が正しいのかどうか不明
         if self.centralManager == nil {
@@ -88,11 +102,36 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         
         // should wait until power on
         //startScan()
+        
+        // ContentViewからコピーしてきて修正
+        log.timerStart(bleCentral: self, timerIntervalString: self.user.timerInterval)
+        
+        self.state = BLECentralState.running
+
     }
     
     // stop ボタンを押した時に、Centralがオンだったら呼ばれる
     func stopCentralManager() {
+        //stopScan()
+        stopCentral()
+    }
+    
+    func stopCentral() {
         stopScan()
+        self.state = BLECentralState.stop
+        
+        self.log.timerStop() // この中で、transferCList を変更するので、とりあえず止めておく。
+        
+        for transfer in transferCList {
+            if transfer.valid {
+                if (transfer.loopLock.lock(before:Date().addingTimeInterval(30)) == false) {
+                    self.log.addItem(logText: "lock in stop Central failed")
+                }
+                transfer.valid = false
+                self.centralManager.cancelPeripheralConnection(transfer.connectedPeripheral)
+            }
+        }
+        
     }
     
     // 電源がオンになるのを待たないといけない
@@ -884,9 +923,18 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
         // まだ log を知らないので書けない
     }
     
-    func startPeripheralManager(log: Log) {
+    func startPeripheralManager(log: Log, userMessage: UserMessage) {
+        startPeripheral(log: log, userMessage: userMessage)
+    }
+        
+    func startPeripheral(log: Log, userMessage: UserMessage) {
+
         self.log = log
         self.log.addItem(logText:"startPeripheralManager")
+        self.userMessage = userMessage
+        
+        self.userMessage.PmessageLoopLock.unlock()
+        
         if self.peripheralManager == nil {
             print("peripheralManger is nil")
             self.peripheralManager = CBPeripheralManager(delegate: self, queue: nil)
@@ -901,7 +949,7 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
     }
     // stop ボタンを押した時に、Peripheralがオンだったら呼ばれる
     public func stopPeripheralManager() {
-        print("stopPeripheralManager called. Not implemented yet.")
+        //print("stopPeripheralManager called. Not implemented yet.")
         // stop advertise
         //stopAdvertise()
         stopPeripheral()
@@ -913,7 +961,7 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
         // stop advertise
         stopAdvertise()
         
-        self.userMessage.PmessageLoopLock.lock() // lockが取れたなら、transferP は nil
+        self.userMessage.PmessageLoopLock.lock() // lockが取れたなら、transferP は nil になっている
         
     }
 

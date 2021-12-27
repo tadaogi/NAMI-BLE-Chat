@@ -110,11 +110,13 @@ public class UserMessage: ObservableObject {
         // ここで、validでないTransferCをクリアする
         transferCList.removeAll(where:{$0.valid == false})
         
-        let transfer = TransferC(bleCentral: self.bleCentral, connectedPeripheral: connectedPeripheral)
-        transferCList.append(transfer)
-        print("transfer list \(transferCList)")
-        
-        transfer.start()
+        if bleCentral.state == BLECentralState.running { // 終了処理に入っていたら、新しいtransferCはつくらない
+            let transferC = TransferC(bleCentral: self.bleCentral, connectedPeripheral: connectedPeripheral)
+            transferCList.append(transferC)
+            print("transfer list \(transferCList)")
+            
+            transferC.start()
+        }
     }
     
     // Peripheral側のロジック
@@ -233,6 +235,7 @@ class TransferC {
     var protocolMessageQueue:[String]
     var protocolMessageIndex: Int
     var semaphore: DispatchSemaphore
+    var loopLock: NSLock
     var valid: Bool
     
     init (bleCentral: BLECentral, connectedPeripheral: CBPeripheral) {
@@ -241,6 +244,7 @@ class TransferC {
         self.protocolMessageQueue = []
         self.protocolMessageIndex = 0
         self.semaphore = DispatchSemaphore(value: 0)
+        self.loopLock = NSLock()
         self.valid = true
     }
     
@@ -249,7 +253,7 @@ class TransferC {
         let queue = DispatchQueue.global(qos:.default)
         queue.async {
             print("transfer.start is called")
-            
+            self.loopLock.lock()
         
             // send BEGIN0
             self.bleCentral.writeData("BEGIN0\n", peripheral: self.connectedPeripheral)
@@ -265,6 +269,9 @@ class TransferC {
             self.receiveMessageLoop()
             
             // １回のメッセージのやりとりは終了したので、終了処理をする。
+            
+            self.loopLock.unlock()
+            
             // disconnect
             // 変数の初期化（connectedPeripheral だけで良いのか？）
             self.valid = false
