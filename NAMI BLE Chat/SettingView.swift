@@ -51,10 +51,31 @@ struct SettingView: View {
                         .frame(height: 0)
                 }
                 HStack() {
-                    Text("Auto Mode")
+                    Text("Auto")
                     Toggle(isOn: $user.AutoMode) {
                         EmptyView()
                     }
+                    
+                    
+                    Text("C")
+                    TextField("", value: $user.Ctime,formatter: NumberFormatter(),
+                              onCommit: {
+                        print("onCommit(Ctime)")
+                        print(user.Ctime)
+                        UserDefaults.standard.set(user.rssi3m, forKey: "Ctime")
+                    })
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                    
+                    Text("P")
+                    TextField("", value: $user.Ptime,formatter: NumberFormatter(),
+                              onCommit: {
+                        print("onCommit(Ptime)")
+                        print(user.Ptime)
+                        UserDefaults.standard.set(user.rssi3m, forKey: "Ptime")
+                    })
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                    
+/*
                     Text("Debug Log")
                     Toggle(isOn: $user.debugLogMode) {
                         EmptyView()
@@ -63,6 +84,7 @@ struct SettingView: View {
                         .fill(Color.white)
                         .frame(minWidth: 0.0, maxWidth: .infinity)
                         .frame(height: 0)
+ */
                 }
                 HStack {
                     Text("MyID")

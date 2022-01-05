@@ -12,44 +12,44 @@ struct MessageView: View {
     @EnvironmentObject var userMessage : UserMessage
     
     var body: some View {
-        
-        VStack(alignment: .leading) {
-            HStack {
-                Text("UserMessages")
-                Spacer()
-                Text(userMessage.pStatus)
-            }
-            
-            ScrollView(.vertical,showsIndicators: true) {
-                // これがないと、最初に書いたテキストの幅に固定されてしまう
-                Rectangle()
-                    .fill(Color.white)
-                    .frame(minWidth: 0.0, maxWidth: .infinity)
-                    .frame(height: 0)
-                ForEach(self.userMessage.userMessageList, id: \.code) { messageitem in
-                    //HStack {
-                    let tmptext = messageitem.userMessageID+","+messageitem.userMessageText
-                    Text(tmptext)
-                            .padding([.leading], 15)
-                    //Spacer()
-                    //}
+        NavigationView {
+            VStack(alignment: .leading) {
+                HStack {
+                    Text("UserMessages")
+                    Spacer()
+                    Text(userMessage.pStatus)
                 }
- 
-            }.background(Color("lightBackground"))
-            .foregroundColor(Color.black)
-        
-            Text("Comment")
-            // HStack(){
+                
+                ScrollView(.vertical,showsIndicators: true) {
+                    // これがないと、最初に書いたテキストの幅に固定されてしまう
+                    Rectangle()
+                        .fill(Color.white)
+                        .frame(minWidth: 0.0, maxWidth: .infinity)
+                        .frame(height: 0)
+                    ForEach(self.userMessage.userMessageList, id: \.code) { messageitem in
+                        //HStack {
+                        let tmptext = messageitem.userMessageID+","+messageitem.userMessageText
+                        Text(tmptext)
+                            .padding([.leading], 15)
+                        //Spacer()
+                        //}
+                    }
+                    
+                }.background(Color("lightBackground"))
+                    .foregroundColor(Color.black)
+                
+                Text("Comment")
+                // HStack(){
                 ScrollView(.vertical,showsIndicators: true) {
                     
                     TextField("your message",
                               text: $inputmessage,
                               onCommit: {
-                                print("onCommit:\(inputmessage)")
-                              })
+                        print("onCommit:\(inputmessage)")
+                    })
                 }.background(Color("lightBackground"))
-                .foregroundColor(Color.black)
-                .frame(height:50)
+                    .foregroundColor(Color.black)
+                    .frame(height:50)
                 Button (action: {
                     if inputmessage != "" {
                         print("SEND: \(inputmessage)")
@@ -60,10 +60,19 @@ struct MessageView: View {
                 }) {
                     Text("SEND")
                 }
-            //}
+                //}
+            }
+            .navigationBarTitle("Message", displayMode: .inline)
+            .navigationBarItems(
+                trailing:
+                    NavigationLink( destination: MessageTestView(userMessage: userMessage)) {
+                        Text("Test")
+                        
+                    }
+            )
+            
         }
     }
-    
 }
 
 struct MessageView_Previews: PreviewProvider {

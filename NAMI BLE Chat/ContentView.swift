@@ -10,6 +10,8 @@ import CoreBluetooth
 
 class User: ObservableObject {
     @Published var AutoMode = false
+    @Published var Ptime = 300
+    @Published var Ctime = 300
     @Published var CentralMode = true
     @Published var ConnectMode = true
     @Published var PeripheralMode = false
@@ -20,6 +22,7 @@ class User: ObservableObject {
     @Published var obsoleteInterval = "900" // <-600
     @Published var rssi1m = -60
     @Published var rssi3m = -70
+    @Published var testMessageFlag = false
 
     init() {
         self.myID = UserDefaults.standard.object(forKey: "myID") as? String ?? "tmp2"
@@ -56,7 +59,6 @@ struct ContentView: View {
         //print(self.log)
         //self.bleCentral.myinit(message: self.message)
         // ここでは失敗する。早すぎるみたい。
-        
     }
     
     func Date2String(date: Date)->String {
@@ -88,7 +90,12 @@ struct ContentView: View {
             user.CentralMode = false
             blePeripheral.startPeripheral(log: log, userMessage: userMessage)
             user.PeripheralMode = true
-            DispatchQueue.main.asyncAfter(deadline: .now()+300) {
+            blePeripheral.peripheralMode = true
+            
+            //let randomInt = Int.random(in: 5..<8)
+            //let waitTime:Double = Double(60 * randomInt)
+            let waitTime:Double = Double(user.Ptime)
+            DispatchQueue.main.asyncAfter(deadline: .now()+waitTime) {
                 PtoC(log: log, devices: devices, userMessage: userMessage)
             }
         } else {
@@ -100,11 +107,16 @@ struct ContentView: View {
         if runflag {
             print("PtoC")
             log.addItem(logText: "PtoC")
-            blePeripheral.stopPeripheral()
+            blePeripheral.stopPeripheral(log: log)
             user.PeripheralMode = false
+            blePeripheral.peripheralMode = false
             bleCentral.startCentral(log: log, devices: devices, user: user)
             user.CentralMode = true
-            DispatchQueue.main.asyncAfter(deadline: .now()+300) {
+            
+            //let randomInt = Int.random(in: 5..<8)
+            //let waitTime:Double = Double(60 * randomInt)
+            let waitTime:Double = Double(user.Ctime)
+            DispatchQueue.main.asyncAfter(deadline: .now()+waitTime) {
                 CtoP(log: log, devices: devices, userMessage: userMessage)
             }
         } else {
@@ -136,12 +148,13 @@ struct ContentView: View {
                             // 先にやっておく
                             bleCentral.myinit(userMessage: self.userMessage)
                             blePeripheral.myinit(userMessage: self.userMessage)
+                            devices.myinit(userMessage: self.userMessage)
                             
                             userMessage.initBLE(bleCentral: self.bleCentral, blePeripheral: self.blePeripheral)
                             
                             if (user.AutoMode) {
                                 autoCPrun(log: log, devices: devices, userMessage: userMessage)
-                            }
+                            } else
                             if (user.CentralMode) {
                                 bleCentral.startCentralManager(log: self.log, devices: self.devices, user: self.user)
                                 
@@ -151,7 +164,7 @@ struct ContentView: View {
                                 
                                 bleCentral.state = BLECentralState.running
                                 */
-                            }
+                            } else
                             if (user.PeripheralMode) {
                                 blePeripheral.startPeripheralManager(log: self.log, userMessage: self.userMessage)
                             }
@@ -174,14 +187,14 @@ struct ContentView: View {
                         } else {
                             if (user.AutoMode) {
                                 autoCPstop()
-                            }
+                            } else
                             if (user.CentralMode) {
                                 bleCentral.stopCentralManager()
                                 //log.timerStop()
                                 // stopCentralに移行
-                            }
+                            } else
                             if (user.PeripheralMode) {
-                                blePeripheral.stopPeripheralManager()
+                                blePeripheral.stopPeripheralManager(log: log)
                             }
                             blePeripheral.peripheralMode = user.PeripheralMode
                             self.log.addItem(logText:"stopButton,")
@@ -251,7 +264,7 @@ struct ContentView: View {
                     //Text(dummy)
                 }.background(Color("lightBackground"))
                 .foregroundColor(Color.black)
-            Text("A:\(String(user.AutoMode)),C:\(String(user.CentralMode)),P:\(String(user.PeripheralMode)),ID:\(user.myID),T:\(user.timerInterval),O:\(user.obsoleteInterval)")
+            Text("A:\(String(user.AutoMode))(\(user.Ctime),\(user.Ptime)),C:\(String(user.CentralMode)),P:\(String(user.PeripheralMode)),ID:\(user.myID),T:\(user.timerInterval),O:\(user.obsoleteInterval)")
             }
             .padding(5)
             .navigationBarTitle("Debug", displayMode: .inline)

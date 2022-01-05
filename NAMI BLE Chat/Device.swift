@@ -38,6 +38,8 @@ class Devices : ObservableObject {
     @Published var closeLongDeviceScore = 1
     @Published var showAlert = false
     @Published var showLongAlert = false
+    // userMessageを遅れるようにするために、ContentViewから教えてもらう
+    @Published var userMessage : UserMessage! = nil
     
     //@EnvironmentObject var user: User
     init() {
@@ -49,6 +51,13 @@ class Devices : ObservableObject {
             RSSI3mth = -70
             UserDefaults.standard.set(RSSI3mth, forKey: "rssi3m")
         }
+    }
+    
+    // userMessageを遅れるようにするために、ContentViewから教えてもらう
+    func myinit(userMessage: UserMessage) {
+        self.userMessage = userMessage
+        // 確認できたのでコメントアウト
+        // self.userMessage.addItem(userMessageText: "devices.myinit is called")
     }
     
     var devicecount = 0
@@ -219,6 +228,9 @@ class Devices : ObservableObject {
             glog.addItem(logText: "CloseDeviceCount, Alarm, 0000, \(closeDeviceCount), \(closeDeviceScore)")
             glog.addItem(logText: "CloseLongDeviceCount, Alarm, 0000, \(closeLongDeviceCount), \(closeLongDeviceScore)")
         }
+        
+        // for debug
+        //self.userMessage.addItem(userMessageText: "[DEBUG] DeviceCount \(devicecount)")
     }
     
     public func countiPhone()->Int {
@@ -261,6 +273,8 @@ class Devices : ObservableObject {
                 
                 showAlert = true
                 
+                self.userMessage.addItem(userMessageText: "[ALERT] CloseDeviceCount")
+
             }
 
             return 3
@@ -273,7 +287,7 @@ class Devices : ObservableObject {
     
     func calcCloseLongDeviceScore(closeLongDeviceCount: Int)->Int {
     
-        if closeLongDeviceCount > 5 {
+        if closeLongDeviceCount > 5 { // デバッグ用に値を高くして、アラートが出ないようにしてある。
             if showLongAlert == false {
                 //アラーム音を鳴らす
                 //AudioServicesPlayAlertSoundWithCompletion(1151, nil)
@@ -292,10 +306,12 @@ class Devices : ObservableObject {
                 AudioServicesPlayAlertSoundWithCompletion(SystemSoundID(kSystemSoundID_Vibrate)) {}
                 
                 showLongAlert = true
-                
+
+                self.userMessage.addItem(userMessageText: "[ALERT] CloseLongDeviceCount")
+
             }
             return 3
-        } else if closeLongDeviceCount > 3 {
+        } else if closeLongDeviceCount > 0 {
             return 2
         } else {
             return 1
