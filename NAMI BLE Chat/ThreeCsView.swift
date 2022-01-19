@@ -126,7 +126,8 @@ struct ThreeCsView: View {
                     .padding(.top)
                     HStack() {
                         Text("Close and Long Devices : ")
-                        Text(String(format: "%d,%d", devices.closeLongDeviceCount, devices.closeLongDeviceScore))
+                        Text(String(format: "%d,%d,%d",
+                                    devices.closeMiddleDeviceCount, devices.closeLongDeviceCount, devices.closeLongDeviceScore))
                         
                         
                     }

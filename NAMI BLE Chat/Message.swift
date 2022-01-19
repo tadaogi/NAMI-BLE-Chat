@@ -147,7 +147,9 @@ public class UserMessage: ObservableObject {
             
                 return // return で良いのか？
             }
-            self.blePeripheral.log.addItem(logText:"BEGIN0 after PmessageLoopLock.lock()")
+            //self.blePeripheral.log.addItem(logText:"BEGIN0 after PmessageLoopLock.lock()")
+            
+            self.blePeripheral.log.addItem(logText:"P: MessageLoop start")
             transferP = TransferP(blePeripheral: self.blePeripheral)
             // ここで transferPがnilということはない
             transferP?.begin0()
@@ -254,6 +256,8 @@ public class UserMessage: ObservableObject {
 
             self.userMessageList.append(UserMessageItem(userMessageID: protocolMessageCommand[1], userMessageText: protocolMessageCommand[2]))
             self.messageIDLock.unlock()
+            self.bleCentral.log.addItem(logText: "addItemExternal append, \(protocolMessageCommand[1]), \(protocolMessageCommand[2]) ")
+            
             
             // 画面表示を変えないとredrawできないので、姑息な手段で書き換える。
             if self.pStatus == "|" {
@@ -309,8 +313,9 @@ class TransferC {
             } else { // 正常時の処理
                 
                 
-                self.bleCentral.log.addItem(logText: "in transferC.start() after lock, \( self.connectedPeripheral.name ?? "unknown"), \( self.connectedPeripheral.identifier.uuidString) ")
-                
+                //self.bleCentral.log.addItem(logText: "in transferC.start() after lock, \( self.connectedPeripheral.name ?? "unknown"), \( self.connectedPeripheral.identifier.uuidString) ")
+                self.bleCentral.log.addItem(logText: "C: MessageLoop start, \( self.connectedPeripheral.name ?? "unknown"), \( self.connectedPeripheral.identifier.uuidString) ")
+
                 // send BEGIN0
                 self.bleCentral.writeData("BEGIN0\n", peripheral: self.connectedPeripheral)
                 self.bleCentral.readfromP(peripheral: self.connectedPeripheral) // とりあえず、readが出来るかの確認
@@ -354,6 +359,8 @@ class TransferC {
     
     func sendMessageLoop(){
         print("sendMessageLoop")
+        self.bleCentral.log.addItem(logText:"C: enter sendMessageLoop")
+
         for userMessage in bleCentral.userMessage.userMessageList {
             print(userMessage.userMessageID,userMessage.userMessageText)
             
@@ -394,6 +401,7 @@ class TransferC {
     
     func receiveMessageLoop() {
         print("receiveMessageLoop")
+        self.bleCentral.log.addItem(logText: "C: enter receiveMessageLoop")
         
         // send BEGIN1
         self.bleCentral.writeData("BEGIN1\n", peripheral: self.connectedPeripheral)
@@ -408,10 +416,13 @@ class TransferC {
             switch receiveCommand[0] {
             case "END1":
                 print("end of receiveMessageLoop")
+                self.bleCentral.log.addItem(logText: "C: receiveMessageLoop END1, \( self.connectedPeripheral.name ?? "unknown"), \( self.connectedPeripheral.identifier.uuidString) ")
                 return
             
             case "IHAVE":
                 print("C receive IHAVE \(receiveCommand[1])")
+                self.bleCentral.log.addItem(logText: "C: receiveMessageLoop IHAVE \(receiveCommand[1])")
+                
                 var ihave: Bool = false
                 for userMessage in bleCentral.userMessage.userMessageList {
                     if userMessage.userMessageID == receiveCommand[1] {
@@ -429,7 +440,7 @@ class TransferC {
 
             case "MSG":
                 print("receive MSG (not implemented yet) \(receiveCommand[1])")
-                self.bleCentral.log.addItem(logText:"transferC received MSG,")
+                self.bleCentral.log.addItem(logText:"C: receiveMessageLoop MSG, \(receiveCommand[1])")
 
                 self.bleCentral.userMessage.addItemExternal(protocolMessageCommand: receiveCommand)
                 // for debug
@@ -439,6 +450,7 @@ class TransferC {
                 
             default:
                 print("receiveMessageLoopError \(receiveCommand[0])")
+                self.bleCentral.log.addItem(logText:"C: receiveMessageLoop Error, \(receiveCommand[0])")
                 errorReset()
                 return
             }
@@ -641,7 +653,7 @@ class TransferP {
         }
         
         write2C(writeData: "END1\n")
-        self.blePeripheral.log.addItem(logText:"P sent END1,")
+        self.blePeripheral.log.addItem(logText:"P: MessageLoop end")
 
 
     }

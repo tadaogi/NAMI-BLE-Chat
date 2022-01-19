@@ -33,6 +33,7 @@ class Devices : ObservableObject {
     @Published var devicelist : [DeviceItem] = []
 //    @Published var debugnum : Int = 3
     @Published var closeDeviceCount = 0
+    @Published var closeMiddleDeviceCount = 0
     @Published var closeLongDeviceCount = 0
     @Published var closeDeviceScore = 1
     @Published var closeLongDeviceScore = 1
@@ -179,6 +180,7 @@ class Devices : ObservableObject {
         }
         // 上のループと一緒にできるけど、外出しの関数にする可能性もあるので、とりあえずもう一度計算する
         var TmpCloseDeviceCount = 0
+        var TmpCloseMiddleDeviceCount = 0
         var TmpCloseLongDeviceCount = 0
         // for debug
         print("iPhoneMode=\(iPhoneMode)")
@@ -202,6 +204,12 @@ class Devices : ObservableObject {
             if device.average_rssi > Double(RSSI1mth) {
                 // 最初の検出から 900 秒以上たっていて、
                 // 最後の検出から 90 秒以上たっていない
+                // middle
+                if (now.timeIntervalSince1970 - device.lastDate.timeIntervalSince1970 < 300) /* for debug 90 -> 300 */
+                    && (now.timeIntervalSince1970 - device.firstDate.timeIntervalSince1970 > 300) { // middle なので 5 分
+                    TmpCloseMiddleDeviceCount = TmpCloseMiddleDeviceCount + 1
+                }
+                // long
                 if (now.timeIntervalSince1970 - device.lastDate.timeIntervalSince1970 < 300) /* for debug 90 -> 300 */
                     && (now.timeIntervalSince1970 - device.firstDate.timeIntervalSince1970 > 900) {
                     TmpCloseLongDeviceCount = TmpCloseLongDeviceCount + 1
@@ -219,14 +227,15 @@ class Devices : ObservableObject {
             }
         }
         closeDeviceCount = TmpCloseDeviceCount
+        closeMiddleDeviceCount = TmpCloseMiddleDeviceCount
         closeLongDeviceCount = TmpCloseLongDeviceCount
         closeDeviceScore = calcCloseDeviceScore(closeDeviceCount: closeDeviceCount)
-        closeLongDeviceScore = calcCloseLongDeviceScore(closeLongDeviceCount: closeLongDeviceCount)
+        closeLongDeviceScore = calcCloseLongDeviceScore(closeLongDeviceCount: closeLongDeviceCount, closeMiddleDeviceCount: closeMiddleDeviceCount)
 
         if let glog = GlobalVar.shared.gLog {
             glog.addItem(logText: "DeviceCount, Alarm, 0000, \(devicecount)")
             glog.addItem(logText: "CloseDeviceCount, Alarm, 0000, \(closeDeviceCount), \(closeDeviceScore)")
-            glog.addItem(logText: "CloseLongDeviceCount, Alarm, 0000, \(closeLongDeviceCount), \(closeLongDeviceScore)")
+            glog.addItem(logText: "CloseLongDeviceCount, Alarm, 0000, \(closeMiddleDeviceCount), \(closeLongDeviceCount), \(closeLongDeviceScore)")
         }
         
         // for debug
@@ -253,7 +262,7 @@ class Devices : ObservableObject {
     }
     
     func calcCloseDeviceScore(closeDeviceCount: Int)->Int {
-        if closeDeviceCount > 30 {
+        if closeDeviceCount > 5 {
             if showAlert == false {
                 //アラーム音を鳴らす
                 //AudioServicesPlayAlertSoundWithCompletion(1151, nil)
@@ -278,16 +287,16 @@ class Devices : ObservableObject {
             }
 
             return 3
-        } else if closeDeviceCount > 15 {
+        } else if closeDeviceCount > 3 {
             return 2
         } else {
             return 1
         }
     }
     
-    func calcCloseLongDeviceScore(closeLongDeviceCount: Int)->Int {
-    
-        if closeLongDeviceCount > 5 { // デバッグ用に値を高くして、アラートが出ないようにしてある。
+    func calcCloseLongDeviceScore(closeLongDeviceCount: Int, closeMiddleDeviceCount: Int)->Int {
+    //
+        if closeLongDeviceCount > 0 {
             if showLongAlert == false {
                 //アラーム音を鳴らす
                 //AudioServicesPlayAlertSoundWithCompletion(1151, nil)
@@ -311,7 +320,7 @@ class Devices : ObservableObject {
 
             }
             return 3
-        } else if closeLongDeviceCount > 0 {
+        } else if closeMiddleDeviceCount > 0 {
             return 2
         } else {
             return 1

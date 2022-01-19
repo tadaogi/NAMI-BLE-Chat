@@ -54,6 +54,7 @@ struct SettingView: View {
                     Text("Auto")
                     Toggle(isOn: $user.AutoMode) {
                         EmptyView()
+
                     }
                     
                     
@@ -62,7 +63,7 @@ struct SettingView: View {
                               onCommit: {
                         print("onCommit(Ctime)")
                         print(user.Ctime)
-                        UserDefaults.standard.set(user.rssi3m, forKey: "Ctime")
+                        UserDefaults.standard.set(user.Ctime, forKey: "Ctime")
                     })
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                     
@@ -71,10 +72,14 @@ struct SettingView: View {
                               onCommit: {
                         print("onCommit(Ptime)")
                         print(user.Ptime)
-                        UserDefaults.standard.set(user.rssi3m, forKey: "Ptime")
+                        UserDefaults.standard.set(user.Ptime, forKey: "Ptime")
                     })
                         .textFieldStyle(RoundedBorderTextFieldStyle())
-                    
+  
+                    Text("Random")
+                    Toggle(isOn: $user.RandomMode) {
+                        EmptyView()
+                    }
 /*
                     Text("Debug Log")
                     Toggle(isOn: $user.debugLogMode) {
@@ -189,6 +194,9 @@ struct SettingView: View {
                 UserDefaults.standard.set(user.obsoleteInterval, forKey: "obsoluteInterval")
                 UserDefaults.standard.set(user.iPhoneMode, forKey: "iPhoneMode")
                 UserDefaults.standard.set(user.debugLogMode, forKey: "debugLogMode")
+                UserDefaults.standard.set(user.AutoMode, forKey: "AutoMode")
+                UserDefaults.standard.set(user.RandomMode, forKey: "RandomMode")
+
                 ConnectMode = user.ConnectMode
                 iPhoneMode = user.iPhoneMode
                 debugLogMode = user.debugLogMode

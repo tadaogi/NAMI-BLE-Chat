@@ -1145,6 +1145,7 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
         self.log.addItem(logText:"didReceiveReadRequest")
 
         // Peripheral側のCBCentralオブジェクトでMTUを確認する
+        
         print("Received read request: MTU=\(request.central.maximumUpdateValueLength)");
         
         //let myname = UserDefaults.standard.string(forKey: "myID")
@@ -1158,6 +1159,9 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
                     wmsg = (transferP?.getProtocolMessageP())! // ここでブロックしてしまう
                 } else {
                     wmsg = "transferP nil error"
+                    self.log.addItem(logText:"transferP nil error")
+                    // error の時に response を返すのが正しいのか不明
+                    // C 側は、エラーになったら reset の処理に行くようになっている
                 }
                 print("wmsg = \(wmsg)")
                 request.value = wmsg.data(using: String.Encoding.utf8, allowLossyConversion:true)!
@@ -1179,6 +1183,7 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
     
     public func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
         print("enter didReceiveWriteRequest \(requests[0].characteristic.uuid)")
+        
         self.log.addItem(logText:"didReceiveWriteRequest")
 
 

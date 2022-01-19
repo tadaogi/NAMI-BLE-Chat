@@ -12,6 +12,7 @@ class User: ObservableObject {
     @Published var AutoMode = false
     @Published var Ptime = 300
     @Published var Ctime = 300
+    @Published var RandomMode = true
     @Published var CentralMode = true
     @Published var ConnectMode = true
     @Published var PeripheralMode = false
@@ -31,6 +32,10 @@ class User: ObservableObject {
         self.iPhoneMode = UserDefaults.standard.object(forKey: "iPhoneMode") as? Bool ?? true
         self.rssi1m = UserDefaults.standard.object(forKey: "rssi1m") as? Int ?? -60
         self.rssi3m = UserDefaults.standard.object(forKey: "rssi3m") as? Int ?? -70
+        self.AutoMode = UserDefaults.standard.object(forKey: "AutoMode") as? Bool ?? true
+        self.RandomMode = UserDefaults.standard.object(forKey: "RandomMode") as? Bool ?? true
+        self.Ptime = UserDefaults.standard.object(forKey: "Ptime") as? Int ?? 300
+        self.Ctime = UserDefaults.standard.object(forKey: "Ctime") as? Int ?? 300
 
     }
 }
@@ -85,17 +90,22 @@ struct ContentView: View {
     func CtoP(log: Log, devices: Devices, userMessage: UserMessage) {
         if runflag {
             print("CtoP")
-            log.addItem(logText: "CtoP")
+            //log.addItem(logText: "CtoP")
             bleCentral.stopCentral()
             user.CentralMode = false
             blePeripheral.startPeripheral(log: log, userMessage: userMessage)
             user.PeripheralMode = true
             blePeripheral.peripheralMode = true
             
-            //let randomInt = Int.random(in: 5..<8)
-            //let waitTime:Double = Double(60 * randomInt)
-            let waitTime:Double = Double(user.Ptime)
-            DispatchQueue.main.asyncAfter(deadline: .now()+waitTime) {
+            let randomInt = Int.random(in: 5..<8)
+            var randomwaitTime:Double = 0.0
+            if user.RandomMode {
+                randomwaitTime = Double(60 * randomInt)
+            }
+            let waitPTime:Double = Double(user.Ptime) + randomwaitTime
+            log.addItem(logText: "CtoP (\(Int(waitPTime)))")
+
+            DispatchQueue.main.asyncAfter(deadline: .now()+waitPTime) {
                 PtoC(log: log, devices: devices, userMessage: userMessage)
             }
         } else {
@@ -113,10 +123,15 @@ struct ContentView: View {
             bleCentral.startCentral(log: log, devices: devices, user: user)
             user.CentralMode = true
             
-            //let randomInt = Int.random(in: 5..<8)
-            //let waitTime:Double = Double(60 * randomInt)
-            let waitTime:Double = Double(user.Ctime)
-            DispatchQueue.main.asyncAfter(deadline: .now()+waitTime) {
+            let randomInt = Int.random(in: 0..<5)
+            var randomwaitTime:Double = 0.0
+            if user.RandomMode {
+                randomwaitTime = Double(60 * randomInt)
+            }
+            let waitCTime:Double = Double(user.Ctime) + randomwaitTime
+            log.addItem(logText: "PtoC (\(Int(waitCTime)))")
+
+            DispatchQueue.main.asyncAfter(deadline: .now()+waitCTime) {
                 CtoP(log: log, devices: devices, userMessage: userMessage)
             }
         } else {
