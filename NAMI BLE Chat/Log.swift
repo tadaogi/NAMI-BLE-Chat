@@ -38,8 +38,10 @@ class Log : ObservableObject {
     var logcount = 0
     
     var timer: Timer? = nil
-    fileprivate let loglock = NSLock()
-    
+    fileprivate let logcountlock = NSLock()
+    fileprivate let loglistlock = NSLock()
+    fileprivate let logfilelock = NSLock()
+
     //func add() {
     //    count = count + 1
     //    self.logtext += "add \(self.count)\n"
@@ -56,7 +58,7 @@ class Log : ObservableObject {
     func addItem(logText: String) {
         // logが化けることがあった（2022/1/19のログ）
         // ここでlockをかけて大丈夫か？
-        loglock.lock()
+        //loglock.lock() // ここで止まっていたので、やめる。
         let now = Date() // 現在日時の取得
         let dateFormatter = DateFormatter()
         dateFormatter.locale = Locale(identifier: "ja_JP") // ロケールの設定
@@ -64,25 +66,30 @@ class Log : ObservableObject {
         let currenttime = dateFormatter.string(from: now) // -> 2021/01/20 19:57:17.234
         print(currenttime + " " + logText)
         
+        logcountlock.lock() // 共有変数を変更する場所だけにしてみる
+        // 本当なら、３つ変数があるので（変数２つとファイル）３つのlockで良いはず
         logcount = logcount + 1
+        logcountlock.unlock()
         
         // デバッグのために、10件ごとにログを消す
         if logcount%100 == 0 {
+            loglistlock.lock()
             loglist = [
                 LogItem(logtext: "--- log deleted ---"),
             ]
+            loglistlock.unlock()
         }
-        let text = "\(currenttime), [\(self.logcount)], \(logText)"
-        //loglock.lock()
-        DispatchQueue.main.async {
-            self.loglist.append(LogItem(logtext: text))
-        }
-        //loglock.unlock()
         
-        // デバッグのために書かないで見る -> 関係なさそうなのでもとに戻す
+        let text = "\(currenttime), [\(self.logcount)], \(logText)"
+        
+        DispatchQueue.main.async {
+            self.loglistlock.lock()
+            self.loglist.append(LogItem(logtext: text))
+            self.loglistlock.unlock()
+        }
+        
         appendlocal(fname: "NAMI.log", text: text+"\n")
 
-        loglock.unlock()
     }
     
     func appendlocal(fname: String, text: String) {
@@ -98,11 +105,12 @@ class Log : ObservableObject {
             
             if fileManager.fileExists(atPath: path.path) {
                     print("exists")
-            
+                logfilelock.lock()
                 let fileHandle = try FileHandle(forWritingTo: path)
                 fileHandle.seekToEndOfFile()
                 fileHandle.write(data)
                 fileHandle.closeFile()
+                logfilelock.unlock()
             } else {
                 fileManager.createFile(atPath: path.path,
                                    contents: data, attributes: nil)
