@@ -54,6 +54,9 @@ class Log : ObservableObject {
     }
     
     func addItem(logText: String) {
+        // logが化けることがあった（2022/1/19のログ）
+        // ここでlockをかけて大丈夫か？
+        loglock.lock()
         let now = Date() // 現在日時の取得
         let dateFormatter = DateFormatter()
         dateFormatter.locale = Locale(identifier: "ja_JP") // ロケールの設定
@@ -79,6 +82,7 @@ class Log : ObservableObject {
         // デバッグのために書かないで見る -> 関係なさそうなのでもとに戻す
         appendlocal(fname: "NAMI.log", text: text+"\n")
 
+        loglock.unlock()
     }
     
     func appendlocal(fname: String, text: String) {
