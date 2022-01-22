@@ -172,6 +172,13 @@ struct SettingView: View {
             Text("NAMI BLE Chat (ver.\(versiontext))")
                 .padding(.bottom, 20)
         }.padding(5)
+            .alert("error", isPresented: $log.showLogAlert) {
+                Button("OK") {
+                    log.showLogAlert = false
+                }
+            } message: {
+                Text("log upload error")
+            }
             .onAppear(perform: {
                 let now = Date() // 現在日時の取得
                 let dateFormatter = DateFormatter()

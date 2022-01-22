@@ -34,6 +34,7 @@ class Log : ObservableObject {
           LogItem(logtext: "--- log start ---"),
 //        LogItem(logtext: "log2")
     ]
+    @Published var showLogAlert = false
     //var count = 0
     var logcount = 0
     
@@ -121,6 +122,7 @@ class Log : ObservableObject {
     }
     
     func readlocal(fname:   String)-> String {
+        //self.showLogAlert = true // debug
         do {
             let fileManager = FileManager.default
             let docs = try fileManager.url(for: .documentDirectory,
@@ -144,6 +146,8 @@ class Log : ObservableObject {
             
         } catch {
             print(error)
+            self.showLogAlert = true
+
         }
         
         return "error"
@@ -162,6 +166,8 @@ class Log : ObservableObject {
             try fileManager.removeItem(at: path)
         } catch {
             print(error)
+            
+            //Alert(title: Text("upload failed"))
         }
     }
     
