@@ -273,11 +273,18 @@ class Log : ObservableObject {
                         do {
                             // forced unwrap しているので、要修正
                             let decodeddata = try decoder.decode(Reply.self, from:data!)
-                            let size = decodeddata.matches[0]?.metadata!.metadata!.size ?? 0
-                            print(decodeddata.matches[0]?.metadata!.metadata!.size ?? 0)
-                            DispatchQueue.main.async {
-                                UploadResultMessage = "Upload Success (size=\(size))"
-                                self.showUploadResult = true
+                            if (decodeddata.matches.count==0){
+                                DispatchQueue.main.async {
+                                    UploadResultMessage = "Upload Success (size unknown)"
+                                    self.showUploadResult = true
+                                }
+                            } else {
+                                let size = decodeddata.matches[0]?.metadata!.metadata!.size ?? 0
+                                print(decodeddata.matches[0]?.metadata!.metadata!.size ?? 0)
+                                DispatchQueue.main.async {
+                                    UploadResultMessage = "Upload Success (size=\(size))"
+                                    self.showUploadResult = true
+                                }
                             }
 
                         } catch {

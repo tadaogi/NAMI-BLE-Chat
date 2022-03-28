@@ -506,10 +506,10 @@
             filePath = "NAMI BLE Chat/Log.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "306"
-            endingLineNumber = "306"
+            startingLineNumber = "313"
+            endingLineNumber = "313"
             landmarkName = "timerStart(bleCentral:timerIntervalString:)"
-            landmarkType = "7">
+            landmarkType = "9">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -1076,14 +1076,30 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "89CC4334-4355-4567-8BBD-64CCCC48C6D2"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "NAMI BLE Chat/Log.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "282"
+            endingLineNumber = "282"
+            landmarkName = "getFileSize(encodedfname:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "12F9A3C2-82EE-4220-B314-ACA1DF9797C4"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "NAMI BLE Chat/Log.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "276"
-            endingLineNumber = "276"
+            startingLineNumber = "252"
+            endingLineNumber = "252"
             landmarkName = "getFileSize(encodedfname:)"
             landmarkType = "7">
          </BreakpointContent>
