@@ -179,6 +179,13 @@ struct SettingView: View {
             } message: {
                 Text("log upload error")
             }
+            .alert("upload", isPresented: $log.showUploadResult) {
+                Button("OK") {
+                    log.showUploadResult = false
+                }
+            } message: {
+                Text(UploadResultMessage)
+            }
             .onAppear(perform: {
                 let now = Date() // 現在日時の取得
                 let dateFormatter = DateFormatter()

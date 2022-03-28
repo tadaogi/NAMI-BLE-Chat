@@ -26,6 +26,7 @@ struct LogItem {
 }
 
 var versiontext:String = ""
+var UploadResultMessage = "test"
 
 class Log : ObservableObject {
     //@Published var logtext: String = "initial\n1\n2\n3\n4\n5\n6\n"
@@ -35,6 +36,7 @@ class Log : ObservableObject {
 //        LogItem(logtext: "log2")
     ]
     @Published var showLogAlert = false
+    @Published var showUploadResult = false
     //var count = 0
     var logcount = 0
     
@@ -205,6 +207,84 @@ class Log : ObservableObject {
                 // HTTPステータスコード
                 print("statusCode: \(response.statusCode)")
                 //print(String(data: data, encoding: .utf8) ?? "")
+                if (response.statusCode == 200) {
+                    print("success")
+                    self.getFileSize(encodedfname: encodedfname)
+                } else {
+                
+                    // アラートが表示できるかのテスト
+                    DispatchQueue.main.async {
+                        UploadResultMessage = "Upload Fail (\(response.statusCode))"
+                        self.showUploadResult = true
+                    }
+                }
+
+            }
+        }.resume()
+    }
+    
+    func getFileSize(encodedfname: String) {
+        print("Log.getFileSize()")
+        
+        let url = URL(string: "https://api.dropboxapi.com/2/files/search_v2")
+        var request = URLRequest(url: url!)
+        // POSTを指定
+        request.httpMethod = "POST"
+        // header
+        // 上と違うのは何故か？
+        request.addValue("Bearer 53t8RlQgs0cAAAAAAAAAAe3UGhe_0W0rW03zdeSlEVM2Ubl9fRtuVICTFBg8OGDo", forHTTPHeaderField: "Authorization")
+        request.addValue("application/json",forHTTPHeaderField: "Content-Type")
+        // POSTするデータをBodyとして設定
+        request.httpBody = "{\"query\": \"\(encodedfname)\",\"options\":{\"path\": \"/NAMIupload\"}}".data(using: .utf8)
+
+        let session = URLSession.shared
+        session.dataTask(with: request) { (data, response, error) in
+            if error == nil, let response = response as? HTTPURLResponse {
+                // HTTPヘッダの取得
+                print("Content-Type: \(response.allHeaderFields["Content-Type"] ?? "")")
+                // HTTPステータスコード
+                print("statusCode: \(response.statusCode)")
+                if (response.statusCode == 200) {
+                    print("success")
+
+                    if (data != nil) {
+                        let jsonstr = String(data: data!, encoding: .utf8)!
+                        print(jsonstr)
+                        
+                        struct Reply: Codable {
+                            var has_more: Bool?
+                            var matches:[Matches?]
+                        }
+                        
+                        struct Matches: Codable {
+                            var metadata: Metadata?
+                        }
+                        
+                        final class Metadata: Codable {
+                            var metadata: Metadata?
+                            var size: Int?
+                        }
+                        /*
+                         guard let datadrop = jsonstr.data(using: .utf8) else {
+                         return
+                         }
+                         */
+                        let decoder = JSONDecoder()
+                        do {
+                            // forced unwrap しているので、要修正
+                            let decodeddata = try decoder.decode(Reply.self, from:data!)
+                            let size = decodeddata.matches[0]?.metadata!.metadata!.size ?? 0
+                            print(decodeddata.matches[0]?.metadata!.metadata!.size ?? 0)
+                            DispatchQueue.main.async {
+                                UploadResultMessage = "Upload Success (size=\(size))"
+                                self.showUploadResult = true
+                            }
+
+                        } catch {
+                            print("decode error")
+                        }
+                    }
+                }
             }
         }.resume()
     }
