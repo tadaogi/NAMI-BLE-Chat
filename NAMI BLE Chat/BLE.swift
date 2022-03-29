@@ -28,7 +28,7 @@ struct BLEcommService {
 }
 // Centralとして動く時の処理はこちら
 var ConnectMode : Bool = true
-var iPhoneMode : Bool = false
+var iPhoneMode : Bool = true
 var debugLogMode : Bool = true
 
 
