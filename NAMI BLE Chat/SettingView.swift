@@ -11,6 +11,8 @@ struct SettingView: View {
     @EnvironmentObject var user: User
     @EnvironmentObject var log : Log
     @State var uploadfname : String
+    @State var rmconfirm = false
+    
     
     var body: some View {
         ScrollView([.vertical, .horizontal],showsIndicators: true) {
@@ -157,7 +159,8 @@ struct SettingView: View {
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                 
                 Button (action: {
-                    self.log.rmlocal(fname: "NAMI.log")
+                    rmconfirm = true
+                    //self.log.rmlocal(fname: "NAMI.log")
                 }) {
                     Text("ClearLog")
                     // テキストのサイズを指定
@@ -185,6 +188,16 @@ struct SettingView: View {
                 }
             } message: {
                 Text(UploadResultMessage)
+            }
+            .alert("Clear Log?", isPresented: $rmconfirm) {
+                Button("OK") {
+                    rmconfirm = false
+                    self.log.rmlocal(fname: "NAMI.log")
+                }
+                Button("cancel") {
+                    rmconfirm = false
+                }
+
             }
             .onAppear(perform: {
                 let now = Date() // 現在日時の取得
