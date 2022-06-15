@@ -187,6 +187,7 @@ struct ContentView: View {
                             self.log.addItem(logText:"startButton,")
                             buttontext = "running"
                             runflag = true
+                            gps.timerStart(timerInterval: 60)
                             
                             //何故か、なくても動く。駄目かな？ないと駄目
                             // 上に移動
@@ -215,6 +216,8 @@ struct ContentView: View {
                             self.log.addItem(logText:"stopButton,")
                             buttontext = "Start(again)"
                             runflag = false
+                            
+                            gps.timerStop()
                          }
                     }) {
                         Text(buttontext)

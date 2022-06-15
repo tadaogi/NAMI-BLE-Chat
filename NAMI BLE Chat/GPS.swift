@@ -73,6 +73,12 @@ class GPS: NSObject, CLLocationManagerDelegate{
     
     func timerStart (timerInterval: Int) {
         print("GPS.timerStart()")
+        if let glog = GlobalVar.shared.gLog {
+            glog.addItem(logText: "GPStimerStart, GPS, 0000,")
+        }
+        
+        // 動いていたら止めておく
+        timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: TimeInterval(timerInterval ), repeats: true, block: { [self]_ in
             print("GPS timer called")
             locationManager.requestLocation() // １回だけ返ってくる
@@ -81,6 +87,10 @@ class GPS: NSObject, CLLocationManagerDelegate{
     
     func timerStop () {
         print("GPS.timerStop()")
+        if let glog = GlobalVar.shared.gLog {
+            glog.addItem(logText: "GPStimerStop, GPS, 0000,")
+        }
+
         timer?.invalidate()
     }
 }
