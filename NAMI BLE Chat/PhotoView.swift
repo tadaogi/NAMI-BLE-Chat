@@ -37,6 +37,7 @@ func obsolete_POSTtest(filename: String, uiImage: UIImage) -> String? {
     
     // boundaryを作る
     let boundary = "----------" + UUID().uuidString
+    print(boundary)
     // bocyを作る
     let username = "user00"
     //let filename = "sample.png"
@@ -59,8 +60,8 @@ func obsolete_POSTtest(filename: String, uiImage: UIImage) -> String? {
     httpBody1 += "Content-Disposition: form-data; name=\"file\";"
     httpBody1 += "filename=\"\(filename)\"\r\n"
     httpBody1 += "\r\n"
-    httpBody1 += "--\(boundary)\r\n"
-    httpBody1 += "\r\n"
+//    httpBody1 += "--\(boundary)\r\n"
+//    httpBody1 += "\r\n"
     
     var httpBody = Data()
     httpBody.append(httpBody1.data(using: .utf8)!)
@@ -103,6 +104,7 @@ func obsolete_POSTtest(filename: String, uiImage: UIImage) -> String? {
 struct PhotoView: View {
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var uiImage: UIImage?
+    @State private var ciImage: CIImage?
     @State private var filename:String = ""
     @State private var dummyresult:String = ""
     @State private var inputmessage = ""
@@ -195,7 +197,8 @@ struct PhotoView: View {
     }
     private func loadImageFromSelectedPhoto(photo: PhotosPickerItem?) async {
         if let data = try? await photo?.loadTransferable(type: Data.self) {
-            self.uiImage = UIImage(data: data)
+                self.uiImage = UIImage(data: data)
+                self.ciImage = CIImage(data: data)
         }
     }
     
@@ -204,6 +207,7 @@ struct PhotoView: View {
         
         // boundaryを作る
         let boundary = "----------" + UUID().uuidString
+        print(boundary)
         // bocyを作る
         let username = "user00"
         //let filename = "sample.png"
@@ -213,11 +217,22 @@ struct PhotoView: View {
             return
         }
          */
+        /*
         let image = uiImage
         guard let imageData = image.jpegData(compressionQuality: 1) else {
             print("imageData is nil")
             return
         }
+         */
+        // GPS情報(Exif情報)を残すために上を下に変更する
+        guard let imageData = CIContext().jpegRepresentation(
+            of: ciImage!,
+            colorSpace: ciImage?.colorSpace ?? CGColorSpaceCreateDeviceRGB(),
+            options: [:]) else {
+            print("imageData is nil")
+            return
+            }
+        
         var httpBody1 = "--\(boundary)\r\n"
         httpBody1 += "Content-Disposition: form-data; name=\"userInfo\"\r\n"
         httpBody1 += "\r\n"
@@ -226,8 +241,9 @@ struct PhotoView: View {
         httpBody1 += "Content-Disposition: form-data; name=\"file\";"
         httpBody1 += "filename=\"\(filename)\"\r\n"
         httpBody1 += "\r\n"
-        httpBody1 += "--\(boundary)\r\n"
-        httpBody1 += "\r\n"
+//        httpBody1 += "--\(boundary)\r\n"
+//        httpBody1 += "\r\n"
+// 上の２行がファイルに含まれてしまう
         
         var httpBody = Data()
         httpBody.append(httpBody1.data(using: .utf8)!)
