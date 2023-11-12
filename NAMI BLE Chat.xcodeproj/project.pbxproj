@@ -18,6 +18,7 @@
 		32626EAA25B3055900BEE892 /* BLE.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32626EA925B3055900BEE892 /* BLE.swift */; };
 		326DA13E2696C65A004F0442 /* GPS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 326DA13D2696C65A004F0442 /* GPS.swift */; };
 		326DA1412696C744004F0442 /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 326DA1402696C744004F0442 /* CoreLocation.framework */; };
+		327CD3FA2AFFA0D600045659 /* PhotoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 327CD3F92AFFA0D600045659 /* PhotoView.swift */; };
 		328C353726C0ADCF007EA122 /* ThreeCsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 328C353626C0ADCF007EA122 /* ThreeCsView.swift */; };
 		32EBD21125CA00870032F3AF /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32EBD21025CA00870032F3AF /* Message.swift */; };
 		32EBD21525CA03210032F3AF /* Hello.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32EBD21425CA03210032F3AF /* Hello.swift */; };
@@ -42,6 +43,7 @@
 		32626EA925B3055900BEE892 /* BLE.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLE.swift; sourceTree = "<group>"; };
 		326DA13D2696C65A004F0442 /* GPS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPS.swift; sourceTree = "<group>"; };
 		326DA1402696C744004F0442 /* CoreLocation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreLocation.framework; path = System/Library/Frameworks/CoreLocation.framework; sourceTree = SDKROOT; };
+		327CD3F92AFFA0D600045659 /* PhotoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoView.swift; sourceTree = "<group>"; };
 		328C353626C0ADCF007EA122 /* ThreeCsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreeCsView.swift; sourceTree = "<group>"; };
 		32EBD21025CA00870032F3AF /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
 		32EBD21425CA03210032F3AF /* Hello.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Hello.swift; sourceTree = "<group>"; };
@@ -103,6 +105,7 @@
 				32626E9925B2421C00BEE892 /* Preview Content */,
 				324BF7FC268AF46100BEC254 /* test.txt */,
 				328C353626C0ADCF007EA122 /* ThreeCsView.swift */,
+				327CD3F92AFFA0D600045659 /* PhotoView.swift */,
 			);
 			path = "NAMI BLE Chat";
 			sourceTree = "<group>";
@@ -197,6 +200,7 @@
 				321DC427275D833400497385 /* AlarmSettingView.swift in Sources */,
 				326DA13E2696C65A004F0442 /* GPS.swift in Sources */,
 				328C353726C0ADCF007EA122 /* ThreeCsView.swift in Sources */,
+				327CD3FA2AFFA0D600045659 /* PhotoView.swift in Sources */,
 				32626EA725B24FB300BEE892 /* SettingView.swift in Sources */,
 				3254BA92277BDE3000A1D2D0 /* MessageTestView.swift in Sources */,
 				32EBD21B25CA09330032F3AF /* MainView.swift in Sources */,
@@ -341,7 +345,7 @@
 				DEVELOPMENT_TEAM = V5D273UZBL;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = "NAMI BLE Chat/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -365,7 +369,7 @@
 				DEVELOPMENT_TEAM = V5D273UZBL;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = "NAMI BLE Chat/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

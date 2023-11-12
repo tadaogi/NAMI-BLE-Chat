@@ -10,6 +10,7 @@ import SwiftUI
 struct MessageView: View {
     @State private var inputmessage = ""
     @EnvironmentObject var userMessage : UserMessage
+    @State var PhotoSheet: Bool = false
     
     var body: some View {
         NavigationView {
@@ -29,16 +30,35 @@ struct MessageView: View {
                     ForEach(self.userMessage.userMessageList, id: \.code) { messageitem in
                         //HStack {
                         let tmptext = messageitem.userMessageID+","+messageitem.userMessageText
-                        Text(tmptext)
+                        Text(.init(tmptext))
                             .padding([.leading], 15)
                         //Spacer()
                         //}
                     }
+                    .environment(\.openURL,
+                                  OpenURLAction { url in
+                        print("FileID clicked \(url.absoluteString)")
+                        //fileID.name = url.absoluteString
+                        //active.toggle()
+                        //return .discarded
+                        return .handled
+                    })
                     
                 }.background(Color("lightBackground"))
                     .foregroundColor(Color.black)
                 
-                Text("Comment")
+                HStack {
+                    Text("Comment")
+                    Button (action: {
+                        print("photo")
+                        PhotoSheet.toggle()
+                    }) {
+                        Text("Photo")
+                    }
+                    .sheet(isPresented: $PhotoSheet, onDismiss: didDismiss) {
+                        PhotoView()
+                    }
+                }
                 // HStack(){
                 ScrollView(.vertical,showsIndicators: true) {
                     
@@ -72,6 +92,11 @@ struct MessageView: View {
             )
             
         }
+    }
+    
+    func didDismiss() {
+        print("didDismiss")
+        inputmessage = "didDismiss"
     }
 }
 
