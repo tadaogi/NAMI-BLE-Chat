@@ -19,6 +19,7 @@
 		326DA13E2696C65A004F0442 /* GPS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 326DA13D2696C65A004F0442 /* GPS.swift */; };
 		326DA1412696C744004F0442 /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 326DA1402696C744004F0442 /* CoreLocation.framework */; };
 		327CD3FA2AFFA0D600045659 /* PhotoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 327CD3F92AFFA0D600045659 /* PhotoView.swift */; };
+		327CD3FC2B04AFC000045659 /* PhotoShow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 327CD3FB2B04AFC000045659 /* PhotoShow.swift */; };
 		328C353726C0ADCF007EA122 /* ThreeCsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 328C353626C0ADCF007EA122 /* ThreeCsView.swift */; };
 		32EBD21125CA00870032F3AF /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32EBD21025CA00870032F3AF /* Message.swift */; };
 		32EBD21525CA03210032F3AF /* Hello.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32EBD21425CA03210032F3AF /* Hello.swift */; };
@@ -44,6 +45,7 @@
 		326DA13D2696C65A004F0442 /* GPS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPS.swift; sourceTree = "<group>"; };
 		326DA1402696C744004F0442 /* CoreLocation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreLocation.framework; path = System/Library/Frameworks/CoreLocation.framework; sourceTree = SDKROOT; };
 		327CD3F92AFFA0D600045659 /* PhotoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoView.swift; sourceTree = "<group>"; };
+		327CD3FB2B04AFC000045659 /* PhotoShow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoShow.swift; sourceTree = "<group>"; };
 		328C353626C0ADCF007EA122 /* ThreeCsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreeCsView.swift; sourceTree = "<group>"; };
 		32EBD21025CA00870032F3AF /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
 		32EBD21425CA03210032F3AF /* Hello.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Hello.swift; sourceTree = "<group>"; };
@@ -106,6 +108,7 @@
 				324BF7FC268AF46100BEC254 /* test.txt */,
 				328C353626C0ADCF007EA122 /* ThreeCsView.swift */,
 				327CD3F92AFFA0D600045659 /* PhotoView.swift */,
+				327CD3FB2B04AFC000045659 /* PhotoShow.swift */,
 			);
 			path = "NAMI BLE Chat";
 			sourceTree = "<group>";
@@ -202,6 +205,7 @@
 				328C353726C0ADCF007EA122 /* ThreeCsView.swift in Sources */,
 				327CD3FA2AFFA0D600045659 /* PhotoView.swift in Sources */,
 				32626EA725B24FB300BEE892 /* SettingView.swift in Sources */,
+				327CD3FC2B04AFC000045659 /* PhotoShow.swift in Sources */,
 				3254BA92277BDE3000A1D2D0 /* MessageTestView.swift in Sources */,
 				32EBD21B25CA09330032F3AF /* MainView.swift in Sources */,
 				32626E9625B2421B00BEE892 /* ContentView.swift in Sources */,

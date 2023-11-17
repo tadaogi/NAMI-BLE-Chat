@@ -11,7 +11,10 @@ struct MessageView: View {
     @State private var inputmessage = ""
     @EnvironmentObject var userMessage : UserMessage
     @State var PhotoSheet: Bool = false
-    
+    @State var edgeIP: String = "10.0.0.11"
+    @State private var active = false
+    @EnvironmentObject var fileID: FileID
+
     var body: some View {
         NavigationView {
             VStack(alignment: .leading) {
@@ -38,14 +41,22 @@ struct MessageView: View {
                     .environment(\.openURL,
                                   OpenURLAction { url in
                         print("FileID clicked \(url.absoluteString)")
-                        //fileID.name = url.absoluteString
-                        //active.toggle()
+                        fileID.name = url.absoluteString
+                        active.toggle()
+                        //PhotoShow()
+                        // ここで PhotoShow() しても表示されない
                         //return .discarded
+                        
                         return .handled
                     })
                     
                 }.background(Color("lightBackground"))
                     .foregroundColor(Color.black)
+                    .sheet(isPresented: $active, onDismiss: didDismiss) {
+                        PhotoShow(edgeIP: $edgeIP)
+                        
+                    }
+
                 
                 HStack {
                     Text("Comment")
@@ -56,8 +67,17 @@ struct MessageView: View {
                         Text("Photo")
                     }
                     .sheet(isPresented: $PhotoSheet, onDismiss: didDismiss) {
-                        PhotoView()
+                        PhotoView(edgeIP: $edgeIP)
+                        
                     }
+                    // ここでも動く
+                    /*
+                     .sheet(isPresented: $active, onDismiss: didDismiss) {
+                        PhotoShow()
+                        
+                    }
+                     */
+
                 }
                 // HStack(){
                 ScrollView(.vertical,showsIndicators: true) {
@@ -90,6 +110,14 @@ struct MessageView: View {
                         
                     }
             )
+            // ここだと表示されない
+            /*
+            .navigationDestination(isPresented: $active, destination: {
+
+                PhotoShow()
+            })
+             */
+
             
         }
     }
@@ -97,6 +125,11 @@ struct MessageView: View {
     func didDismiss() {
         print("didDismiss")
         inputmessage = "didDismiss"
+        print($edgeIP)
+    }
+    
+    func requestFile() {
+        
     }
 }
 
@@ -106,6 +139,7 @@ struct MessageView_Previews: PreviewProvider {
         ForEach(["iPhone SE (2nd generation)", "iPhone 6s Plus", "iPad Pro (9.7-inch)"], id: \.self) { deviceName in
             MessageView()
                 .environmentObject(UserMessage())
+                .environmentObject(FileID())
                 /// 以下の2行を追加
                 .previewDevice(PreviewDevice(rawValue: deviceName))
                 .previewDisplayName(deviceName)

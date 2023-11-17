@@ -23,6 +23,7 @@ class UserMessageItem {
 
 public class UserDefine: ObservableObject {
     @Published var pStatus: String = "i"
+    @Published var edgeIP: String = "192.168.0.0"
 }
 
 /*

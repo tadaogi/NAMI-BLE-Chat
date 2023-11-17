@@ -26,6 +26,7 @@ struct MainView: View {
         }
         .environmentObject(UserMessage())
         .environmentObject(UserDefine())
+        .environmentObject(FileID())
     }
 }
 

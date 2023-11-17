@@ -59,6 +59,8 @@ struct ContentView: View {
     var gps = GPS()
     @State var autoCPflag = false
     
+    @EnvironmentObject var fileID: FileID
+    
     init() {
         //print("ContentView init is called")
         //print(self.log)
@@ -321,6 +323,7 @@ struct ContentView_Previews: PreviewProvider {
                     .environmentObject(user)
                     .environmentObject(Log())
                     .environmentObject(Devices())
+                    .environmentObject(FileID())
                     // .environmentObject(UserMessage())
                     /// 以下の2行を追加
                     .previewDevice(PreviewDevice(rawValue: deviceName))

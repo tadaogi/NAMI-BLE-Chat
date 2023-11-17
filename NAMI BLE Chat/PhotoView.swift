@@ -111,7 +111,9 @@ struct PhotoView: View {
     @EnvironmentObject var userMessage : UserMessage
     @State private var sendmsg:String = "sendpmsg"
     @State private var fileIDlink:String = ""
-    @State var hisip = "10.0.0.11"
+    @Binding var edgeIP: String
+    @EnvironmentObject var fileID: FileID
+
 
     
     var body: some View {
@@ -119,7 +121,7 @@ struct PhotoView: View {
         // URLTestからコピペ
         HStack {
             Text("client")
-            TextField("",text: $hisip)
+            TextField("",text: $edgeIP)
                 .overlay(
                     RoundedRectangle(cornerSize: CGSize(width: 8.0, height: 8.0))
                     .stroke(Color.orange, lineWidth: 4.0)
@@ -253,7 +255,7 @@ struct PhotoView: View {
         httpBody2 += "--\(boundary)--\r\n"
 
         httpBody.append(httpBody2.data(using: .utf8)!)
-        let url = URL(string: "http://"+hisip+":8010/registfile")! 
+        let url = URL(string: "http://"+edgeIP+":8010/registfile")!
         print(url)
         //URLを生成
         var request = URLRequest(url: url)               //Requestを生成
@@ -276,16 +278,40 @@ struct PhotoView: View {
                 print(fname)
                 dummyresult = fname
                 fileIDlink = " [Link](\(fname))"
+                
+                SaveToDoc(filename: fname, uiImage: uiImage)
+
             } catch let error {
                 print(error)
             }
         }
         task.resume()
     }
+    
+    func SaveToDoc(filename: String, uiImage: UIImage) {
+        print("SaveToDoc called")
+        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let fileURL = documentsURL.appendingPathComponent(filename)
+        guard let imageData = CIContext().jpegRepresentation(
+            of: ciImage!,
+            colorSpace: ciImage?.colorSpace ?? CGColorSpaceCreateDeviceRGB(),
+            options: [:]) else {
+            print("imageData is nil")
+            return
+            }
+        do {
+            try imageData.write(to: fileURL)
+            print("SaveToDoc Done")
+        } catch {
+            print("SaveToDoc error")
+        }
+    }
 
     
 }
 
+
 #Preview {
-    PhotoView()
+    PhotoView( edgeIP: .constant("#Preview"))
 }
+
