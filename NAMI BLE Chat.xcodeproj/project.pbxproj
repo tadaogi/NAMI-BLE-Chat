@@ -34,6 +34,7 @@
 /* Begin PBXFileReference section */
 		321DC426275D833400497385 /* AlarmSettingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmSettingView.swift; sourceTree = "<group>"; };
 		324BF7FC268AF46100BEC254 /* test.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = test.txt; sourceTree = "<group>"; };
+		324CC8072B194DC1003ECECB /* Todo.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = Todo.md; sourceTree = "<group>"; };
 		3254BA91277BDE2F00A1D2D0 /* MessageTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageTestView.swift; sourceTree = "<group>"; };
 		32626E9025B2421B00BEE892 /* NAMI BLE Chat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "NAMI BLE Chat.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		32626E9325B2421B00BEE892 /* BLEcommTest0App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEcommTest0App.swift; sourceTree = "<group>"; };
@@ -111,6 +112,7 @@
 				328C353626C0ADCF007EA122 /* ThreeCsView.swift */,
 				327CD3F92AFFA0D600045659 /* PhotoView.swift */,
 				327CD3FB2B04AFC000045659 /* PhotoShow.swift */,
+				324CC8072B194DC1003ECECB /* Todo.md */,
 			);
 			path = "NAMI BLE Chat";
 			sourceTree = "<group>";
