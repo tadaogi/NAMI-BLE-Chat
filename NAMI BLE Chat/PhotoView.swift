@@ -109,10 +109,11 @@ struct PhotoView: View {
     @State private var dummyresult:String = ""
     @State private var inputmessage = ""
     @EnvironmentObject var userMessage : UserMessage
-    @State private var sendmsg:String = "sendpmsg"
+    @State private var sendmsg:String = ""
     @State private var fileIDlink:String = ""
     @Binding var edgeIP: String
     @EnvironmentObject var fileID: FileID
+    @EnvironmentObject var user: User
 
 
     
@@ -120,7 +121,7 @@ struct PhotoView: View {
         Text("Send Message with Photo")
         // URLTestからコピペ
         HStack {
-            Text("client")
+            Text("edge")
             TextField("",text: $edgeIP)
                 .overlay(
                     RoundedRectangle(cornerSize: CGSize(width: 8.0, height: 8.0))
@@ -130,7 +131,7 @@ struct PhotoView: View {
             .padding(16.0)
         }
         HStack {
-            PhotosPicker("写真を選択", selection: $selectedPhoto, photoLibrary: .shared())
+            PhotosPicker("Select Photo", selection: $selectedPhoto, photoLibrary: .shared())
                 .onChange(of: selectedPhoto) {
                     print("onChange")
                     print(selectedPhoto?.itemIdentifier as Any)
@@ -211,7 +212,8 @@ struct PhotoView: View {
         let boundary = "----------" + UUID().uuidString
         print(boundary)
         // bocyを作る
-        let username = "user00"
+        let username:String = user.myID
+        print(username)
         //let filename = "sample.png"
         /*
         guard let image = UIImage(named: filename) else {

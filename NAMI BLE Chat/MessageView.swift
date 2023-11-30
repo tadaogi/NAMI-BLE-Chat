@@ -11,7 +11,7 @@ struct MessageView: View {
     @State private var inputmessage = ""
     @EnvironmentObject var userMessage : UserMessage
     @State var PhotoSheet: Bool = false
-    @State var edgeIP: String = "10.0.0.11"
+    @State var edgeIP: String = "10.9.153.163"
     @State private var active = false
     @EnvironmentObject var fileID: FileID
 
@@ -32,9 +32,22 @@ struct MessageView: View {
                         .frame(height: 0)
                     ForEach(self.userMessage.userMessageList, id: \.code) { messageitem in
                         //HStack {
+                        /*
+                        var tmptext=""
+                        if userMessage.debugMessageFlag {
+                            tmptext = messageitem.userMessageID+","+messageitem.userMessageText
+                        } else {
+                            tmptext = messageitem.userMessageText
+                        }
+                         */
                         let tmptext = messageitem.userMessageID+","+messageitem.userMessageText
+                        /*
                         Text(.init(tmptext))
                             .padding([.leading], 15)
+                         */
+                        Text(.init(setmessage(messageitem: messageitem)))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding([.leading], 5)
                         //Spacer()
                         //}
                     }
@@ -106,7 +119,7 @@ struct MessageView: View {
             .navigationBarItems(
                 trailing:
                     NavigationLink( destination: MessageTestView(userMessage: userMessage)) {
-                        Text("Test")
+                        Text("NAMI")
                         
                     }
             )
@@ -124,12 +137,24 @@ struct MessageView: View {
     
     func didDismiss() {
         print("didDismiss")
-        inputmessage = "didDismiss"
-        print($edgeIP)
+//        inputmessage = "didDismiss"
+//        print($edgeIP)
     }
     
     func requestFile() {
         
+    }
+    
+    func setmessage(messageitem: UserMessageItem) -> String {
+        var tmptext=""
+        if userMessage.debugMessageFlag {
+            tmptext = messageitem.userMessageID+","+messageitem.userMessageText
+        } else {
+            let arr:[String] = messageitem.userMessageID.components(separatedBy: "-")
+            let usrID = arr[2]
+            tmptext = "[\(usrID)] " + messageitem.userMessageText
+        }
+        return tmptext
     }
 }
 

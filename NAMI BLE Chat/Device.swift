@@ -281,8 +281,9 @@ class Devices : ObservableObject {
                 AudioServicesPlayAlertSoundWithCompletion(SystemSoundID(kSystemSoundID_Vibrate)) {}
                 
                 showAlert = true
-                
-                self.userMessage.addItem(userMessageText: "[ALERT] CloseDeviceCount")
+                if self.userMessage.debugMessageFlag {
+                    self.userMessage.addItem(userMessageText: "[ALERT] CloseDeviceCount")
+                }
 
             }
 
@@ -316,7 +317,9 @@ class Devices : ObservableObject {
                 
                 showLongAlert = true
 
-                self.userMessage.addItem(userMessageText: "[ALERT] CloseLongDeviceCount")
+                if self.userMessage.debugMessageFlag {
+                    self.userMessage.addItem(userMessageText: "[ALERT] CloseLongDeviceCount")
+                }
 
             }
             return 3

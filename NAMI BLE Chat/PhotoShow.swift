@@ -17,7 +17,7 @@ struct PhotoShow: View {
     
     var body: some View {
         Text("PhotoShow")
-        Text("url is \(fileID.name)")
+        Text("FileID:\(fileID.name)")
         let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let fileURL = documentsURL.appendingPathComponent(fileID.name)
 
