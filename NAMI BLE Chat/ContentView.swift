@@ -26,7 +26,7 @@ class User: ObservableObject {
     @Published var testMessageFlag = false
 
     init() {
-        self.myID = UserDefaults.standard.object(forKey: "myID") as? String ?? "tmp2"
+        self.myID = UserDefaults.standard.object(forKey: "myID") as? String ?? "tadashi"
         self.timerInterval = UserDefaults.standard.object(forKey: "timerInterval") as? String ?? "30"
         self.obsoleteInterval = UserDefaults.standard.object(forKey: "obsoleteInterval") as? String ?? "900"
         self.iPhoneMode = UserDefaults.standard.object(forKey: "iPhoneMode") as? Bool ?? true

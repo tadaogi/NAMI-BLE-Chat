@@ -48,6 +48,12 @@ struct MessageTestView: View {
                             RoundedRectangle(cornerRadius: 20)
                                 .stroke(Color.yellow, lineWidth: 2)
                         )}
+                HStack {
+                    Text("debugMessage")
+                    Toggle(isOn: $userMessage.debugMessageFlag) {
+                        EmptyView()
+                    }
+                }
             }
             Text("NAMI BLE Chat (ver.\(versiontext))")
                 .padding(20)

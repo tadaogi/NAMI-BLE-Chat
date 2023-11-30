@@ -21,6 +21,7 @@
 		327CD3FA2AFFA0D600045659 /* PhotoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 327CD3F92AFFA0D600045659 /* PhotoView.swift */; };
 		327CD3FC2B04AFC000045659 /* PhotoShow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 327CD3FB2B04AFC000045659 /* PhotoShow.swift */; };
 		328C353726C0ADCF007EA122 /* ThreeCsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 328C353626C0ADCF007EA122 /* ThreeCsView.swift */; };
+		32BF689C2B17114D008779DF /* SAMPLE.MOV in Resources */ = {isa = PBXBuildFile; fileRef = 32BF689B2B17114D008779DF /* SAMPLE.MOV */; };
 		32EBD21125CA00870032F3AF /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32EBD21025CA00870032F3AF /* Message.swift */; };
 		32EBD21525CA03210032F3AF /* Hello.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32EBD21425CA03210032F3AF /* Hello.swift */; };
 		32EBD21825CA08210032F3AF /* MessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32EBD21725CA08210032F3AF /* MessageView.swift */; };
@@ -47,6 +48,7 @@
 		327CD3F92AFFA0D600045659 /* PhotoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoView.swift; sourceTree = "<group>"; };
 		327CD3FB2B04AFC000045659 /* PhotoShow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoShow.swift; sourceTree = "<group>"; };
 		328C353626C0ADCF007EA122 /* ThreeCsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreeCsView.swift; sourceTree = "<group>"; };
+		32BF689B2B17114D008779DF /* SAMPLE.MOV */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = SAMPLE.MOV; sourceTree = "<group>"; };
 		32EBD21025CA00870032F3AF /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
 		32EBD21425CA03210032F3AF /* Hello.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Hello.swift; sourceTree = "<group>"; };
 		32EBD21725CA08210032F3AF /* MessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageView.swift; sourceTree = "<group>"; };
@@ -124,6 +126,7 @@
 		326DA13F2696C744004F0442 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				32BF689B2B17114D008779DF /* SAMPLE.MOV */,
 				326DA1402696C744004F0442 /* CoreLocation.framework */,
 			);
 			name = Frameworks;
@@ -189,6 +192,7 @@
 				32626EA425B24C4B00BEE892 /* Colors.xcassets in Resources */,
 				32626E9B25B2421C00BEE892 /* Preview Assets.xcassets in Resources */,
 				32F1DF88268B11CC006493C4 /* Assets.xcassets in Resources */,
+				32BF689C2B17114D008779DF /* SAMPLE.MOV in Resources */,
 				324BF7FD268AF46100BEC254 /* test.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

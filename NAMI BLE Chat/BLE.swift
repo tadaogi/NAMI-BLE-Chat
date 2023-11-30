@@ -75,8 +75,9 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     public func myinit(userMessage: UserMessage) {
         print("BLECentral myinit is called")
         self.userMessage = userMessage
-        self.userMessage.addItem(userMessageText: "BLECentral.myinit is called") // shoud be log
-
+        if self.userMessage.debugMessageFlag {
+            self.userMessage.addItem(userMessageText: "BLECentral.myinit is called") // shoud be log
+        }
     }
     
     func startCentralManager(log: Log, devices: Devices, user: User) {

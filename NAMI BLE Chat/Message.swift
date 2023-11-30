@@ -23,7 +23,7 @@ class UserMessageItem {
 
 public class UserDefine: ObservableObject {
     @Published var pStatus: String = "i"
-    @Published var edgeIP: String = "192.168.0.0"
+    @Published var edgeIP: String = "10.9.153.163"
 }
 
 /*
@@ -40,6 +40,7 @@ public class UserMessage: ObservableObject {
 //    @Published var messagelist0 = messagelist
     var bleCentral : BLECentral!
     var blePeripheral : BLEPeripheral!
+    var debugMessageFlag = false
 
     @Published var userMessageList : [UserMessageItem] = [ // array の方が正式名称らしいがとりあえずそのまま
         //UserMessageItem(userMessageID: "  ", userMessageText: "                                                                                        a"),
@@ -72,9 +73,14 @@ public class UserMessage: ObservableObject {
         let userMessageID = currenttime + "-" + sValue + "-" + myID
         
         DispatchQueue.main.async {
+            print("debugMessageFlag:",self.debugMessageFlag)
+            print(userMessageText)
             self.userMessageCount = self.userMessageCount + 1
-            self.userMessageList.append(UserMessageItem(userMessageID: userMessageID, userMessageText: "\(currenttime)[\(self.userMessageCount)]: \(userMessageText)"))
-        
+            if self.debugMessageFlag {
+                self.userMessageList.append(UserMessageItem(userMessageID: userMessageID, userMessageText: "\(currenttime)[\(self.userMessageCount)]: \(userMessageText)"))
+            } else {
+                self.userMessageList.append(UserMessageItem(userMessageID: userMessageID, userMessageText: "\(userMessageText)"))
+            }
             
             // debug
             // 相手が決まらないとかけなくなるので、コメントアウト 2021/12/15
