@@ -10,6 +10,30 @@ import SwiftUI
 import Foundation
 import Network
 import PhotosUI
+import AVKit
+
+struct Movie: Transferable {
+    let url: URL
+
+    static var transferRepresentation: some TransferRepresentation {
+        FileRepresentation(contentType: .movie) { movie in
+        //FileRepresentation(contentType: .item) { movie in
+            SentTransferredFile(movie.url)
+        } importing: { received in
+            let filename = received.file.lastPathComponent
+//            let copy = URL.documentsDirectory.appending(path: "movie.mp4")
+            let copy = URL.documentsDirectory.appending(path: "upload.mp4")
+            print("Movie")
+        
+            if FileManager.default.fileExists(atPath: copy.path()) {
+                try FileManager.default.removeItem(at: copy)
+            }
+            print("received \(received)")
+            try FileManager.default.copyItem(at: received.file, to: copy)
+            return Self.init(url: copy)
+        }
+    }
+}
 
 func URLtest() {
     print("URLtest")
@@ -114,9 +138,15 @@ struct PhotoView: View {
     @Binding var edgeIP: String
     @EnvironmentObject var fileID: FileID
     @EnvironmentObject var user: User
+    @State private var active = false
 
+    @State private var movie: Movie?
 
-    
+    enum LoadState {
+        case unknown, loading, loaded /*(Movie)*/, failed
+    }
+    @State private var loadState = LoadState.unknown
+
     var body: some View {
         Text("Send Message with Photo")
         // URLTestからコピペ
@@ -156,6 +186,34 @@ struct PhotoView: View {
                     .frame(width:50, height:50)
             }
         }
+        
+        // videoがloadされたら、ビデオを表示する
+        switch loadState {
+        case .unknown:
+            EmptyView()
+        case .loading:
+            ProgressView()
+            //case .loaded(let movie):
+        case .loaded:
+            
+            VideoPlayer(player: AVPlayer(url: movie!.url))
+                .scaledToFit()
+                .frame(width: 300, height: 300)
+            
+            Text("loaded")
+        case .failed:
+            Text("Import failed")
+        }
+        
+        Button(action:{
+            if filename != "" {
+                POSTMain(filename: filename, uiImage: uiImage)
+            }
+        }) {
+            Text("post main")
+        }
+
+/*
         Button(action:{
             if filename != "" , let uiImage = uiImage {
                 POSTtest(filename: filename, uiImage: uiImage)
@@ -163,6 +221,7 @@ struct PhotoView: View {
         }) {
             Text("post")
         }
+ */
         Text(dummyresult)
         ScrollView(.vertical,showsIndicators: true) {
             
@@ -192,19 +251,274 @@ struct PhotoView: View {
             .environment(\.openURL,
                           OpenURLAction { url in
                 print("OpenURLAction with \(url.absoluteString)")
-                //fileID.name = url.absoluteString
-                //active.toggle()
+                fileID.name = url.absoluteString
+                active.toggle()
                 //return .discarded
                 return .handled
             })
+            .sheet(isPresented: $active, onDismiss: didDismiss) {
+                PhotoShow(edgeIP: $edgeIP)
+            }
     }
+    
+    func didDismiss() {
+        print("didDismiss")
+    }
+
+    private func loadImageFromSelectedPhoto(photo: PhotosPickerItem?) async {
+        // 写真の次にビデオを選んだときのために nil にしておく。逆も同じ。
+        self.uiImage = nil
+        self.loadState = .unknown
+        self.movie = nil
+        // VideoTestからコピペ
+        // .videoは音声なし。.movieはどっちも含むらしい
+        // https://fromatom.hatenablog.com/entry/2022/08/09/010206
+        if ((photo!.supportedContentTypes.contains(where: { type in type.isSubtype(of: .movie)}))){
+            print("audio visual")
+//            print(photo?.supportedContentTypes)
+            Task {
+                do {
+                    loadState = .loading
+                    
+
+//                                    if let movie = try await selectedItem?.loadTransferable(type: Movie.self) {
+                    if let movie = try await photo?.loadTransferable(type: Movie.self) {
+                        print("movie is not nil")
+                        self.movie = movie
+                        print("self.movie is \(self.movie!.url.absoluteString)")
+
+                        loadState = .loaded /*(movie)*/
+                    } else {
+                        print("movie is nil")
+                        loadState = .failed
+                    }
+                } catch {
+                    loadState = .failed
+                }
+            }
+        } else if ((photo!.supportedContentTypes.contains(where: { type in type.isSubtype(of: .image)}))){
+            print("image")
+            //            print(photo?.supportedContentTypes)
+            if let data = try? await photo?.loadTransferable(type: Data.self) {
+                print("uiImage is not nil")
+                self.uiImage = UIImage(data: data)
+                self.ciImage = CIImage(data: data)
+
+                print("get uiImage")
+                if self.uiImage == nil {
+                    print("but uiImage is nil")
+                }
+                
+                
+            } else {
+                print("uiImage is nil")
+            }
+        }
+    }
+    /* old */
+    /*
     private func loadImageFromSelectedPhoto(photo: PhotosPickerItem?) async {
         if let data = try? await photo?.loadTransferable(type: Data.self) {
                 self.uiImage = UIImage(data: data)
                 self.ciImage = CIImage(data: data)
         }
     }
+     */
     
+    func POSTMain(filename: String, uiImage: UIImage??){
+        print("POSTMain")
+        if self.uiImage != nil {
+            print("photo")
+            POSTtest(filename: filename, uiImage: self.uiImage)
+        } else {
+            print("movie")
+            POSTtest2()
+        }
+    }
+    
+    func POSTtest2() {
+            print("POSTtest2")
+            
+    //        let videoClipPath = url.absoluteString
+    //        let videoClipName = url.lastPathComponent
+    //        print(videoClipName)
+            /// ①DocumentsフォルダURL取得
+            guard let dirURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+                fatalError("フォルダURL取得エラー")
+            }
+            
+            /// ②対象のファイルURL取得
+            let fileURL = dirURL.appendingPathComponent("upload.mp4")
+            
+            guard let fileContents = try? Data(contentsOf: fileURL) else {
+                print("ファイル読み込みエラー")
+                return
+            }
+
+            // boundaryを作る
+            let boundary = "----------" + UUID().uuidString
+            print(boundary)
+            // bocyを作る
+            // for debug
+            //let username:String = user.myID
+            let username="usr00"
+            print(username)
+            // GPS情報(Exif情報)を残すために上を下に変更する
+            /*
+            guard let imageData = CIContext().jpegRepresentation(
+                of: ciImage!,
+                colorSpace: ciImage?.colorSpace ?? CGColorSpaceCreateDeviceRGB(),
+                options: [:]) else {
+                print("imageData is nil")
+                return
+                }
+             */
+            /*
+            let image = self.uiImage
+            if image == nil {
+                print("image is nil")
+                return
+            }
+            guard let imageData = image!.jpegData(compressionQuality: 1) else {
+                print("imageData is nil")
+                return
+            }
+            */
+
+            var httpBody1 = "--\(boundary)\r\n"
+            httpBody1 += "Content-Disposition: form-data; name=\"userInfo\"\r\n"
+            httpBody1 += "\r\n"
+            httpBody1 += "{\"userID\":\"\(username)\"}\r\n"
+            httpBody1 += "--\(boundary)\r\n"
+            httpBody1 += "Content-Disposition: form-data; name=\"file\";"
+            httpBody1 += "filename=\"\(self.filename)\"\r\n"
+            httpBody1 += "\r\n"
+    //        httpBody1 += "--\(boundary)\r\n"
+    //        httpBody1 += "\r\n"
+    // 上の２行がファイルに含まれてしまう
+            
+            var httpBody = Data()
+            httpBody.append(httpBody1.data(using: .utf8)!)
+    //        httpBody.append(imageData)
+            httpBody.append(fileContents)
+            
+            var httpBody2 = "\r\n"
+            httpBody2 += "--\(boundary)--\r\n"
+
+            httpBody.append(httpBody2.data(using: .utf8)!)
+            let url = URL(string: "http://"+edgeIP+":8010/registfile")!
+            print(url)
+            //URLを生成
+            var request = URLRequest(url: url)               //Requestを生成
+            request.httpMethod = "POST"
+            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+            request.setValue("\(httpBody.count)", forHTTPHeaderField: "Content-Length")
+            request.httpBody = httpBody
+            let task = URLSession.shared.dataTask(with: request) { (data, response, error) in  //非同期で通信を行う
+                guard let data = data else { return }
+                do {
+                    //print(response ?? 9999)
+                    let contents =  String(data:data,encoding: .ascii)
+                    print(contents ?? "contents")
+                    let object = try JSONSerialization.jsonObject(with: data, options: .allowFragments)  // DataをJsonに変換
+                    print(object)
+                    guard let obj = object as? [String: Any],
+                          let fname = obj["filename"] as? String else {
+                              return
+                          }
+                    print(fname)
+    // for debug
+                    fileIDlink = " [Link](\(fname))"
+                    dummyresult = fname
+                    fileIDlink = " [Link](\(fname))"
+                    // 動画の場合は、セーブしない（とりあえず）
+                    // 本当は rename するのが良いと思われる
+                    /*
+                    SaveToDoc(filename: fname, uiImage: uiImage)
+                     */
+
+                } catch let error {
+                    print(error)
+                }
+            }
+            task.resume()
+        }
+
+                
+        func POSTtest(filename: String, uiImage: UIImage??) {
+            print("POSTtest")
+            
+            // boundaryを作る
+            let boundary = "----------" + UUID().uuidString
+            print(boundary)
+            // bocyを作る
+            // for debug
+            //let username:String = user.myID
+            let username="usr0"
+            print(username)
+            // GPS情報(Exif情報)を残すために上を下に変更する
+            guard let imageData = CIContext().jpegRepresentation(
+                of: ciImage!,
+                colorSpace: ciImage?.colorSpace ?? CGColorSpaceCreateDeviceRGB(),
+                options: [:]) else {
+                print("imageData is nil")
+                return
+                }
+            
+            var httpBody1 = "--\(boundary)\r\n"
+            httpBody1 += "Content-Disposition: form-data; name=\"userInfo\"\r\n"
+            httpBody1 += "\r\n"
+            httpBody1 += "{\"userID\":\"\(username)\"}\r\n"
+            httpBody1 += "--\(boundary)\r\n"
+            httpBody1 += "Content-Disposition: form-data; name=\"file\";"
+            httpBody1 += "filename=\"\(filename)\"\r\n"
+            httpBody1 += "\r\n"
+    //        httpBody1 += "--\(boundary)\r\n"
+    //        httpBody1 += "\r\n"
+    // 上の２行がファイルに含まれてしまう
+            
+            var httpBody = Data()
+            httpBody.append(httpBody1.data(using: .utf8)!)
+            httpBody.append(imageData)
+            
+            var httpBody2 = "\r\n"
+            httpBody2 += "--\(boundary)--\r\n"
+
+            httpBody.append(httpBody2.data(using: .utf8)!)
+            let url = URL(string: "http://"+edgeIP+":8010/registfile")!
+            print(url)
+            //URLを生成
+            var request = URLRequest(url: url)               //Requestを生成
+            request.httpMethod = "POST"
+            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+            request.setValue("\(httpBody.count)", forHTTPHeaderField: "Content-Length")
+            request.httpBody = httpBody
+            let task = URLSession.shared.dataTask(with: request) { (data, response, error) in  //非同期で通信を行う
+                guard let data = data else { return }
+                do {
+                    //print(response ?? 9999)
+                    let contents =  String(data:data,encoding: .ascii)
+                    print(contents ?? "contents")
+                    let object = try JSONSerialization.jsonObject(with: data, options: .allowFragments)  // DataをJsonに変換
+                    print(object)
+                    guard let obj = object as? [String: Any],
+                          let fname = obj["filename"] as? String else {
+                              return
+                          }
+                    print(fname)
+                    dummyresult = fname
+                    fileIDlink = " [Link](\(fname))"
+                    sendmsg = fileIDlink
+                    SaveToDoc(filename: fname, uiImage: uiImage!!)
+
+                } catch let error {
+                    print(error)
+                }
+            }
+            task.resume()
+        }
+// old
+    /*
     func POSTtest(filename: String, uiImage: UIImage) {
         print("POSTtest")
         
@@ -289,6 +603,7 @@ struct PhotoView: View {
         }
         task.resume()
     }
+     */
     
     func SaveToDoc(filename: String, uiImage: UIImage) {
         print("SaveToDoc called")

@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
+import AVKit
 
 class FileID: ObservableObject {
     @Published var name: String = "initial"
@@ -26,11 +28,29 @@ struct PhotoShow: View {
         let checkfile = checkFile(fname: fname)
 //        if FileManager.default.fileExists(atPath: fileURL.path) {
         if checkfile {
+            if UTType(filenameExtension: fileURL.pathExtension)!.conforms(to: .image) {
+                AsyncImage(url: fileURL) { image  in
+                    image.resizable()
+                } placeholder: {
+                    ProgressView()
+                }
+            } else if UTType(filenameExtension: fileURL.pathExtension)!.conforms(to: .movie) {
+                Text("movie")
+                VideoPlayer(player: AVPlayer(url: fileURL))
+                    .scaledToFit()
+                    .frame(width: 300, height: 300)
+            } else {
+                Text("unknown type")
+            }
+
+// old
+            /*
             AsyncImage(url: fileURL) { image  in
                 image.resizable()
             } placeholder: {
                 ProgressView()
             }
+             */
         } else {
             Text("file not found")
         }
