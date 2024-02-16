@@ -352,7 +352,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"NAMI BLE Chat/Preview Content\"";
-				DEVELOPMENT_TEAM = V5D273UZBL;
+				DEVELOPMENT_TEAM = BXKL5N8R36;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = "NAMI BLE Chat/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -360,7 +360,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = ogilab.com.NAMIBLEChat;
+				PRODUCT_BUNDLE_IDENTIFIER = ogilab.com.NAMIBLEChat2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
@@ -376,7 +376,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"NAMI BLE Chat/Preview Content\"";
-				DEVELOPMENT_TEAM = V5D273UZBL;
+				DEVELOPMENT_TEAM = BXKL5N8R36;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = "NAMI BLE Chat/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -384,7 +384,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = ogilab.com.NAMIBLEChat;
+				PRODUCT_BUNDLE_IDENTIFIER = ogilab.com.NAMIBLEChat2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;

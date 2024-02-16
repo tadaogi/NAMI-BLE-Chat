@@ -133,7 +133,12 @@ struct MessageView: View {
 
             
         }
+        // Macの表示が、「MessageView」と「ContentView]で違うので
+        // これをいれると同じになるのか試しにいれる。2024/2/16 OK
+        // 以下の行で、iPad と iPhone と同じ表示になる
+        .navigationViewStyle(StackNavigationViewStyle())
     }
+    
     
     func didDismiss() {
         print("didDismiss")

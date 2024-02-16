@@ -195,6 +195,11 @@ struct ThreeCsView: View {
             )
 
         }
+        // Macの表示が、「MessageView」と「ContentView]で違うので
+        // これをいれると同じになるのか試しにいれる。2024/2/16
+        // こっちは、元のほうが見栄えが良いので戻した。
+        // 以下の行で、iPad と iPhone と同じ表示になる
+        //.navigationViewStyle(StackNavigationViewStyle())
     }
 }
 
