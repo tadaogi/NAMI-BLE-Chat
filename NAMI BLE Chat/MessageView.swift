@@ -11,7 +11,8 @@ struct MessageView: View {
     @State private var inputmessage = ""
     @EnvironmentObject var userMessage : UserMessage
     @State var PhotoSheet: Bool = false
-    @State var edgeIP: String = "10.9.153.163"
+    //@State var edgeIP: String = "10.9.153.163" // この値が PhotoView で使われる
+    @EnvironmentObject var wifi: WiFi
     @State private var active = false
     @EnvironmentObject var fileID: FileID
 
@@ -66,8 +67,8 @@ struct MessageView: View {
                 }.background(Color("lightBackground"))
                     .foregroundColor(Color.black)
                     .sheet(isPresented: $active, onDismiss: didDismiss) {
-                        PhotoShow(edgeIP: $edgeIP)
-                        
+                        //PhotoShow(edgeIP: $edgeIP)
+                        PhotoShow()
                     }
 
                 
@@ -80,8 +81,8 @@ struct MessageView: View {
                         Text("Photo")
                     }
                     .sheet(isPresented: $PhotoSheet, onDismiss: didDismiss) {
-                        PhotoView(edgeIP: $edgeIP)
-                        
+                        //PhotoView(edgeIP: $edgeIP)
+                        PhotoView()
                     }
                     // ここでも動く
                     /*

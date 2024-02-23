@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 import CoreBluetooth
+import NetworkExtension
 
 class UserMessageItem {
     var code: UUID
@@ -23,7 +24,7 @@ class UserMessageItem {
 
 public class UserDefine: ObservableObject {
     @Published var pStatus: String = "i"
-    @Published var edgeIP: String = "10.9.153.163"
+//    @Published var edgeIP: String = "10.9.153.163(Message.swift)" // 多分使われていない
 }
 
 /*
@@ -52,11 +53,17 @@ public class UserMessage: ObservableObject {
     var PmessageLoopLock = NSLock()
     var messageIDLock = NSLock()
     
+    var wifi:WiFi!
+    
     func initBLE(bleCentral:BLECentral, blePeripheral:BLEPeripheral) {
         self.bleCentral = bleCentral
         self.blePeripheral = blePeripheral
         
         print("Message.initBLE() is called")
+    }
+    
+    func initWiFi(wifi: WiFi) {
+        self.wifi = wifi
     }
     
     func addItem(userMessageText: String) {
@@ -265,6 +272,8 @@ public class UserMessage: ObservableObject {
             self.messageIDLock.unlock()
             self.bleCentral.log.addItem(logText: "addItemExternal append, \(protocolMessageCommand[1]), \(protocolMessageCommand[2]) ")
             
+            // command かどうか確認 2024.2.19
+            MessageCommandCheck(MessageCommand: protocolMessageCommand[2])
             
             // 画面表示を変えないとredrawできないので、姑息な手段で書き換える。
             if self.pStatus == "|" {
@@ -273,6 +282,84 @@ public class UserMessage: ObservableObject {
                 self.pStatus="|"
             }
         }
+        
+        func MessageCommandCheck(MessageCommand: String) {
+            print(MessageCommand)
+            // MessageCommand = "command,wifi,<SSID>,<PASS>"
+        
+            let commands:[String] = MessageCommand.components(separatedBy:",")
+            print(commands)
+            
+            if commands[0]=="command" {
+                if commands.count == 1 {
+                    print("command syntax error: \(commands)")
+                    self.bleCentral.log.addItem(logText: "command syntax error: \(commands)")
+                } else {
+                    if commands[1]=="wifi" {
+                        if commands.count != 5 {
+                            print("command[wifi] syntax error: \(commands)")
+                            self.bleCentral.log.addItem(logText: "command[wifi] syntax error: \(commands)")
+                        } else {
+                            let ssid = commands[2]
+                            let pass = commands[3]
+                            let edgeIP = commands[4]
+                            self.wifi.edgeIP = "set for debug"
+                            
+                            print(ssid, pass, edgeIP, self.wifi.edgeIP)
+                            
+                            self.wifi.connect(ssid: ssid, password: pass, edgeIP: edgeIP)
+                        }
+                    }
+                }
+            }
+        }
+        
+        // wifitestからコピペ、引数だけ修正
+        func obsolute_connect(ssid:String, pass:String) {
+            print("connect")
+            print(ssid)
+            print(pass)
+            // https://qiita.com/Howasuto/items/0538f7b3795a9470b5d9
+            // Important
+            
+            // To use the NEHotspotConfigurationManager class, you must enable the Hotspot Configuration capability in Xcode. For more information, see Hotspot Configuration Entitlement.
+            //インスタンスの生成
+            // originalはshared()だったけど、エラーになるので修正
+            let manager = NEHotspotConfigurationManager.shared
+            //仮のSSIDを代入
+            //ssid = "GR-MT300N-V2-d2a"
+            //仮のPASSWORDを代入
+            let password = pass
+            //後ほど利用するisWEPの値としてtureを代入
+            let isWEP = false // trueでエラーだったのでとりあえずfalse
+            //変数にWifiスポットの設定を代入
+            let hotspotConfiguration = NEHotspotConfiguration(ssid: ssid, passphrase: password, isWEP: isWEP)
+            //上記で記述したWifi設定に対して制限をかける。
+            //hotspotConfiguration.joinOnce = false // trueを変更
+            //ここでも有効期限として制限をかける。
+            //hotspotConfiguration.lifeTimeInDays = 30 // 1を変更
+
+            //ダイアログを出現させる。
+            var res = "" // 本当は、画面表示の @State の変数だった
+            // error は、apply が成功したかかどうかで、接続とは関係ない
+            manager.apply(hotspotConfiguration) { (error) in
+              if let error = error {
+                  print(error)
+                  if (error.localizedDescription == "already associated.") {
+                      res = "associated"
+                  } else {
+                      res = "error"
+                  }
+              } else {
+                  // 接続失敗は、apply自体は成功しているので、こちらに来る
+                 print("success")
+                 res = "success"
+              }
+            }
+            print(res)
+
+        }
+
     }
 }
 

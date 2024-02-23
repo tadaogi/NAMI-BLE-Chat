@@ -135,7 +135,8 @@ struct PhotoView: View {
     @EnvironmentObject var userMessage : UserMessage
     @State private var sendmsg:String = ""
     @State private var fileIDlink:String = ""
-    @Binding var edgeIP: String
+    //@Binding var edgeIP: String
+    @EnvironmentObject var wifi: WiFi
     @EnvironmentObject var fileID: FileID
     @EnvironmentObject var user: User
     @State private var active = false
@@ -152,7 +153,7 @@ struct PhotoView: View {
         // URLTestからコピペ
         HStack {
             Text("edge")
-            TextField("",text: $edgeIP)
+            TextField("",text: $wifi.edgeIP)
                 .overlay(
                     RoundedRectangle(cornerSize: CGSize(width: 8.0, height: 8.0))
                     .stroke(Color.orange, lineWidth: 4.0)
@@ -257,7 +258,8 @@ struct PhotoView: View {
                 return .handled
             })
             .sheet(isPresented: $active, onDismiss: didDismiss) {
-                PhotoShow(edgeIP: $edgeIP)
+                //PhotoShow(edgeIP: $wifi.edgeIP)
+                PhotoShow()
             }
     }
     
@@ -406,7 +408,7 @@ struct PhotoView: View {
             httpBody2 += "--\(boundary)--\r\n"
 
             httpBody.append(httpBody2.data(using: .utf8)!)
-            let url = URL(string: "http://"+edgeIP+":8010/registfile")!
+        let url = URL(string: "http://"+wifi.edgeIP+":8010/registfile")!
             print(url)
             //URLを生成
             var request = URLRequest(url: url)               //Requestを生成
@@ -485,7 +487,7 @@ struct PhotoView: View {
             httpBody2 += "--\(boundary)--\r\n"
 
             httpBody.append(httpBody2.data(using: .utf8)!)
-            let url = URL(string: "http://"+edgeIP+":8010/registfile")!
+            let url = URL(string: "http://"+wifi.edgeIP+":8010/registfile")!
             print(url)
             //URLを生成
             var request = URLRequest(url: url)               //Requestを生成
@@ -629,6 +631,6 @@ struct PhotoView: View {
 
 
 #Preview {
-    PhotoView( edgeIP: .constant("#Preview"))
+    PhotoView()
 }
 

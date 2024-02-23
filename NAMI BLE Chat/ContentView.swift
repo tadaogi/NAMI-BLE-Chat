@@ -61,11 +61,14 @@ struct ContentView: View {
     
     @EnvironmentObject var fileID: FileID
     
+    @EnvironmentObject var wifi: WiFi
+    
     init() {
         //print("ContentView init is called")
         //print(self.log)
         //self.bleCentral.myinit(message: self.message)
         // ここでは失敗する。早すぎるみたい。
+        
     }
     
     func Date2String(date: Date)->String {
@@ -169,6 +172,8 @@ struct ContentView: View {
                             
                             userMessage.initBLE(bleCentral: self.bleCentral, blePeripheral: self.blePeripheral)
                             
+                            userMessage.initWiFi(wifi: self.wifi)
+                            
                             if (user.AutoMode) {
                                 autoCPrun(log: log, devices: devices, userMessage: userMessage)
                             } else
@@ -190,6 +195,11 @@ struct ContentView: View {
                             buttontext = "running"
                             runflag = true
                             gps.timerStart(timerInterval: 60)
+                            
+                            self.log.addItem(logText: "wifi debug")
+                            wifi.setlog(log: self.log)
+                            let wifires = wifi.start()
+                            self.log.addItem(logText: "wifi start: \(wifires)")
                             
                             //何故か、なくても動く。駄目かな？ないと駄目
                             // 上に移動
