@@ -19,6 +19,7 @@ class User: ObservableObject {
     @Published var iPhoneMode = false
     @Published var debugLogMode = true
     @Published var myID = "tmp"
+    @Published var UUID = "00000002-0000-0000-0000-000000000000"
     @Published var timerInterval = "30" // <- 300
     @Published var obsoleteInterval = "900" // <-600
     @Published var rssi1m = -60
@@ -27,6 +28,7 @@ class User: ObservableObject {
 
     init() {
         self.myID = UserDefaults.standard.object(forKey: "myID") as? String ?? "tadashi"
+        self.UUID = UserDefaults.standard.object(forKey: "UUID") as? String ?? Foundation.UUID().uuidString
         self.timerInterval = UserDefaults.standard.object(forKey: "timerInterval") as? String ?? "30"
         self.obsoleteInterval = UserDefaults.standard.object(forKey: "obsoleteInterval") as? String ?? "900"
         self.iPhoneMode = UserDefaults.standard.object(forKey: "iPhoneMode") as? Bool ?? true

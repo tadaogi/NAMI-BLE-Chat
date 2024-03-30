@@ -10,7 +10,7 @@ import SwiftUI
 struct MessageView: View {
     @State private var inputmessage = ""
     @EnvironmentObject var userMessage : UserMessage
-    @State var PhotoSheet: Bool = false
+    @State private var PhotoSheet: Bool = false
     //@State var edgeIP: String = "10.9.153.163" // この値が PhotoView で使われる
     @EnvironmentObject var wifi: WiFi
     @State private var active = false

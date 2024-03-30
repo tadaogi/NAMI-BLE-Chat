@@ -34,7 +34,7 @@ public class WiFi: ObservableObject {
     var loopstatus = false
     @Published var message = "wifimessage\n"
     let TaskListLock = NSLock()
-    @Published var edgeIP = "0.0.0.0 (in WiFi)"
+    @Published var edgeIP = "10.0.0.99"
     
     private let monitor = NWPathMonitor()
     private let queue = DispatchQueue.global(qos: .background)
@@ -173,6 +173,24 @@ public class WiFi: ObservableObject {
                                 print("URL error \(statuscode)") // Timeoutはここに来るのか？
                                 break
                             }
+                        } else if nextTask.taskType == "uploadWithID" {
+                            print("do task uploadWithID")
+                            let fname = nextTask.taskArgs[1]
+                            print(fname)
+                            
+                            let statuscode = self.ActualfileuploadWithID(fileName: fname)
+                            print("statuscode=\(statuscode)")
+                            
+                            if statuscode == 200 {
+                                self.namitaskList.removeFirst()
+                                print("after removeFirst \(self.namitaskList.count)")
+                                self.TaskListLock.unlock()
+                            } else {
+                                print("some error \(statuscode)") // Timeoutはここに来るのか？
+                                break
+                            }
+
+                            
                         } else {
                             print("taskType unknown \(nextTask.taskType)")
                             self.namitaskList.removeFirst()
@@ -345,6 +363,20 @@ public class WiFi: ObservableObject {
 
     }
     
+    
+    func fileuploadWithID(fname: String) {
+        print("WiFi:fileuploadWithID to ")
+        print(edgeIP)
+        
+        let namitask = NamiTask(args: ["uploadWithID",fname])
+        print(namitask.taskID)
+        print(namitask.taskType)
+        print(namitask.taskArgs)
+        
+        addNamiTask(namitask: namitask)
+
+    }
+    
     // PhotoShowのfileRequest からコピーして修正
     // 本当にリクエストを投げるロジック
     
@@ -413,4 +445,91 @@ public class WiFi: ObservableObject {
             print("SaveToDoc error")
         }
     }
+    
+    
+    func ActualfileuploadWithID(fileName: String) -> Int {
+        print("ActualfileuploadWithID")
+        //let fileName = "DSCF0085.JPG"
+        //let fileNameWithoutExt = (fileName as NSString).deletingPathExtension
+        //let ext = (fileName as NSString).pathExtension
+         
+        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let fileURL = documentsURL.appendingPathComponent(fileName)
+
+        // 読み込んだJPEGファイルをそのままアップロード
+        //let imageData = try! Data(contentsOf: Bundle.main.url(forResource: fileNameWithoutExt, withExtension: ext)!)
+        print(fileURL)
+        let imageData = try! Data(contentsOf: (fileURL))
+        
+        // POSTtestから流用
+        // boundaryを作る
+        let boundary = "----------" + UUID().uuidString
+        print(boundary)
+
+        
+        var httpBody1 = "--\(boundary)\r\n"
+        httpBody1 += "Content-Disposition: form-data; name=\"file\";"
+        httpBody1 += "filename=\"\(fileName)\"\r\n"
+        httpBody1 += "\r\n"
+  
+        var httpBody = Data()
+        httpBody.append(httpBody1.data(using: .utf8)!)
+        httpBody.append(imageData)
+        var httpBody2 = "\r\n"
+        httpBody2 += "--\(boundary)--\r\n"
+
+        httpBody.append(httpBody2.data(using: .utf8)!)
+        let url = URL(string: "http://" + edgeIP + ":8010/registfileUwithID")!
+        print(url)
+
+        //URLを生成
+        var request = URLRequest(url: url)               //Requestを生成
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.setValue("\(httpBody.count)", forHTTPHeaderField: "Content-Length")
+        request.httpBody = httpBody
+        request.timeoutInterval = 1.0 // for debug
+
+        // エラーのために、scodeを０にしておく
+        self.rescode0 = 0
+        let task = URLSession.shared.dataTask(with: request) { (data, response, error) in  //非同期で通信を行う
+            do {
+                defer {
+                    self.URLsemaphore.signal()
+                }
+                if let error = error {
+                    print("request failure: \(error)")
+                    let nsError = error as NSError
+                    print(nsError)
+                    if nsError.domain == NSURLErrorDomain, nsError.code == NSURLErrorTimedOut {
+                        print("timeout in uploadtest")
+                    }
+                    return
+                }
+                guard let data = data else { return }
+                                
+                if let response = response as? HTTPURLResponse {
+                    print(response)
+                    print("response.statusCode = \(response.statusCode)")
+                    self.rescode0 = response.statusCode
+                }
+                
+                let object = try JSONSerialization.jsonObject(with: data, options: .allowFragments) as! [String: Any] 
+                 
+                // DataをJsonに変換
+                print("object is \(object)")
+                let retEdgeID = object["edgeID"] as! String
+                print("retEdgeID = \(retEdgeID)")
+            } catch let error {
+                print(error)
+            }
+        }
+        task.resume()
+        // requestCompleteHandler内でsemaphore.signal()が呼び出されるまで待機する
+        URLsemaphore.wait()
+        print("request completed")
+        return rescode0
+    }
+    
+
 }

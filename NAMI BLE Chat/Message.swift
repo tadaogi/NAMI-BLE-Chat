@@ -77,6 +77,7 @@ public class UserMessage: ObservableObject {
         let iValue = Int.random(in: 1 ... 0xffff)
         let sValue = String(format: "%04x", iValue)
         let myID:String = (UserDefaults.standard.string(forKey: "myID") ?? "NONE") as String
+        let UUID:String = (UserDefaults.standard.string(forKey: "UUID") ?? "00000001-0000-0000-0000-000000000001") as String
         let userMessageID = currenttime + "-" + sValue + "-" + myID
         
         DispatchQueue.main.async {

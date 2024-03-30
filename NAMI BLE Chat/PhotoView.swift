@@ -140,8 +140,12 @@ struct PhotoView: View {
     @EnvironmentObject var fileID: FileID
     @EnvironmentObject var user: User
     @State private var active = false
-
+    //@Binding var PhotoSheet: Bool
+    @Environment(\.presentationMode) var presentationMode
+    
     @State private var movie: Movie?
+    
+    @State private var TBDfileID = ""
 
     enum LoadState {
         case unknown, loading, loaded /*(Movie)*/, failed
@@ -149,122 +153,199 @@ struct PhotoView: View {
     @State private var loadState = LoadState.unknown
 
     var body: some View {
-        Text("Send Message with Photo")
-        // URLTestからコピペ
-        HStack {
-            Text("edge")
-            TextField("",text: $wifi.edgeIP)
-                .overlay(
-                    RoundedRectangle(cornerSize: CGSize(width: 8.0, height: 8.0))
-                    .stroke(Color.orange, lineWidth: 4.0)
-                    .padding(-8.0)
-            )
-            .padding(16.0)
-        }
-        HStack {
-            PhotosPicker("Select Photo", selection: $selectedPhoto, photoLibrary: .shared())
-                .onChange(of: selectedPhoto) {
-                    print("onChange")
-                    print(selectedPhoto?.itemIdentifier as Any)
-                    if let selectedPhoto = selectedPhoto, let localID = selectedPhoto.itemIdentifier {
-                        let result = PHAsset.fetchAssets(withLocalIdentifiers: [localID], options: nil)
-                        if let asset = result.firstObject {
-                            print("Got " + asset.debugDescription)
-                            
-                            let resources = PHAssetResource.assetResources(for: asset)
-                            if let resource = resources.first {
-                                filename = resource.originalFilename
-                                print(filename)
+        ScrollView([.vertical],showsIndicators: true) {
+            Text("Send Message with Photo")
+            // URLTestからコピペ
+            HStack {
+                Text("edge")
+                TextField("",text: $wifi.edgeIP)
+                    .overlay(
+                        RoundedRectangle(cornerSize: CGSize(width: 8.0, height: 8.0))
+                            .stroke(Color.orange, lineWidth: 4.0)
+                            .padding(-8.0)
+                    )
+                    .padding(16.0)
+            }
+            HStack {
+                PhotosPicker("Select Photo", selection: $selectedPhoto, photoLibrary: .shared())
+                    .onChange(of: selectedPhoto) {
+                        print("onChange")
+                        print(selectedPhoto?.itemIdentifier as Any)
+                        if let selectedPhoto = selectedPhoto, let localID = selectedPhoto.itemIdentifier {
+                            let result = PHAsset.fetchAssets(withLocalIdentifiers: [localID], options: nil)
+                            if let asset = result.firstObject {
+                                print("Got " + asset.debugDescription)
+                                
+                                let resources = PHAssetResource.assetResources(for: asset)
+                                if let resource = resources.first {
+                                    filename = resource.originalFilename
+                                    print(filename)
+                                }
                             }
                         }
+                        Task { await loadImageFromSelectedPhoto(photo: selectedPhoto) }
+                        
                     }
-                    Task { await loadImageFromSelectedPhoto(photo: selectedPhoto) }
+                if let uiImage = uiImage {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .frame(width:50, height:50)
+                }
+            }
+            
+            // videoがloadされたら、ビデオを表示する
+            switch loadState {
+            case .unknown:
+                EmptyView()
+            case .loading:
+                ProgressView()
+                //case .loaded(let movie):
+            case .loaded:
+                
+                VideoPlayer(player: AVPlayer(url: movie!.url))
+                    .scaledToFit()
+                    .frame(width: 300, height: 300)
+                
+                Text("loaded")
+            case .failed:
+                Text("Import failed")
+            }
+            
+            Button(action:{
+                if filename != "" {
+                    POSTMain(filename: filename, uiImage: uiImage)
+                } else {
+                    print("filename is nil")
+                }
+            }) {
+                Text("post main")
+            }
+            
+            /*
+             Button(action:{
+             if filename != "" , let uiImage = uiImage {
+             POSTtest(filename: filename, uiImage: uiImage)
+             }
+             }) {
+             Text("post")
+             }
+             */
+            Text(dummyresult)
+            ScrollView(.vertical,showsIndicators: true) {
+                
+                TextField("your message",
+                          text: $inputmessage,
+                          onCommit: {
+                    //                sendmsg = inputmessage + fileIDlink
+                    print("onCommit:\(sendmsg)")
+                })
+            }.background(Color("lightBackground"))
+                .foregroundColor(Color.black)
+                .frame(height:50)
+            Button (action: {
+                sendmsg = inputmessage + fileIDlink
+                print("Button:\(inputmessage),\(sendmsg)")
+                // 何故か inputmessage だと、うまくいかない。dispmsgだとうまくいく
+                if sendmsg != "" {
+                    print("SEND: \(sendmsg)")
+                    self.userMessage.addItem(userMessageText: sendmsg)
+                    inputmessage = ""
                     
                 }
-            if let uiImage = uiImage {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .frame(width:50, height:50)
+            }) {
+                Text("SEND")
             }
-        }
-        
-        // videoがloadされたら、ビデオを表示する
-        switch loadState {
-        case .unknown:
-            EmptyView()
-        case .loading:
-            ProgressView()
-            //case .loaded(let movie):
-        case .loaded:
-            
-            VideoPlayer(player: AVPlayer(url: movie!.url))
-                .scaledToFit()
-                .frame(width: 300, height: 300)
-            
-            Text("loaded")
-        case .failed:
-            Text("Import failed")
-        }
-        
-        Button(action:{
-            if filename != "" {
-                POSTMain(filename: filename, uiImage: uiImage)
+            Text(.init(sendmsg))
+            Button(action: {
+                self.presentationMode.wrappedValue.dismiss()
+                print("close in photoview")
+            }) {
+                Text("Close")
             }
-        }) {
-            Text("post main")
-        }
-
-/*
-        Button(action:{
-            if filename != "" , let uiImage = uiImage {
-                POSTtest(filename: filename, uiImage: uiImage)
+            Button(action: {
+                print("rename test")
+                RenameMovieFile(FromFilename: "upload.mp4", ToFilename: TBDfileID)
+            }) {
+                Text("rename test")
             }
-        }) {
-            Text("post")
+                .environment(\.openURL,
+                              OpenURLAction { url in
+                    print("OpenURLAction with \(url.absoluteString)")
+                    fileID.name = url.absoluteString
+                    active.toggle()
+                    //return .discarded
+                    return .handled
+                })
+                .sheet(isPresented: $active, onDismiss: didDismiss) {
+                    //PhotoShow(edgeIP: $wifi.edgeIP)
+                    PhotoShow()
+                }
         }
- */
-        Text(dummyresult)
-        ScrollView(.vertical,showsIndicators: true) {
-            
-            TextField("your message",
-                      text: $inputmessage,
-                      onCommit: {
-//                sendmsg = inputmessage + fileIDlink
-                print("onCommit:\(sendmsg)")
-            })
-        }.background(Color("lightBackground"))
-            .foregroundColor(Color.black)
-            .frame(height:50)
-        Button (action: {
-            sendmsg = inputmessage + fileIDlink
-            print("Button:\(inputmessage),\(sendmsg)")
-            // 何故か inputmessage だと、うまくいかない。dispmsgだとうまくいく
-            if sendmsg != "" {
-                print("SEND: \(sendmsg)")
-                self.userMessage.addItem(userMessageText: sendmsg)
-                inputmessage = ""
-                
-            }
-        }) {
-            Text("SEND")
-        }
-        Text(.init(sendmsg))
-            .environment(\.openURL,
-                          OpenURLAction { url in
-                print("OpenURLAction with \(url.absoluteString)")
-                fileID.name = url.absoluteString
-                active.toggle()
-                //return .discarded
-                return .handled
-            })
-            .sheet(isPresented: $active, onDismiss: didDismiss) {
-                //PhotoShow(edgeIP: $wifi.edgeIP)
-                PhotoShow()
-            }
     }
     
     func didDismiss() {
         print("didDismiss")
+    }
+    
+    // 動作確認用 本体はwifi.swiftへ移動
+    func obsolute_uploadtest(fileName: String) {
+        print("uploadtest")
+        //let fileName = "DSCF0085.JPG"
+        let fileNameWithoutExt = (fileName as NSString).deletingPathExtension
+        let ext = (fileName as NSString).pathExtension
+         
+        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let fileURL = documentsURL.appendingPathComponent(fileName)
+
+        // 読み込んだJPEGファイルをそのままアップロード
+        //let imageData = try! Data(contentsOf: Bundle.main.url(forResource: fileNameWithoutExt, withExtension: ext)!)
+        print(fileURL)
+        let imageData = try! Data(contentsOf: (fileURL))
+        
+        // POSTtestから流用
+        // boundaryを作る
+        let boundary = "----------" + UUID().uuidString
+        print(boundary)
+
+        
+        var httpBody1 = "--\(boundary)\r\n"
+        httpBody1 += "Content-Disposition: form-data; name=\"file\";"
+        httpBody1 += "filename=\"\(fileName)\"\r\n"
+        httpBody1 += "\r\n"
+  
+        var httpBody = Data()
+        httpBody.append(httpBody1.data(using: .utf8)!)
+        httpBody.append(imageData)
+        var httpBody2 = "\r\n"
+        httpBody2 += "--\(boundary)--\r\n"
+
+        httpBody.append(httpBody2.data(using: .utf8)!)
+        let url = URL(string: "http://127.0.0.1:8010/registfileUwithID")!
+        print(url)
+
+        //URLを生成
+        var request = URLRequest(url: url)               //Requestを生成
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.setValue("\(httpBody.count)", forHTTPHeaderField: "Content-Length")
+        request.httpBody = httpBody
+        request.timeoutInterval = 1.0 // for debug
+
+        let task = URLSession.shared.dataTask(with: request) { (data, response, error) in  //非同期で通信を行う
+            if let error = error {
+                print("request failure: \(error)")
+                let nsError = error as NSError
+                print(nsError)
+                if nsError.domain == NSURLErrorDomain, nsError.code == NSURLErrorTimedOut {
+                    print("timeout in uploadtest")
+                }
+                return
+            }
+            guard let data = data else { return }
+            print(response ?? 9999)
+            print("success in uploadtest")
+        }
+        task.resume()
     }
 
     private func loadImageFromSelectedPhoto(photo: PhotosPickerItem?) async {
@@ -362,8 +443,8 @@ struct PhotoView: View {
             print(boundary)
             // bocyを作る
             // for debug
-            //let username:String = user.myID
-            let username="usr00"
+            let username:String = user.myID
+            //let username="usr00"
             print(username)
             // GPS情報(Exif情報)を残すために上を下に変更する
             /*
@@ -388,9 +469,17 @@ struct PhotoView: View {
             */
 
             var httpBody1 = "--\(boundary)\r\n"
+        /*
             httpBody1 += "Content-Disposition: form-data; name=\"userInfo\"\r\n"
             httpBody1 += "\r\n"
             httpBody1 += "{\"userID\":\"\(username)\"}\r\n"
+        */
+            httpBody1 += "Content-Disposition: form-data; name=\"fileInfoU\"\r\n"
+            httpBody1 += "\r\n"
+            httpBody1 += "{\"UUID\":\"\(user.UUID)\","
+            httpBody1 += "\"userID\":\"\(username)\"}\r\n"
+        
+        
             httpBody1 += "--\(boundary)\r\n"
             httpBody1 += "Content-Disposition: form-data; name=\"file\";"
             httpBody1 += "filename=\"\(self.filename)\"\r\n"
@@ -408,7 +497,7 @@ struct PhotoView: View {
             httpBody2 += "--\(boundary)--\r\n"
 
             httpBody.append(httpBody2.data(using: .utf8)!)
-        let url = URL(string: "http://"+wifi.edgeIP+":8010/registfile")!
+        let url = URL(string: "http://"+wifi.edgeIP+":8010/registfileU")!
             print(url)
             //URLを生成
             var request = URLRequest(url: url)               //Requestを生成
@@ -416,7 +505,28 @@ struct PhotoView: View {
             request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
             request.setValue("\(httpBody.count)", forHTTPHeaderField: "Content-Length")
             request.httpBody = httpBody
+            request.timeoutInterval = 1.0 // for debug
+        
             let task = URLSession.shared.dataTask(with: request) { (data, response, error) in  //非同期で通信を行う
+                if let error = error {
+                    print("request failure: \(error)")
+                    let nsError = error as NSError
+                    print(nsError)
+                    if nsError.domain == NSURLErrorDomain, nsError.code == NSURLErrorTimedOut {
+                        print("timeout in POSTtest2")
+                        // TBDのfileIDを作成する
+                        TBDfileID = user.UUID + "-edgeTBD-" + username + "-" + filename
+                        dummyresult = "Timeout: use \(TBDfileID)"
+                        fileIDlink = " [Link](\(TBDfileID))"
+                        sendmsg = fileIDlink
+//                        SaveToDoc(filename: TBDfileID, uiImage: uiImage!!)
+                        RenameMovieFile(FromFilename: "upload.mp4", ToFilename: TBDfileID)
+                        
+                        wifi.fileuploadWithID(fname: TBDfileID)
+
+                    }
+                    return
+                }
                 guard let data = data else { return }
                 do {
                     //print(response ?? 9999)
@@ -440,6 +550,7 @@ struct PhotoView: View {
                      */
 
                 } catch let error {
+                    print("error in POSTtest2")
                     print(error)
                 }
             }
@@ -455,8 +566,8 @@ struct PhotoView: View {
             print(boundary)
             // bocyを作る
             // for debug
-            //let username:String = user.myID
-            let username="usr0"
+            let username:String = user.myID
+            //let username="usr0"
             print(username)
             // GPS情報(Exif情報)を残すために上を下に変更する
             guard let imageData = CIContext().jpegRepresentation(
@@ -468,9 +579,18 @@ struct PhotoView: View {
                 }
             
             var httpBody1 = "--\(boundary)\r\n"
+            // registfileからregistfileUへの修正
+            /*
             httpBody1 += "Content-Disposition: form-data; name=\"userInfo\"\r\n"
             httpBody1 += "\r\n"
             httpBody1 += "{\"userID\":\"\(username)\"}\r\n"
+             */
+            httpBody1 += "Content-Disposition: form-data; name=\"fileInfoU\"\r\n"
+            httpBody1 += "\r\n"
+            httpBody1 += "{\"UUID\":\"\(user.UUID)\","
+            httpBody1 += "\"userID\":\"\(username)\"}\r\n"
+
+            
             httpBody1 += "--\(boundary)\r\n"
             httpBody1 += "Content-Disposition: form-data; name=\"file\";"
             httpBody1 += "filename=\"\(filename)\"\r\n"
@@ -487,7 +607,9 @@ struct PhotoView: View {
             httpBody2 += "--\(boundary)--\r\n"
 
             httpBody.append(httpBody2.data(using: .utf8)!)
-            let url = URL(string: "http://"+wifi.edgeIP+":8010/registfile")!
+            
+            // registfileからregistfileUへの修正
+            let url = URL(string: "http://"+wifi.edgeIP+":8010/registfileU")!
             print(url)
             //URLを生成
             var request = URLRequest(url: url)               //Requestを生成
@@ -495,7 +617,27 @@ struct PhotoView: View {
             request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
             request.setValue("\(httpBody.count)", forHTTPHeaderField: "Content-Length")
             request.httpBody = httpBody
+            request.timeoutInterval = 1.0 // for debug
+
             let task = URLSession.shared.dataTask(with: request) { (data, response, error) in  //非同期で通信を行う
+                if let error = error {
+                    print("request failure: \(error)")
+                    let nsError = error as NSError
+                    print(nsError)
+                    if nsError.domain == NSURLErrorDomain, nsError.code == NSURLErrorTimedOut {
+                        print("timeout in POSTtest")
+                        // TBDのfileIDを作成する
+                        TBDfileID = user.UUID + "-edgeTBD-" + username + "-" + filename
+                        dummyresult = "Timeout: use \(TBDfileID)"
+                        fileIDlink = " [Link](\(TBDfileID))"
+                        sendmsg = fileIDlink
+                        SaveToDoc(filename: TBDfileID, uiImage: uiImage!!)
+                        
+                        wifi.fileuploadWithID(fname: TBDfileID)
+
+                    }
+                    return
+                }
                 guard let data = data else { return }
                 do {
                     //print(response ?? 9999)
@@ -623,6 +765,20 @@ struct PhotoView: View {
             print("SaveToDoc Done")
         } catch {
             print("SaveToDoc error")
+        }
+    }
+    
+    func RenameMovieFile(FromFilename: String, ToFilename: String) {
+        print("RenameMovieFile")
+        print("SaveToDoc called")
+        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let FromfileURL = documentsURL.appendingPathComponent(FromFilename)
+        let TofileURL = documentsURL.appendingPathComponent(ToFilename)
+
+        do{
+            try FileManager.default.moveItem(at: FromfileURL, to: TofileURL)
+        }catch{
+            print("RenameMovieFile error \(error)")
         }
     }
 

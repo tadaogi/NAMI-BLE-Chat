@@ -78,8 +78,8 @@
             filePath = "NAMI BLE Chat/Message.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "121"
-            endingLineNumber = "121"
+            startingLineNumber = "122"
+            endingLineNumber = "122"
             landmarkName = "startTransfer(connectedPeripheral:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -94,8 +94,8 @@
             filePath = "NAMI BLE Chat/Message.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "397"
-            endingLineNumber = "397"
+            startingLineNumber = "398"
+            endingLineNumber = "398"
             landmarkName = "start()"
             landmarkType = "7">
          </BreakpointContent>
@@ -174,8 +174,8 @@
             filePath = "NAMI BLE Chat/Message.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "458"
-            endingLineNumber = "458"
+            startingLineNumber = "459"
+            endingLineNumber = "459"
             landmarkName = "sendMessageLoop()"
             landmarkType = "7">
          </BreakpointContent>
@@ -190,8 +190,8 @@
             filePath = "NAMI BLE Chat/Message.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "105"
-            endingLineNumber = "105"
+            startingLineNumber = "106"
+            endingLineNumber = "106"
             landmarkName = "addItem(userMessageText:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -574,38 +574,6 @@
             endingLineNumber = "222"
             landmarkName = "centralManager(_:didDiscover:advertisementData:rssi:)"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "2A7B2774-A44A-4D5B-A056-651299E4F991 - 1c1075c10afc45a0"
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "NAMI_BLE_Chat.BLECentral.centralManager(_: __C.CBCentralManager, didDiscover: __C.CBPeripheral, advertisementData: Swift.Dictionary&lt;Swift.String, Any&gt;, rssi: __C.NSNumber) -&gt; ()"
-                  moduleName = "NAMI BLE Chat"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tadashi/test/NAMI%20BLE%20Chat/NAMI%20BLE%20Chat/BLE.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "174"
-                  endingLineNumber = "174"
-                  offsetFromSymbolStart = "3432">
-               </Location>
-               <Location
-                  uuid = "2A7B2774-A44A-4D5B-A056-651299E4F991 - 1c1075c10afc45a0"
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "NAMI_BLE_Chat.BLECentral.centralManager(_: __C.CBCentralManager, didDiscover: __C.CBPeripheral, advertisementData: Swift.Dictionary&lt;Swift.String, Any&gt;, rssi: __C.NSNumber) -&gt; ()"
-                  moduleName = "NAMI BLE Chat"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tadashi/test/NAMI%20BLE%20Chat/NAMI%20BLE%20Chat/BLE.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "174"
-                  endingLineNumber = "174"
-                  offsetFromSymbolStart = "3784">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -682,8 +650,8 @@
             filePath = "NAMI BLE Chat/Message.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "642"
-            endingLineNumber = "642"
+            startingLineNumber = "643"
+            endingLineNumber = "643"
             landmarkName = "write2C(writeData:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -698,8 +666,8 @@
             filePath = "NAMI BLE Chat/ContentView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "190"
-            endingLineNumber = "190"
+            startingLineNumber = "192"
+            endingLineNumber = "192"
             landmarkName = "body"
             landmarkType = "24">
          </BreakpointContent>
@@ -778,8 +746,8 @@
             filePath = "NAMI BLE Chat/ContentView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "128"
-            endingLineNumber = "128"
+            startingLineNumber = "130"
+            endingLineNumber = "130"
             landmarkName = "PtoC(log:devices:userMessage:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -810,8 +778,8 @@
             filePath = "NAMI BLE Chat/ContentView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "177"
-            endingLineNumber = "177"
+            startingLineNumber = "179"
+            endingLineNumber = "179"
             landmarkName = "body"
             landmarkType = "24">
          </BreakpointContent>
@@ -826,8 +794,8 @@
             filePath = "NAMI BLE Chat/ContentView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "110"
-            endingLineNumber = "110"
+            startingLineNumber = "112"
+            endingLineNumber = "112"
             landmarkName = "CtoP(log:devices:userMessage:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -922,8 +890,8 @@
             filePath = "NAMI BLE Chat/Message.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "154"
-            endingLineNumber = "154"
+            startingLineNumber = "155"
+            endingLineNumber = "155"
             landmarkName = "analyzeText(protocolMessageText:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -954,8 +922,8 @@
             filePath = "NAMI BLE Chat/ContentView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "137"
-            endingLineNumber = "137"
+            startingLineNumber = "139"
+            endingLineNumber = "139"
             landmarkName = "PtoC(log:devices:userMessage:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -1130,8 +1098,8 @@
             filePath = "NAMI BLE Chat/SettingView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "132"
-            endingLineNumber = "132"
+            startingLineNumber = "146"
+            endingLineNumber = "146"
             landmarkName = "body"
             landmarkType = "24">
          </BreakpointContent>
@@ -1162,10 +1130,58 @@
             filePath = "NAMI BLE Chat/Message.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "308"
-            endingLineNumber = "308"
+            startingLineNumber = "309"
+            endingLineNumber = "309"
             landmarkName = "MessageCommandCheck(MessageCommand:)"
             landmarkType = "9">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "90733673-F69A-480C-A4A9-A2E69F835F53"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "NAMI BLE Chat/Message.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "79"
+            endingLineNumber = "79"
+            landmarkName = "addItem(userMessageText:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "5D13A2C7-D740-4319-9CCA-A55AE0890ADE"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "NAMI BLE Chat/PhotoView.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "448"
+            endingLineNumber = "448"
+            landmarkName = "POSTtest2()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "E5046CCE-5D97-4DC7-8D58-22FADEBF970C"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "NAMI BLE Chat/PhotoView.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "571"
+            endingLineNumber = "571"
+            landmarkName = "POSTtest(filename:uiImage:)"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

@@ -105,6 +105,20 @@ struct SettingView: View {
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                 }
                 HStack {
+                    Button(action: {
+                        user.UUID = UUID().uuidString
+                        print(user.UUID)
+                        UserDefaults.standard.set(user.myID, forKey: "UUID")
+
+                    }) {
+                        Text("UUID")
+                    }
+                    Spacer()
+                    Text(user.UUID)
+                    
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                }
+                HStack {
                     Text("TimerInterval")
                     Spacer()
                     TextField("", text: $user.timerInterval,
@@ -217,6 +231,10 @@ struct SettingView: View {
             .onDisappear(perform: {
                 print("onDisappear called in SettingView")
                 UserDefaults.standard.set(user.myID, forKey: "myID")
+                UserDefaults.standard.set(user.UUID, forKey: "UUID")
+                print("onDisappear UUID:")
+                print(user.UUID)
+
                 UserDefaults.standard.set(user.timerInterval, forKey: "timerInterval")
                 UserDefaults.standard.set(user.obsoleteInterval, forKey: "obsoluteInterval")
                 UserDefaults.standard.set(user.iPhoneMode, forKey: "iPhoneMode")
