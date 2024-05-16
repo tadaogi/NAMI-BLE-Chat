@@ -20,11 +20,16 @@ class User: ObservableObject {
     @Published var debugLogMode = true
     @Published var myID = "tmp"
     @Published var UUID = "00000002-0000-0000-0000-000000000000"
-    @Published var timerInterval = "30" // <- 300
+    @Published var timerInterval = "30" // <- 300 // GPSのタイマー
     @Published var obsoleteInterval = "900" // <-600
     @Published var rssi1m = -60
     @Published var rssi3m = -70
     @Published var testMessageFlag = false
+    @Published var EdgeMode = false
+    @Published var ssid = ""
+    @Published var pass = ""
+    @Published var myip = "0.0.0.0"
+    @Published var WiFiMessageFlag = false
 
     init() {
         self.myID = UserDefaults.standard.object(forKey: "myID") as? String ?? "tadashi"
@@ -38,6 +43,10 @@ class User: ObservableObject {
         self.RandomMode = UserDefaults.standard.object(forKey: "RandomMode") as? Bool ?? true
         self.Ptime = UserDefaults.standard.object(forKey: "Ptime") as? Int ?? 300
         self.Ctime = UserDefaults.standard.object(forKey: "Ctime") as? Int ?? 300
+        self.EdgeMode = UserDefaults.standard.bool(forKey: "EdgeMode")
+        self.ssid = (UserDefaults.standard.string(forKey: "ssid") ?? "debugSSID")
+        self.pass = (UserDefaults.standard.string(forKey: "pass") ?? "debugPASS")
+
 
     }
 }
@@ -175,6 +184,7 @@ struct ContentView: View {
                             userMessage.initBLE(bleCentral: self.bleCentral, blePeripheral: self.blePeripheral)
                             
                             userMessage.initWiFi(wifi: self.wifi)
+                            userMessage.initUser(user: self.user)
                             
                             if (user.AutoMode) {
                                 autoCPrun(log: log, devices: devices, userMessage: userMessage)

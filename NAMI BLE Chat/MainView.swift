@@ -13,14 +13,19 @@ struct MainView: View {
             MessageView()
                 .tabItem{Text("Message")}
             ContentView()
-                .environmentObject(User())
+            /*
+                //.environmentObject(User())
                // .environmentObject(Log()) // 使い方が分かっていないかも
                 // ThreeCsViewを作ったときに以下の行があると同期されなかったのでコメントアウトした
                 //.environmentObject(Devices())
                 //.environmentObject(UserMessage())
+             */
                 .tabItem{
                     Text("Debug")
                 }
+            //            WiFiView(userMessage: UserMessage())
+            WiFiView()
+                .tabItem{Text("WiFi")}
             ThreeCsView()
                 .tabItem{Text("3Cs")}
         }
@@ -28,6 +33,7 @@ struct MainView: View {
         .environmentObject(UserDefine())
         .environmentObject(FileID())
         .environmentObject(WiFi())
+        .environmentObject(User())
     }
 }
 

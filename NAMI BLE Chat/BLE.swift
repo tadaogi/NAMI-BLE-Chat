@@ -662,6 +662,11 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
                 // とりあえずUUID_Writeが見つかったら、メッセージのTransferを開始する。
                 print(peripheral.name!)
                 //print(connectedPeripheral)
+                
+                // MTUの確認
+                let MTU = peripheral.maximumWriteValueLength(for: .withoutResponse)
+                print(MTU)
+                
                 if self.userMessage != nil {
                     // connectedPeripheralではなく、peripheralを渡す。2021/12/15
                     //self.userMessage.startTransfer(connectedPeripheral: self.connectedPeripheral)

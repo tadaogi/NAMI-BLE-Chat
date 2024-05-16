@@ -157,7 +157,8 @@ struct MessageView: View {
             tmptext = messageitem.userMessageID+","+messageitem.userMessageText
         } else {
             let arr:[String] = messageitem.userMessageID.components(separatedBy: "-")
-            let usrID = arr[2]
+            let arr2:[String] = arr[2].components(separatedBy: "(")
+            let usrID = arr2[0]
             tmptext = "[\(usrID)] " + messageitem.userMessageText
         }
         return tmptext

@@ -10,6 +10,22 @@ import Combine
 import CoreBluetooth
 import NetworkExtension
 
+class DateUtils {
+    class func dateFromString(string: String, format: String) -> Date {
+        let formatter: DateFormatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.dateFormat = format
+        return formatter.date(from: string)!
+    }
+
+    class func stringFromDate(date: Date, format: String) -> String {
+        let formatter: DateFormatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.dateFormat = format
+        return formatter.string(from: date)
+    }
+}
+
 class UserMessageItem {
     var code: UUID
     var userMessageID: String
@@ -39,6 +55,7 @@ var messagecount = 0
 
 public class UserMessage: ObservableObject {
 //    @Published var messagelist0 = messagelist
+    
     var bleCentral : BLECentral!
     var blePeripheral : BLEPeripheral!
     var debugMessageFlag = false
@@ -54,6 +71,7 @@ public class UserMessage: ObservableObject {
     var messageIDLock = NSLock()
     
     var wifi:WiFi!
+    var user:User!
     
     func initBLE(bleCentral:BLECentral, blePeripheral:BLEPeripheral) {
         self.bleCentral = bleCentral
@@ -64,6 +82,10 @@ public class UserMessage: ObservableObject {
     
     func initWiFi(wifi: WiFi) {
         self.wifi = wifi
+    }
+    
+    func initUser(user: User) {
+        self.user = user
     }
     
     func addItem(userMessageText: String) {
@@ -78,7 +100,7 @@ public class UserMessage: ObservableObject {
         let sValue = String(format: "%04x", iValue)
         let myID:String = (UserDefaults.standard.string(forKey: "myID") ?? "NONE") as String
         let UUID:String = (UserDefaults.standard.string(forKey: "UUID") ?? "00000001-0000-0000-0000-000000000001") as String
-        let userMessageID = currenttime + "-" + sValue + "-" + myID
+        let userMessageID = currenttime + "-" + sValue + "-" + myID + "(0)" // 最後の()はホップの回数とする
         
         DispatchQueue.main.async {
             print("debugMessageFlag:",self.debugMessageFlag)
@@ -269,7 +291,57 @@ public class UserMessage: ObservableObject {
             
             self.userMessageCount = self.userMessageCount + 1 // これを増やす必要があるか不明
 
-            self.userMessageList.append(UserMessageItem(userMessageID: protocolMessageCommand[1], userMessageText: protocolMessageCommand[2]))
+            // IDから時刻を取り出して、現在時刻と比較
+            var recUserMessageID = protocolMessageCommand[1]
+            let IDarray = recUserMessageID.split(separator:"-")
+            if IDarray.count <= 1 {
+                print("illeagal userMessageID")
+                self.bleCentral.log.addItem(logText: "illeagal userMessageID in addItemExternal")
+
+                return
+            }
+            let IDdateString = String(IDarray[0])
+            let date = DateUtils.dateFromString(string: IDdateString , format: "yyyyMMddHHmmss.SSS")
+            print(date)
+            let now = Date() // 現在日時の取得
+            print(now)
+            let diffsec = now.timeIntervalSince(date)
+            print(diffsec)
+            
+            if diffsec > 3600 { // 1hour
+                print("too old userMessageID")
+                self.bleCentral.log.addItem(logText: "too old userMessageID in addItemExternal")
+
+                return
+
+            }
+            
+            // hop 回数
+            var regex = /\((\d+)\)/
+
+            var match = recUserMessageID.firstMatch(of: regex)
+            if match == nil {
+                print("illeagal userMessageID(hop)")
+                self.bleCentral.log.addItem(logText: "illeagal userMessageID(hop) in addItemExternal")
+
+                return
+            }
+            var originalhopStr = match?.1 ?? "0"
+            var hop = Int(match?.1 ?? "0") ?? 0
+            hop = hop + 1
+            print(hop)
+            if hop > 10 {
+                print("too many hops ")
+                self.bleCentral.log.addItem(logText: "too many hops in addItemExternal")
+
+                return
+
+            }
+            var newID = recUserMessageID.replacingOccurrences(of: "("+originalhopStr+")", with: "("+String(hop)+")")
+            print(newID)
+            
+            
+            self.userMessageList.append(UserMessageItem(userMessageID: newID, userMessageText: protocolMessageCommand[2]))
             self.messageIDLock.unlock()
             self.bleCentral.log.addItem(logText: "addItemExternal append, \(protocolMessageCommand[1]), \(protocolMessageCommand[2]) ")
             
@@ -286,7 +358,7 @@ public class UserMessage: ObservableObject {
         
         func MessageCommandCheck(MessageCommand: String) {
             print(MessageCommand)
-            // MessageCommand = "command,wifi,<SSID>,<PASS>"
+            // MessageCommand = "command,wifi,<SSID>,<PASS>,<edgeIP>"
         
             let commands:[String] = MessageCommand.components(separatedBy:",")
             print(commands)
@@ -297,18 +369,20 @@ public class UserMessage: ObservableObject {
                     self.bleCentral.log.addItem(logText: "command syntax error: \(commands)")
                 } else {
                     if commands[1]=="wifi" {
-                        if commands.count != 5 {
-                            print("command[wifi] syntax error: \(commands)")
-                            self.bleCentral.log.addItem(logText: "command[wifi] syntax error: \(commands)")
-                        } else {
-                            let ssid = commands[2]
-                            let pass = commands[3]
-                            let edgeIP = commands[4]
-                            self.wifi.edgeIP = "set for debug"
-                            
-                            print(ssid, pass, edgeIP, self.wifi.edgeIP)
-                            
-                            self.wifi.connect(ssid: ssid, password: pass, edgeIP: edgeIP)
+                        if !user.EdgeMode {
+                            if commands.count != 5 {
+                                print("command[wifi] syntax error: \(commands)")
+                                self.bleCentral.log.addItem(logText: "command[wifi] syntax error: \(commands)")
+                            } else {
+                                let ssid = commands[2]
+                                let pass = commands[3]
+                                let edgeIP = commands[4]
+                                self.wifi.edgeIP = edgeIP
+                                
+                                print(ssid, pass, edgeIP, self.wifi.edgeIP)
+                                
+                                self.wifi.connect(ssid: ssid, password: pass, edgeIP: edgeIP)
+                            }
                         }
                     }
                 }
@@ -465,6 +539,25 @@ class TransferC {
                 continue
             }
             
+            // hop 回数 動作確認はしていない
+            let regex = /\((\d+)\)/
+
+            let match = userMessage.userMessageID.firstMatch(of: regex)
+            if match == nil {
+                print("illeagal userMessageID(hop)")
+                self.bleCentral.log.addItem(logText: "illeagal userMessageID(hop) in sendMessageLoop")
+                continue
+            }
+            let originalhopStr = match?.1 ?? "0"
+            let hop = Int(match?.1 ?? "0") ?? 0
+            print(hop)
+            if hop > 10 {
+                print("too many hops ")
+                self.bleCentral.log.addItem(logText: "too many hops in sendMessageLoop")
+                continue
+            }
+            
+            
             // send IHAVE
             self.bleCentral.writeData("IHAVE\n\(userMessage.userMessageID)\n", peripheral: self.connectedPeripheral)
             self.bleCentral.readfromP(peripheral: self.connectedPeripheral) // read
@@ -520,7 +613,16 @@ class TransferC {
                 
                 var ihave: Bool = false
                 for userMessage in bleCentral.userMessage.userMessageList {
-                    if userMessage.userMessageID == receiveCommand[1] {
+                    // hopを消す
+                    let ID0 = userMessage.userMessageID
+                    let arr0:[String] = ID0.components(separatedBy: "(")
+                    let ID0nohop = arr0[0]
+
+                    let ID1 = receiveCommand[1]
+                    let arr1:[String] = ID1.components(separatedBy: "(")
+                    let ID1nohop = arr1[0]
+                    
+                    if ID0nohop == ID1nohop {
                         print("C already have \(userMessage.userMessageID)")
                         // send ACK
                         self.bleCentral.writeData("ACK\n", peripheral: self.connectedPeripheral)
@@ -703,7 +805,16 @@ class TransferP {
         self.blePeripheral.log.addItem(logText:"transferP.ihave, \(userMessageID),")
         
         for userMessage in blePeripheral.userMessage.userMessageList {
-            if userMessage.userMessageID == userMessageID {
+            // hopを消す
+            let ID0 = userMessage.userMessageID
+            let arr0:[String] = ID0.components(separatedBy: "(")
+            let ID0nohop = arr0[0]
+
+            let ID1 = userMessageID
+            let arr1:[String] = ID1.components(separatedBy: "(")
+            let ID1nohop = arr1[0]
+
+            if ID0nohop == ID1nohop {
                 print("I already have \(userMessageID)")
                 write2C(writeData: "ACK\n")
                 return

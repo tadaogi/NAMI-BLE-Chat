@@ -93,5 +93,6 @@ struct MessageTestView: View {
 struct MessageTestView_Previews: PreviewProvider {
     static var previews: some View {
         MessageTestView(userMessage: UserMessage())
+            .environmentObject(User())
     }
 }

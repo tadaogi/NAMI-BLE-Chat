@@ -12,7 +12,7 @@ struct BLEcommTest0App: App {
     var body: some Scene {
         WindowGroup {
             MainView()
-                .environmentObject(User())
+//                .environmentObject(User())
                 .environmentObject(Log())
                 .environmentObject(Devices())
 // NAMI Chat に合わせて修正

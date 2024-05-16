@@ -62,11 +62,11 @@ struct AlarmSettingView: View {
 }
 
 struct AlarmSettingView_Previews: PreviewProvider {
-    static var user = User()
+    //static var user = User()
     
     static var previews: some View {
         AlarmSettingView()
-            .environmentObject(user)
+            .environmentObject(User())
             .environmentObject(Log())
     }
 }

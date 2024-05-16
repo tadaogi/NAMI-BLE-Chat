@@ -624,11 +624,13 @@ struct PhotoView: View {
                     print("request failure: \(error)")
                     let nsError = error as NSError
                     print(nsError)
-                    if nsError.domain == NSURLErrorDomain, nsError.code == NSURLErrorTimedOut {
+                    // 接続先がいて、fastAPIが動いていないと Timeout にならないので、修正する
+                    //                    if nsError.domain == NSURLErrorDomain, nsError.code == NSURLErrorTimedOut {
+                    if nsError.domain == NSURLErrorDomain {
                         print("timeout in POSTtest")
                         // TBDのfileIDを作成する
                         TBDfileID = user.UUID + "-edgeTBD-" + username + "-" + filename
-                        dummyresult = "Timeout: use \(TBDfileID)"
+                        dummyresult = "Error: use \(TBDfileID)"
                         fileIDlink = " [Link](\(TBDfileID))"
                         sendmsg = fileIDlink
                         SaveToDoc(filename: TBDfileID, uiImage: uiImage!!)

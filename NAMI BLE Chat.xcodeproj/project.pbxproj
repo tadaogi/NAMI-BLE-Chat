@@ -22,6 +22,8 @@
 		327CD3FC2B04AFC000045659 /* PhotoShow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 327CD3FB2B04AFC000045659 /* PhotoShow.swift */; };
 		328C353726C0ADCF007EA122 /* ThreeCsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 328C353626C0ADCF007EA122 /* ThreeCsView.swift */; };
 		329CE6162B86D09E00B0141C /* WiFi.swift in Sources */ = {isa = PBXBuildFile; fileRef = 329CE6152B86D09E00B0141C /* WiFi.swift */; };
+		329D39BA2BBA2A4A00EBDE53 /* WiFiView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 329D39B92BBA2A4A00EBDE53 /* WiFiView.swift */; };
+		329D39BC2BBA303100EBDE53 /* WiFiCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 329D39BB2BBA303100EBDE53 /* WiFiCheck.swift */; };
 		32BF689C2B17114D008779DF /* SAMPLE.MOV in Resources */ = {isa = PBXBuildFile; fileRef = 32BF689B2B17114D008779DF /* SAMPLE.MOV */; };
 		32EBD21125CA00870032F3AF /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32EBD21025CA00870032F3AF /* Message.swift */; };
 		32EBD21525CA03210032F3AF /* Hello.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32EBD21425CA03210032F3AF /* Hello.swift */; };
@@ -52,6 +54,8 @@
 		32846F312B832D67008D411E /* NAMI BLE Chat.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "NAMI BLE Chat.entitlements"; sourceTree = "<group>"; };
 		328C353626C0ADCF007EA122 /* ThreeCsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreeCsView.swift; sourceTree = "<group>"; };
 		329CE6152B86D09E00B0141C /* WiFi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFi.swift; sourceTree = "<group>"; };
+		329D39B92BBA2A4A00EBDE53 /* WiFiView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiView.swift; sourceTree = "<group>"; };
+		329D39BB2BBA303100EBDE53 /* WiFiCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiCheck.swift; sourceTree = "<group>"; };
 		32BF689B2B17114D008779DF /* SAMPLE.MOV */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = SAMPLE.MOV; sourceTree = "<group>"; };
 		32EBD21025CA00870032F3AF /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
 		32EBD21425CA03210032F3AF /* Hello.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Hello.swift; sourceTree = "<group>"; };
@@ -118,6 +122,8 @@
 				327CD3FB2B04AFC000045659 /* PhotoShow.swift */,
 				324CC8072B194DC1003ECECB /* Todo.md */,
 				329CE6152B86D09E00B0141C /* WiFi.swift */,
+				329D39B92BBA2A4A00EBDE53 /* WiFiView.swift */,
+				329D39BB2BBA303100EBDE53 /* WiFiCheck.swift */,
 			);
 			path = "NAMI BLE Chat";
 			sourceTree = "<group>";
@@ -212,10 +218,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				321DC427275D833400497385 /* AlarmSettingView.swift in Sources */,
+				329D39BA2BBA2A4A00EBDE53 /* WiFiView.swift in Sources */,
 				326DA13E2696C65A004F0442 /* GPS.swift in Sources */,
 				328C353726C0ADCF007EA122 /* ThreeCsView.swift in Sources */,
 				327CD3FA2AFFA0D600045659 /* PhotoView.swift in Sources */,
 				32626EA725B24FB300BEE892 /* SettingView.swift in Sources */,
+				329D39BC2BBA303100EBDE53 /* WiFiCheck.swift in Sources */,
 				327CD3FC2B04AFC000045659 /* PhotoShow.swift in Sources */,
 				3254BA92277BDE3000A1D2D0 /* MessageTestView.swift in Sources */,
 				32EBD21B25CA09330032F3AF /* MainView.swift in Sources */,
@@ -370,6 +378,10 @@
 				PRODUCT_BUNDLE_IDENTIFIER = ogilab.com.NAMIBLEChat2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -395,6 +407,10 @@
 				PRODUCT_BUNDLE_IDENTIFIER = ogilab.com.NAMIBLEChat2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
