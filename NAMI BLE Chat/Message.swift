@@ -73,9 +73,12 @@ public class UserMessage: ObservableObject {
     var wifi:WiFi!
     var user:User!
     
-    func initBLE(bleCentral:BLECentral, blePeripheral:BLEPeripheral) {
+    func initBLE(bleCentral:BLECentral, blePeripheral:BLEPeripheral, log: Log) {
         self.bleCentral = bleCentral
         self.blePeripheral = blePeripheral
+        // auto だと log が設定されないのでここで設定する
+        bleCentral.log = log
+        blePeripheral.log = log
         
         print("Message.initBLE() is called")
     }
@@ -86,6 +89,29 @@ public class UserMessage: ObservableObject {
     
     func initUser(user: User) {
         self.user = user
+        print(self.user)
+    }
+    
+    func addItemWithGPS(userMessageText: String) {
+        // ここではGPSの情報を得られない → user が見えていれば大丈夫
+        var sendText = userMessageText
+        if self.user != nil {
+            var location = user.gps.getLastLocation()
+            let latitude = String(format: "%.6f", location.latitude)
+            let longitude = String(format: "%.6f", location.longitude)
+            let locationTxt = "[GPS,\(latitude),\(longitude)]"
+            sendText = locationTxt + userMessageText
+            print(sendText)
+        } else {
+            var location = globalgps?.getLastLocation()
+            let latitude = String(format: "%.6f", location?.latitude ?? 0.0)
+            let longitude = String(format: "%.6f", location?.longitude ?? 0.0)
+            let locationTxt = "[GPS,\(latitude),\(longitude)]"
+            sendText = locationTxt + userMessageText
+            print(sendText)
+        }
+
+        addItem(userMessageText: sendText)
     }
     
     func addItem(userMessageText: String) {
@@ -100,9 +126,58 @@ public class UserMessage: ObservableObject {
         let sValue = String(format: "%04x", iValue)
         let myID:String = (UserDefaults.standard.string(forKey: "myID") ?? "NONE") as String
         let UUID:String = (UserDefaults.standard.string(forKey: "UUID") ?? "00000001-0000-0000-0000-000000000001") as String
-        let userMessageID = currenttime + "-" + sValue + "-" + myID + "(0)" // 最後の()はホップの回数とする
+        // let userMessageID = currenttime + "-" + sValue + "-" + myID + "(0)" // 最後の()はホップの回数とする
+        
+        // Split Send の実装 2024/5/16
+        let mtu = 512 // ここは相手が決まっていないので、MTUを知ることが出来ない。なので、決め打ちで512にしておく。
+        //let mtu = 4
+        let userMessageIDformat = currenttime + "-" + sValue + "-" + myID + "-%@(0)" // %@は下で、シーケンス番号に置き換える
+        let headerLength = userMessageIDformat.count + 3 // シーケンス番号が３桁までとしておく
+        //var userMessageID : String = ""
+        var sequence = 0 // シーケンス番号、０から始まる
+        var index = 0 // データを、どこから送るか
+        var restToSend = userMessageText.data(using: .utf8)!.count - index // 日本語の時に、count だとずれるので、data にして長さを知る
+        var dataToSend = userMessageText.data(using: .utf8)
         
         DispatchQueue.main.async {
+            // ここから下が、Splitのロジック
+            while (restToSend>0) {
+                var amountToSend = min(restToSend,mtu-headerLength) // 今回送るデータ長
+                print("amountToSend=", amountToSend)
+                
+                var chunk = dataToSend?.subdata(in: index..<(index + amountToSend)) // 今回送るデータ
+                var userMessageID : String = ""
+                if (index + amountToSend < dataToSend!.count) {
+                    print("sequence=",sequence)
+                    userMessageID = String(format: userMessageIDformat, String(sequence))
+                } else {
+                    print("sequence=",sequence)
+                    print("last")
+                    userMessageID = String(format: userMessageIDformat, String(sequence)+"L")
+                }
+                print("userMessageID=", userMessageID)
+                // print("debugMessageFlag:",self.debugMessageFlag) // メッセージ長さが変わってしまうので、とりあえずここでは使わない
+                var UserMessageTextString = String(data:chunk ?? Data(), encoding: .utf8)! // encodeした送るテキスト
+                print(UserMessageTextString)
+                self.userMessageCount = self.userMessageCount + 1
+
+                self.userMessageList.append(UserMessageItem(userMessageID: userMessageID, userMessageText: "\(UserMessageTextString)"))
+
+                index = index + amountToSend
+                restToSend = userMessageText.count - index
+                sequence = sequence + 1
+                
+                
+                // 画面表示を変えないとredrawできないので、姑息な手段で書き換える。
+                if self.pStatus == "|" {
+                    self.pStatus="-"
+                } else {
+                    self.pStatus="|"
+                }
+            }
+            
+            // ここから下がオリジナル
+            /*
             print("debugMessageFlag:",self.debugMessageFlag)
             print(userMessageText)
             self.userMessageCount = self.userMessageCount + 1
@@ -111,6 +186,8 @@ public class UserMessage: ObservableObject {
             } else {
                 self.userMessageList.append(UserMessageItem(userMessageID: userMessageID, userMessageText: "\(userMessageText)"))
             }
+            */
+            
             
             // debug
             // 相手が決まらないとかけなくなるので、コメントアウト 2021/12/15
@@ -140,7 +217,9 @@ public class UserMessage: ObservableObject {
     // と思ったが、開始はCentralからしか来ないので、相手はperipheral
     public func startTransfer(connectedPeripheral: CBPeripheral) {
         
-        self.blePeripheral.log.addItem(logText: "enter startTransfer, \(connectedPeripheral.name), \(connectedPeripheral.identifier.uuidString) ")
+        if self.blePeripheral.log != nil { // なぜかここで log = nil になった
+            self.blePeripheral.log.addItem(logText: "enter startTransfer, \(connectedPeripheral.name), \(connectedPeripheral.identifier.uuidString) ")
+        }
         print("startTransfer is called")
         if pStatus == "|" {
             pStatus="-"
@@ -342,6 +421,34 @@ public class UserMessage: ObservableObject {
             
             
             self.userMessageList.append(UserMessageItem(userMessageID: newID, userMessageText: protocolMessageCommand[2]))
+            
+            // ここで split されたデータの処理をする 2024/5/16
+            var regex2 = /-(?<sequence>\w*)\((?<hop>\d*)\)/ // hopの回数も分かるので、上の処理を直せるが、とりあえずそのまま
+            var match2 = newID.firstMatch(of: regex2) // recUserMessageIDでも同じ
+            if match2 == nil {
+                print("illegal message ID ")
+                self.bleCentral.log.addItem(logText: "illegal message ID in addItemExternal")
+
+                return
+            }
+            let seq = match2!.sequence
+            let last = String(seq.suffix(1))
+
+            if last=="L" {
+                print("LAST")
+                let n = Int(seq.prefix(seq.count-1))!
+                if n==0 {
+                    print("not split")
+                } else {
+                    print("last of split data ",newID)
+                    // mergeSplitData(messageID: newID)
+                }
+
+            }
+            // 到達の順番が変わることがあるので、とにかく毎回チェックする
+            mergeSplitData(messageID: newID)
+
+            
             self.messageIDLock.unlock()
             self.bleCentral.log.addItem(logText: "addItemExternal append, \(protocolMessageCommand[1]), \(protocolMessageCommand[2]) ")
             
@@ -353,6 +460,148 @@ public class UserMessage: ObservableObject {
                 self.pStatus="-"
             } else {
                 self.pStatus="|"
+            }
+        }
+        
+        // 思ったより長くなっている
+        func mergeSplitData(messageID: String) {
+            print("mergeSplitData with ", messageID)
+            var regex3 = /^(?<IDbody>.*)-(?<sequence>\w*)\((?<hop>\d*)\)$/
+
+            // 渡されたIDから、共通部分とｎを知る
+            var match3 = messageID.firstMatch(of:regex3)
+            var IDbody = ""
+            var sequence = ""
+            var last = ""
+            var n = 0
+            if let match3 {
+                print(match3.IDbody)
+                print(match3.sequence)
+                IDbody = String(match3.IDbody)
+                sequence = String(match3.sequence)
+                last = String(sequence.suffix(1))
+
+            }
+            print(IDbody)
+            print(sequence)
+            print(last)
+  
+            // 毎回チェックにしたので、ラストでなくても処理する
+            /*
+            if last != "L" { // 関数を呼ぶ前にチェックしているのでここにはこないはず
+                print("not LAST error")
+                return
+            }
+             */
+            if last != "L" {
+                n = Int(sequence) ?? 0
+            } else {
+                n = Int(sequence.prefix(sequence.count-1))!
+            }
+            print("n=",n)
+            
+            // n+1個入る配列を準備する
+            var UserMessageList : [UserMessageItem?] = Array(repeating: nil, count: n+1)
+
+
+            var itemCount = 0 // 見つかった数
+            for userMessageItem in self.userMessageList {
+                let userMessageItemID = userMessageItem.userMessageID
+                print(userMessageItemID)
+                let matchItem = userMessageItemID.firstMatch(of:regex3)
+                var ItemIDbody = ""
+                var ItemSequence = ""
+                if let matchItem {
+                    print(matchItem.IDbody)
+                    print(matchItem.sequence)
+                    ItemIDbody = String(matchItem.IDbody)
+                    ItemSequence = String(matchItem.sequence)
+                }
+                print(ItemIDbody)
+                if IDbody == ItemIDbody { // 分割のパートを見つけた時
+                    print("find the part of split")
+                    
+                    last = String(ItemSequence.suffix(1))
+                    var ItemSequenceNum = -1
+                    if last=="L" {
+                        ItemSequenceNum = Int(ItemSequence.prefix(ItemSequence.count-1))!
+                    } else {
+                        ItemSequenceNum = Int(ItemSequence)!
+                    }
+                    print(ItemSequenceNum)
+                    // 配列の大きさ（n+1)、indexはnまで、を超えていたら拡張する
+                    if ItemSequenceNum >= n+1 {
+                        UserMessageList += Array(repeating: nil, count: ItemSequenceNum-n)
+                        n = ItemSequenceNum
+                    }
+                    UserMessageList[ItemSequenceNum] = userMessageItem
+
+                    itemCount = itemCount + 1
+                }
+                if itemCount >= n+1 {
+                    break
+                }
+            }
+                
+            // ここで itemCount が n+1 だったら、全部見つかった。はず。
+            // と思ったけど、Lが来ていない状態で、すべて見つかる場合もある。
+            // その時は、base64のdecodeで失敗するので、そのまま return するはず
+            if itemCount >= n+1 {
+                print("find all split")
+                var AllMessage = ""
+                for eachItem in UserMessageList {
+                    if eachItem != nil {
+                        AllMessage.append(contentsOf: eachItem!.userMessageText)
+                    } else { // 1個でもなかったら return する. ここにはこないはず？
+                        print("internal error")
+                        return
+                    }
+                }
+                print(AllMessage)
+                
+                let reg = /^\[base64,fname=(?<fname>[^\]]*)\](?<data>.*)$/
+                let match = AllMessage.firstMatch(of: reg)
+                if let res = match { // 見つかった場合
+                    print(res.fname)
+                    print(res.data.count)
+                    let base64data = String(res.data.utf8)
+                    print(base64data)
+                    let fname = String(res.fname)
+                    
+                    let decodebase64String = Data(base64Encoded: base64data!)
+                    if decodebase64String == nil {
+                        return
+                    }
+                    print(decodebase64String!)
+                    let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                    let decodepath = fname
+                    let decodefileURL = documentsURL.appendingPathComponent(decodepath)
+                    print(decodefileURL)
+                    
+                    //DispatchQueue.global(qos: .userInitiated).async {
+                    DispatchQueue.global(qos: .default).async { // warningが出るので、変えてみた。2024/5/30
+                        print("anync write")
+                        do {
+                            try decodebase64String!.write(to: decodefileURL)
+                        } catch {
+                            print("write decoded data error")
+                        }
+                        print("write finish")
+                    }
+
+                }
+
+            } else {
+                print("something missing")
+                // 見つからなかった。エラー処理が必要か？
+                // エラーの原因が不明なので、対応方法も不明
+                // 全部揃ってから、手作業でマージできる方法を残しておくのが良いかも
+                for i in 0..<n+1 { // 実際には n は最後なので抜けていることはない
+                    if UserMessageList[i] == nil {
+                        print("UserMessageList[",i,"] is missing")
+                    }
+                }
+
             }
         }
         
@@ -468,6 +717,8 @@ class TransferC {
     // ＊重要＊ 通信他でエラーになった時の処理がない
     func start() {
         let queue = DispatchQueue.global(qos:.default)
+        //let queue = DispatchQueue.global(qos:.userInitiated)
+        // Warningが出るので、QoSクラスを変えてみた。あっているかどうか不明 2024/5/30
         queue.async {
             print("transfer.start is called")
             self.bleCentral.log.addItem(logText: "in transferC.start() before lock, \( self.connectedPeripheral.name ?? "unknown"), \( self.connectedPeripheral.identifier.uuidString) ")
@@ -742,6 +993,12 @@ class TransferP {
         self.protocolMessageQueue.append(writeData)
         self.protocolMessageSemaphore.signal()
         // このロジックは合っているのか？
+        // ここで実行時のwarningが出るので、デバッグする 2024/5/31
+        print("QoS debug (wait)", Thread.isMainThread, Thread.current, Thread.current.qualityOfService.rawValue)
+        if Thread.current.qualityOfService == QualityOfService.userInitiated {
+            print("QoS : user initiated")
+        }
+
         switch(self.protocolMessageSyncSemaphore.wait(timeout: .now() + 30)) {
         case .success:
             print("success in write2C")

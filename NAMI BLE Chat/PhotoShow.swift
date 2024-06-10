@@ -13,6 +13,22 @@ class FileID: ObservableObject {
     @Published var name: String = "initial"
 }
 
+// https://stackoverflow.com/questions/76720697/asyncimage-with-a-placeholder-sizing-to-fit-to-aspect-ratio-and-clipping
+// 表示の時に、アスペクト比を保存する方法
+extension View {
+    public func framedAspectRatio(_ aspect: CGFloat? = nil, contentMode: ContentMode) -> some View where Self == Image {
+        self.resizable()
+            .fixedAspectRatio(contentMode: contentMode)
+            .allowsHitTesting(false)
+    }
+
+    public func fixedAspectRatio(_ aspect: CGFloat? = nil, contentMode: ContentMode) -> some View {
+        self.frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+            .aspectRatio(aspect, contentMode: contentMode)
+            .clipped()
+    }
+}
+
 struct PhotoShow: View {
     @EnvironmentObject private var fileID: FileID
     //@Binding var edgeIP: String
@@ -39,10 +55,12 @@ struct PhotoShow: View {
         if checkfile {
             if UTType(filenameExtension: fileURL.pathExtension)!.conforms(to: .image) {
                 AsyncImage(url: fileURL) { image  in
-                    image.resizable()
+                    //image.resizable()
+                    image.framedAspectRatio(contentMode: .fit)
                 } placeholder: {
                     ProgressView()
                 }
+                
             } else if UTType(filenameExtension: fileURL.pathExtension)!.conforms(to: .movie) {
                 Text("movie")
                 VideoPlayer(player: AVPlayer(url: fileURL))

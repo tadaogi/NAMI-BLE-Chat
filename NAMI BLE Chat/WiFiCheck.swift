@@ -11,7 +11,11 @@ import Network
 class WiFicheck: ObservableObject {
     
     private let monitor = NWPathMonitor()
-    private let queue = DispatchQueue.global(qos: .background)
+    //private let queue = DispatchQueue.global(qos: .background)
+    
+    //private let queue = DispatchQueue.global(qos:.userInitiated)
+    private let queue = DispatchQueue.global(qos:.default)
+    // Warningが出るので、QoSクラスを変えてみた。あっているかどうか不明 2024/5/30
 
     @Published var isConnected = false
 

@@ -15,6 +15,7 @@ struct MessageView: View {
     @EnvironmentObject var wifi: WiFi
     @State private var active = false
     @EnvironmentObject var fileID: FileID
+    @EnvironmentObject var user : User
 
     var body: some View {
         NavigationView {
@@ -74,6 +75,9 @@ struct MessageView: View {
                 
                 HStack {
                     Text("Comment")
+                        .onAppear{
+                            print("onAppear in MessageView")
+                        } // ここも来る
                     Button (action: {
                         print("photo")
                         PhotoSheet.toggle()
@@ -107,7 +111,7 @@ struct MessageView: View {
                 Button (action: {
                     if inputmessage != "" {
                         print("SEND: \(inputmessage)")
-                        self.userMessage.addItem(userMessageText: inputmessage)
+                        self.userMessage.addItemWithGPS(userMessageText: inputmessage)
                         inputmessage = ""
                         
                     }
@@ -131,6 +135,17 @@ struct MessageView: View {
                 PhotoShow()
             })
              */
+            .onAppear{
+                print("good onAppear") // here
+                //userMessage.initUser(user: self.user)
+                // これはうまくいかなかった
+                
+                //print(globalgps?.dummy())
+                //print("AAA")
+                // この時点で globalgps にアクセスできる事の確認
+                // できたのでコメントアウトした
+            }
+
 
             
         }

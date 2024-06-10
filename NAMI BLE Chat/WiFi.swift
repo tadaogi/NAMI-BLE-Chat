@@ -37,7 +37,11 @@ public class WiFi: ObservableObject {
     @Published var edgeIP = "10.0.0.99"
     
     private let monitor = NWPathMonitor()
-    private let queue = DispatchQueue.global(qos: .background)
+    //private let queue = DispatchQueue.global(qos: .background)
+    
+    //private let queue = DispatchQueue.global(qos:.userInitiated)
+    private let queue = DispatchQueue.global(qos:.default)
+    // Warningが出るので、QoSクラスを変えてみた。あっているかどうか不明 2024/5/30
     @Published var isConnected = false // 使わないので後で消しても良い
     
     var log : Log!
@@ -115,7 +119,8 @@ public class WiFi: ObservableObject {
     }
     // 待ちに入っている main loop の処理を進める
     func signal() {
-        DispatchQueue.global(qos: .userInitiated).async {
+        //DispatchQueue.global(qos: .userInitiated).async {
+        DispatchQueue.global(qos: .default).async {
             self.mainsemaphore.signal()
         }
     }

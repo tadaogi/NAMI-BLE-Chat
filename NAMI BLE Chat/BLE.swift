@@ -138,6 +138,13 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     // 電源がオンになるのを待たないといけない
     func startScan() {
         print("startScan")
+        
+        // only NAMI test
+        let UUID_str = CBUUID(string: UUID_Service_str)
+
+//        self.centralManager.scanForPeripherals(withServices: [BLEcommService.UUID_Service], options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
+        //self.centralManager.scanForPeripherals(withServices: [UUID_str], options: nil)
+
         // 本当は、サービスのUUIDを指定するのが正しいはずだがうまく動かない
         self.centralManager.scanForPeripherals(withServices: nil, options: nil)
         // 以下の方法ならうまくいく。ただし、FD6Fが入るとNG
@@ -1128,7 +1135,11 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
         self.log.addItem(logText:"startAdvertise")
 
 
-        let advertisementData = [CBAdvertisementDataLocalNameKey: "BLEcommTest0"]
+        //let advertisementData = [CBAdvertisementDataLocalNameKey: "BLEcommTest0"]
+        // only NAMI test
+        let advertisementData = [CBAdvertisementDataLocalNameKey: "BLEcommTest0",
+                              CBAdvertisementDataServiceUUIDsKey: BLEcommService.UUID_Service] as [String : Any]
+        //let advertisementData = [CBAdvertisementDataServiceUUIDsKey: BLEcommService.UUID_Service]
         if (peripheralMode) {
             self.log.addItem(logText:"startAdvertising")
 
@@ -1157,7 +1168,9 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
         //let myname = UserDefaults.standard.string(forKey: "myID")
         
         if request.characteristic.uuid.isEqual(UUID_Read) {
-            let queue = DispatchQueue.global(qos:.default)
+            //let queue = DispatchQueue.global(qos:.default)
+            let queue = DispatchQueue.global(qos:.userInitiated)
+            // Warningが出るので、QoSクラスを変えてみた。あっているかどうか不明 2024/5/30
             queue.async {
                 //let wmsg: String = "\(myname)" as String
                 var wmsg: String
@@ -1178,7 +1191,18 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
 
                 
                 if transferP != nil {
-                    transferP?.protocolMessageSyncSemaphore.signal()
+                    // https://qiita.com/MTattin/items/3f7842ef2695bbbbca3e
+                    let userInitiatedQueue = DispatchQueue(label: "userInitiated_queue", qos: .userInitiated)
+                    userInitiatedQueue.async {
+                        // wait側で実行時のwarningが出るので、デバッグする 2024/5/31
+                        print("QoS debug (signal) ", Thread.isMainThread, Thread.current, Thread.current.qualityOfService.rawValue)
+                        let debugtxt = "QoS debug (signal) : QoS is " +  String(Thread.current.qualityOfService.rawValue)
+                        self.log.addItem(logText:debugtxt)
+                        if Thread.current.qualityOfService.rawValue != 25 {
+                            print("QoS is NOT user initiated at signal")
+                        }
+                        transferP?.protocolMessageSyncSemaphore.signal()
+                    }
                 }
                 
             }
@@ -1197,6 +1221,9 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
             
             if request.characteristic.uuid.isEqual(UUID_Write) {
                 let queue = DispatchQueue.global(qos:.default)
+                
+                //let queue = DispatchQueue.global(qos:.userInitiated)
+                // Warningが出るので、QoSクラスを変えてみた。あっているかどうか不明 2024/5/30
                 queue.async {
                     let requestvalue:Data = request.value!
                     print("write value \(requestvalue)")

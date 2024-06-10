@@ -30,6 +30,7 @@ class User: ObservableObject {
     @Published var pass = ""
     @Published var myip = "0.0.0.0"
     @Published var WiFiMessageFlag = false
+    @Published var gps = GPS()
 
     init() {
         self.myID = UserDefaults.standard.object(forKey: "myID") as? String ?? "tadashi"
@@ -67,7 +68,8 @@ struct ContentView: View {
     @State var buttontext = "Start"
     @State var runflag = false
 //    var devicetext = ""
-    var gps = GPS()
+    //var gps = GPS()
+    
     @State var autoCPflag = false
     
     @EnvironmentObject var fileID: FileID
@@ -113,7 +115,8 @@ struct ContentView: View {
             user.PeripheralMode = true
             blePeripheral.peripheralMode = true
             
-            let randomInt = Int.random(in: 5..<8)
+            //let randomInt = Int.random(in: 5..<8)
+            let randomInt = Int.random(in: 0..<3)
             var randomwaitTime:Double = 0.0
             if user.RandomMode {
                 randomwaitTime = Double(60 * randomInt)
@@ -181,7 +184,7 @@ struct ContentView: View {
                             blePeripheral.myinit(userMessage: self.userMessage)
                             devices.myinit(userMessage: self.userMessage)
                             
-                            userMessage.initBLE(bleCentral: self.bleCentral, blePeripheral: self.blePeripheral)
+                            userMessage.initBLE(bleCentral: self.bleCentral, blePeripheral: self.blePeripheral, log: log)
                             
                             userMessage.initWiFi(wifi: self.wifi)
                             userMessage.initUser(user: self.user)
@@ -206,7 +209,8 @@ struct ContentView: View {
                             self.log.addItem(logText:"startButton,")
                             buttontext = "running"
                             runflag = true
-                            gps.timerStart(timerInterval: 60)
+                            //gps.timerStart(timerInterval: 60)
+                            self.user.gps.timerStart(timerInterval: 60)
                             
                             self.log.addItem(logText: "wifi debug")
                             wifi.setlog(log: self.log)
@@ -241,7 +245,8 @@ struct ContentView: View {
                             buttontext = "Start(again)"
                             runflag = false
                             
-                            gps.timerStop()
+                            //gps.timerStop()
+                            self.user.gps.timerStop()
                          }
                     }) {
                         Text(buttontext)
@@ -318,6 +323,9 @@ struct ContentView: View {
                     }
             )
         }
+        .onAppear {
+            print("onAppear in ContentView")
+        } // ここは,Debug の時に来る
         // 以下の行で、iPad と iPhone と同じ表示になる
         .navigationViewStyle(StackNavigationViewStyle())
         .onAppear(perform: {

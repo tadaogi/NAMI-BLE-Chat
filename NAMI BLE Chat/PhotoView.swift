@@ -125,9 +125,54 @@ func obsolete_POSTtest(filename: String, uiImage: UIImage) -> String? {
     return retString
 }
 
+// CIImageのresize
+// https://qiita.com/john-rocky/items/7ad3898174ee54e5c345
+extension CIImage {
+    func resize(width: Double) -> CIImage {
+        // オリジナル画像のサイズからアスペクト比を計算
+        let aspectScale = extent.size.height / extent.size.width
+        
+        // widthからアスペクト比を元にリサイズ後のサイズを取得
+        let resizedSize = CGSize(width: width, height: width * Double(aspectScale))
+ 
+        let selfSize = extent.size
+        let transform = CGAffineTransform(scaleX: resizedSize.width / selfSize.width, y: resizedSize.height / selfSize.height)
+        return transformed(by: transform)
+    }
+}
+
+// CGImageのresize
+extension CGImage {
+    func resize(width: Double) -> CGImage? {
+        // オリジナル画像のサイズからアスペクト比を計算
+        let aspectScale = self.height / self.width
+        
+        // widthからアスペクト比を元にリサイズ後のサイズを取得
+        let resizedSize = CGSize(width: width, height: width * Double(aspectScale))
+
+        let width: Int = Int(resizedSize.width)
+        let height: Int = Int(resizedSize.height)
+
+        let bytesPerPixel = self.bitsPerPixel / self.bitsPerComponent
+        let destBytesPerRow = width * bytesPerPixel
+
+
+        guard let colorSpace = self.colorSpace else { return nil }
+        guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: self.bitsPerComponent, bytesPerRow: destBytesPerRow, space: colorSpace, bitmapInfo: self.alphaInfo.rawValue) else { return nil }
+
+        context.interpolationQuality = .high
+        context.draw(self, in: CGRect(x: 0, y: 0, width: width, height: height))
+
+        return context.makeImage()
+    }
+}
+
 struct PhotoView: View {
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var uiImage: UIImage?
+    @State private var thumbnailImage: UIImage?
+    @State private var thumbnailJpeg: Data?
+    
     @State private var ciImage: CIImage?
     @State private var filename:String = ""
     @State private var dummyresult:String = ""
@@ -183,16 +228,26 @@ struct PhotoView: View {
                                 }
                             }
                         }
-                        Task { await loadImageFromSelectedPhoto(photo: selectedPhoto) }
+                        Task {
+                            await loadImageFromSelectedPhoto(photo: selectedPhoto)
+                            print("photo ready")
+                            if let ciImage = ciImage {
+                                thumbnailImage = MakeThumbnailFromCIImage(ciImage: ciImage)!
+                            }
+                        }
                         
                     }
                 if let uiImage = uiImage {
+                    Image(uiImage: resize(image: uiImage, width: 50))
+                    /*
                     Image(uiImage: uiImage)
                         .resizable()
-                        .frame(width:50, height:50)
+                        .frame(width:50, height: 50)
+                     */
+                
                 }
             }
-            
+
             // videoがloadされたら、ビデオを表示する
             switch loadState {
             case .unknown:
@@ -211,6 +266,16 @@ struct PhotoView: View {
                 Text("Import failed")
             }
             
+            if let thumbnailImage = thumbnailImage {
+                HStack {
+                    Text("Thumbnail ")
+                    Image(uiImage: thumbnailImage)
+                    
+                }
+            }
+
+
+            
             Button(action:{
                 if filename != "" {
                     POSTMain(filename: filename, uiImage: uiImage)
@@ -220,6 +285,21 @@ struct PhotoView: View {
             }) {
                 Text("post main")
             }
+            
+            // BLEで画像データを送るためのテスト
+            Button(action:{
+                // postしないとファイル名は決まらないので
+                // ダミーでいれる
+                filename = "debug.jpg"
+                if filename != "" {
+                    BLEsend(filename: filename, uiImage: uiImage)
+                } else {
+                    print("filename is nil")
+                }
+            }) {
+                Text("BLEsend TEST")
+            }
+            
             
             /*
              Button(action:{
@@ -283,11 +363,31 @@ struct PhotoView: View {
         }
     }
     
+    // UIImageのresize
+    // https://program-life.com/497
+    func resize(image: UIImage, width: Double) -> UIImage {
+            
+        // オリジナル画像のサイズからアスペクト比を計算
+        let aspectScale = image.size.height / image.size.width
+        
+        // widthからアスペクト比を元にリサイズ後のサイズを取得
+        let resizedSize = CGSize(width: width, height: width * Double(aspectScale))
+        
+        // リサイズ後のUIImageを生成して返却
+        UIGraphicsBeginImageContext(resizedSize)
+        image.draw(in: CGRect(x: 0, y: 0, width: resizedSize.width, height: resizedSize.height))
+        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return resizedImage!
+    }
+    
     func didDismiss() {
         print("didDismiss")
     }
     
     // 動作確認用 本体はwifi.swiftへ移動
+    /*
     func obsolute_uploadtest(fileName: String) {
         print("uploadtest")
         //let fileName = "DSCF0085.JPG"
@@ -347,10 +447,14 @@ struct PhotoView: View {
         }
         task.resume()
     }
+     */
 
     private func loadImageFromSelectedPhoto(photo: PhotosPickerItem?) async {
         // 写真の次にビデオを選んだときのために nil にしておく。逆も同じ。
         self.uiImage = nil
+        self.ciImage = nil
+        self.thumbnailImage = nil
+        self.thumbnailJpeg = nil
         self.loadState = .unknown
         self.movie = nil
         // VideoTestからコピペ
@@ -371,6 +475,8 @@ struct PhotoView: View {
                         print("self.movie is \(self.movie!.url.absoluteString)")
 
                         loadState = .loaded /*(movie)*/
+                        
+                        self.thumbnailImage = MakeThumbnailFromVideo()
                     } else {
                         print("movie is nil")
                         loadState = .failed
@@ -408,6 +514,139 @@ struct PhotoView: View {
     }
      */
     
+    
+    func BLEsend(filename: String, uiImage: UIImage??) {
+        print("BLEsend")
+        if self.uiImage != nil {
+            print("photo")
+            BLEsendPhoto(filename: filename)
+        } else {
+            print("BLEsend movie (not implemented yet)")
+            BLEsendVideo()
+        }
+    }
+    
+    // POSTtest2を参照
+    func BLEsendVideo() {
+        /// ①DocumentsフォルダURL取得
+        guard let dirURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            fatalError("フォルダURL取得エラー")
+        }
+        
+        /// ②対象のファイルURL取得
+        let fileURL = dirURL.appendingPathComponent("upload.mp4")
+        print(fileURL)
+        // https://qiita.com/1997/items/d0bcb3d9d5209bbe3db0
+        // https://mixltd.jp/blog/ios_get_movie_thumbnail/
+        let asset = AVAsset(url: fileURL)
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.appliesPreferredTrackTransform = true
+        // サムネイル生成
+//        let avAsset = AVAsset(url: url)
+//        let generator = AVAssetImageGenerator(asset: avAsset)
+        generator.appliesPreferredTrackTransform = true
+        generator.requestedTimeToleranceAfter = .zero
+        generator.requestedTimeToleranceBefore = .zero
+//        let duration = asset.duration
+        //let duration = try? asset.load(.duration)
+        let seconds = 0.0 // 5秒で指定
+//        let time = CMTime(seconds: seconds, preferredTimescale: duration.timescale)
+        let time = CMTime(seconds: seconds, preferredTimescale: 60)
+        let capturedImage = try! generator.copyCGImage(at: time, actualTime: nil)
+        let thumbnailimage = UIImage(cgImage: capturedImage)
+        DispatchQueue.main.async {
+            // 取得したimageを表示
+            self.thumbnailImage = resize(image:thumbnailimage, width: 32) // これは意味ない
+            self.ciImage = CIImage(cgImage: capturedImage).resize(width: 32)
+            // BLEsendPhotoの中で使う
+            
+            // imageをBLEで送る
+            let filename = "thumbnail.jpg"
+            BLEsendPhoto(filename: filename)
+
+            
+        }
+        
+    }
+    
+    // POSTtestをコピー
+    // 実は uiImage は使っていない
+    func BLEsendPhoto(filename: String) {
+        print("BLEsendPhoto")
+        
+        // GPS情報(Exif情報)を残すため
+        guard let imageData = CIContext().jpegRepresentation(
+            of: ciImage!,
+            colorSpace: ciImage?.colorSpace ?? CGColorSpaceCreateDeviceRGB(),
+            options: [:]) else {
+            print("imageData is nil")
+            return
+        }
+        
+        // jpegファイルのサイズを確認するためにローカルファイルに書き込む
+        // ここは来ない？
+        SaveImageFile(filename: "debug-video-thumbnail.jpg", imageData: imageData)
+
+        
+        BLEsendImage(filename: filename, imageData: imageData)
+    }
+    
+    func BLEsendImage(filename: String, imageData: Data) {
+        
+        /*
+        guard let imageData = CIContext().jpegRepresentation(
+        of: ciImage!,
+                colorSpace: ciImage?.colorSpace ?? CGColorSpaceCreateDeviceRGB(),
+                options: [:]) else {
+                print("imageData is nil")
+            return
+        }
+         */
+        print("imageData.count=",imageData.count)
+        
+        // base64 encode する。
+        let base64String = imageData.base64EncodedString(options: [])
+        print(base64String.count)
+
+        // ヘッダを追加する
+        let writeString = String(format:"[base64,fname=%@]",filename)+base64String
+        self.userMessage.addItem(userMessageText: writeString)
+
+        // debugのために、ファイルに出力する
+        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let path = "base64output"
+        var fileURL = documentsURL.appendingPathComponent(path)
+        print(fileURL)
+
+        do {
+            // テキストの書き込みを実行
+            try writeString.write(to:fileURL, atomically: true, encoding: .utf8)
+            print("debug write 成功\nopen", path)
+
+        } catch {
+            //　テストの書き込みに失敗
+            print("debug write 失敗:", error )
+        }
+        
+        // デバッグ用にdecodeしてファイルに出力
+        let decodebase64String = Data(base64Encoded: base64String)
+        let decodepath = filename // JPEGになっている
+        let decodefileURL = documentsURL.appendingPathComponent(decodepath)
+
+        do {
+            // テキストの書き込みを実行
+            try decodebase64String?.write(to: decodefileURL)
+            print("decode write 成功2\nopen", path)
+
+        } catch {
+            //　テストの書き込みに失敗
+            print("decode write 失敗2:", error )
+        }
+        
+    }
+
+    
+    // POSTMain
     func POSTMain(filename: String, uiImage: UIImage??){
         print("POSTMain")
         if self.uiImage != nil {
@@ -417,6 +656,125 @@ struct PhotoView: View {
             print("movie")
             POSTtest2()
         }
+        // print(self.fileIDlink) // ここではまだfileIDlinkは設定されていない
+    }
+    
+    func MakeThumbnailFromVideo() -> UIImage {
+        /// ①DocumentsフォルダURL取得
+        guard let dirURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            fatalError("フォルダURL取得エラー")
+        }
+        
+        /// ②対象のファイルURL取得
+        let fileURL = dirURL.appendingPathComponent("upload.mp4")
+        print(fileURL)
+        // https://qiita.com/1997/items/d0bcb3d9d5209bbe3db0
+        // https://mixltd.jp/blog/ios_get_movie_thumbnail/
+        let asset = AVAsset(url: fileURL)
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.appliesPreferredTrackTransform = true
+        // サムネイル生成
+//        let avAsset = AVAsset(url: url)
+//        let generator = AVAssetImageGenerator(asset: avAsset)
+        generator.appliesPreferredTrackTransform = true
+        generator.requestedTimeToleranceAfter = .zero
+        generator.requestedTimeToleranceBefore = .zero
+//        let duration = asset.duration
+        //let duration = try? asset.load(.duration)
+        let seconds = 0.0 // 5秒で指定
+//        let time = CMTime(seconds: seconds, preferredTimescale: duration.timescale)
+        let time = CMTime(seconds: seconds, preferredTimescale: 60)
+        let capturedImage = try! generator.copyCGImage(at: time, actualTime: nil)
+        let thumbnailimage = resize(image: UIImage(cgImage: capturedImage), width: 32)
+        
+        // videoからexifのあるjpegができるかの実験
+        // ciimage経由を試す → 失敗
+        //let ciImage = CIImage(cgImage: capturedImage)
+        //MakeThumbnailFromCIImage(ciImage: ciImage)
+        // MakeThumbnailFromCIImageの中で、debug-thumnail.jpg にセーブされる。
+        
+        // videoのGPS情報を得る
+        // ReadFilesで確認したやり方をコピー
+        
+        let video = AVURLAsset(url: fileURL)
+        let metadata = video.metadata
+        var latitude:Double = 0.0
+        var longitude:Double = 0.0
+        var altitude:Double = 0.0
+        for item in metadata {
+            print(item)
+            print(item.identifier)
+            if item.identifier?.rawValue ?? "dummy" == "mdta/com.apple.quicktime.location.ISO6709" {
+                print(item.value)
+                let value = item.value as! String
+                print(type(of: value))
+                print(value)
+                
+                // 緯度、経度、高度に分ける
+                let regex = /(?<latitude>[+-][\d\.]*)(?<longitude>[+-][\d\.]*)(?<altitude>[+-][\d\.]*)/
+                let matches = value.firstMatch(of: regex)
+                if matches != nil {
+                    latitude = Double(matches!.latitude)!
+                    longitude = Double(matches!.longitude)!
+                    altitude = Double(matches!.altitude)!
+                    print(matches!.0)
+                    print(matches!.latitude)
+                    print(matches!.longitude)
+                }
+                
+                // メタデータを書く
+                
+                var properties:[String:Any] = ["":""]
+                print(properties)
+                var exif:[String: Any] = ["":""]
+                properties["{Exif}"] = exif;
+                let gpsData = NSMutableDictionary()
+
+                let altitudeRef = Int(altitude < 0.0 ? 1 : 0)
+                let latitudeRef = latitude<0 ? "S" : "N"
+                let longitudeRef = longitude<0 ? "W" : "E"
+
+                // GPS metadata
+                gpsData[(kCGImagePropertyGPSLatitude as String)] = abs(latitude)
+                gpsData[(kCGImagePropertyGPSLongitude as String)] = abs(longitude)
+                gpsData[(kCGImagePropertyGPSLatitudeRef as String)] = latitudeRef
+                gpsData[(kCGImagePropertyGPSLongitudeRef as String)] = longitudeRef
+                gpsData[(kCGImagePropertyGPSAltitude as String)] = abs(altitude)
+                gpsData[(kCGImagePropertyGPSAltitudeRef as String)] = altitudeRef
+                gpsData[(kCGImagePropertyGPSVersion as String)] = "2.2.0.0"
+
+                properties[ kCGImagePropertyGPSDictionary as String ] = gpsData
+                
+                
+                // この時点では fileID が決まっていない
+               let dummyfileURL = dirURL.appendingPathComponent("video-thumbnail.jpg")
+
+               let thumbnailCGIImage = capturedImage.resize(width: 32)!
+               
+               // thumbnailimageを上で作ってある
+               if let destination = CGImageDestinationCreateWithURL(dummyfileURL as CFURL, UTType.jpeg.identifier as CFString, 1, nil) {
+                  // 先ほどのmetadaをCGImageに反映する
+                  CGImageDestinationAddImage(destination, thumbnailCGIImage, properties as CFDictionary)
+                  // 指定したURLに書き込み
+                  CGImageDestinationFinalize(destination)
+
+                   // 書いたデータを読む
+                   do {
+                       let jpegdata = try Data(contentsOf: dummyfileURL)
+                       print(jpegdata.count)
+                       self.thumbnailJpeg = jpegdata
+                   } catch {
+                       print("read jpeg error in MakeThumbnailFromCide")
+                   }
+                   
+               }
+
+            }
+        }
+        
+        
+        return thumbnailimage
+        
     }
     
     func POSTtest2() {
@@ -525,6 +883,27 @@ struct PhotoView: View {
                         wifi.fileuploadWithID(fname: TBDfileID)
 
                     }
+                    
+                    // thumbnailをBLEで送る
+                    SendThumbnailBLE(filename: TBDfileID)
+                    // 置き換え
+                    /*
+                    let reg = /^(?<fname>.*)\.[^\.]*$/
+                    let match = TBDfileID.firstMatch(of: reg)
+                    if let match = match {
+                        let thumbnailfname = match.fname + "-thumb.jpg"
+                        print(TBDfileID)
+                        print(thumbnailfname)
+                        let thumbnailJpeg = self.thumbnailImage?.jpegData(compressionQuality: 0.9) // 0.9が適当か不明
+                        print(thumbnailJpeg?.count)
+                        if let thumbnaiJpeg = thumbnailJpeg {
+                            BLEsendImage(filename: String(thumbnailfname), imageData: thumbnailJpeg!)
+                        } else {
+                            print("thumbnailImage is nil error")
+                        }
+                    }
+                    */
+
                     return
                 }
                 guard let data = data else { return }
@@ -548,6 +927,26 @@ struct PhotoView: View {
                     /*
                     SaveToDoc(filename: fname, uiImage: uiImage)
                      */
+                    
+                    // thumbnailをBLEで送る
+                    SendThumbnailBLE(filename: fname)
+                    // 置き換え
+                    /*
+                    let reg = /^(?<fname>.*)\.[^\.]*$/
+                    let match = fname.firstMatch(of: reg)
+                    if let match = match {
+                        let thumbnailfname = match.fname + "-thumb.jpg"
+                        print(fname)
+                        print(thumbnailfname)
+                        let thumbnailJpeg = self.thumbnailImage?.jpegData(compressionQuality: 0.9) // 0.9が適当か不明
+                        print(thumbnailJpeg?.count)
+                        if let thumbnaiJpeg = thumbnailJpeg {
+                            BLEsendImage(filename: String(thumbnailfname), imageData: thumbnailJpeg!)
+                        } else {
+                            print("thumbnailImage is nil error")
+                        }
+                    }
+                     */
 
                 } catch let error {
                     print("error in POSTtest2")
@@ -557,7 +956,53 @@ struct PhotoView: View {
             task.resume()
         }
 
+    func SendThumbnailBLE(filename: String) {
+        // thumbnailをBLEで送る
+        let reg = /^(?<fname>.*)\.[^\.]*$/
+        let match = filename.firstMatch(of: reg)
+        if let match = match {
+            let thumbnailfname = match.fname + "-thumb.jpg"
+            print(filename)
+            print(thumbnailfname)
+            //            let thumbnailJpeg = self.thumbnailImage?.jpegData(compressionQuality: 0.9) // 0.9が適当か不明
+            let thumbnailJpeg = self.thumbnailJpeg
+            print(thumbnailJpeg?.count ?? "thumbnail count is unknown in SendThumbnailBLE")
+            
+            // jpegファイルのサイズを確認するためにローカルファイルに書き込む
+            // videoのときだけか？
+            SaveImageFile(filename: "debug-video-thumbnail.jpg", imageData: thumbnailJpeg!)
+
+            
+            if thumbnailJpeg != nil {
+                BLEsendImage(filename: String(thumbnailfname), imageData: thumbnailJpeg!)
+            } else {
+                print("thumbnailImage is nil error in SendThumbnailBLE")
+            }
+        }
+
+    }
                 
+    func MakeThumbnailFromCIImage(ciImage: CIImage) -> UIImage? {
+        let smallciImage = ciImage.resize(width: 32.0)
+        guard let imageData = CIContext().jpegRepresentation(
+            of: smallciImage,
+            colorSpace: smallciImage.colorSpace ?? CGColorSpaceCreateDeviceRGB(),
+            options: [:]) else {
+            print("imageData is nil(MakeThumbnail")
+            return nil
+            }
+        // option で、
+        // [kCGImageDestinationLossyCompressionQuality: compressionQuality]
+        // な感じで quality を指定できるはず
+        
+        // 実際にBLEで送るように jpeg を残しておく。
+        self.thumbnailJpeg = imageData
+        // jpegファイルのサイズを確認するためにローカルファイルに書き込む
+        SaveImageFile(filename: "debug-thumnail.jpg", imageData: imageData)
+        
+        return UIImage(data: imageData)
+        
+    }
         func POSTtest(filename: String, uiImage: UIImage??) {
             print("POSTtest")
             
@@ -577,6 +1022,10 @@ struct PhotoView: View {
                 print("imageData is nil")
                 return
                 }
+            
+            
+            // jpegファイルのサイズを確認するためにローカルファイルに書き込む
+            SaveImageFile(filename: "debug.jpg", imageData: imageData)
             
             var httpBody1 = "--\(boundary)\r\n"
             // registfileからregistfileUへの修正
@@ -638,6 +1087,26 @@ struct PhotoView: View {
                         wifi.fileuploadWithID(fname: TBDfileID)
 
                     }
+                    
+                    // thumbnailをBLEで送る
+                    SendThumbnailBLE(filename: TBDfileID)
+                    // 置き換え
+                    /*
+                    let reg = /^(?<fname>.*)\.[^\.]*$/
+                    let match = TBDfileID.firstMatch(of: reg)
+                    if let match = match {
+                        let thumbnailfname = match.fname + "-thumb.jpg"
+                        print(TBDfileID)
+                        print(thumbnailfname)
+                        let thumbnailJpeg = self.thumbnailImage?.jpegData(compressionQuality: 0.9) // 0.9が適当か不明
+                        print(thumbnailJpeg?.count)
+                        if let thumbnaiJpeg = thumbnailJpeg {
+                            BLEsendImage(filename: String(thumbnailfname), imageData: thumbnailJpeg!)
+                        } else {
+                            print("thumbnailImage is nil error")
+                        }
+                    }
+                     */
                     return
                 }
                 guard let data = data else { return }
@@ -656,6 +1125,9 @@ struct PhotoView: View {
                     fileIDlink = " [Link](\(fname))"
                     sendmsg = fileIDlink
                     SaveToDoc(filename: fname, uiImage: uiImage!!)
+                    
+                    // thumbnailをBLEで送る
+                    SendThumbnailBLE(filename: fname)
 
                 } catch let error {
                     print(error)
@@ -750,6 +1222,20 @@ struct PhotoView: View {
         task.resume()
     }
      */
+    
+    func SaveImageFile(filename: String, imageData: Data) {
+        print("SaveImageFile called")
+        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let fileURL = documentsURL.appendingPathComponent(filename)
+        print(fileURL)
+        do {
+            try imageData.write(to: fileURL)
+            print("SaveImageFile Done")
+        } catch {
+            print("SaveImageFile error")
+        }
+    }
+    
     
     func SaveToDoc(filename: String, uiImage: UIImage) {
         print("SaveToDoc called")
