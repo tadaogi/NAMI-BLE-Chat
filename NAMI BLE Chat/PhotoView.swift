@@ -983,11 +983,13 @@ struct PhotoView: View {
     }
                 
     func MakeThumbnailFromCIImage(ciImage: CIImage) -> UIImage? {
-        let smallciImage = ciImage.resize(width: 32.0)
+        let quality = 0.0 // W64 q=0.0 に固定しておく
+        let width = 64
+        let smallciImage = ciImage.resize(width: Double(width))
         guard let imageData = CIContext().jpegRepresentation(
             of: smallciImage,
             colorSpace: smallciImage.colorSpace ?? CGColorSpaceCreateDeviceRGB(),
-            options: [:]) else {
+            options: [kCGImageDestinationLossyCompressionQuality as CIImageRepresentationOption: quality]) else {
             print("imageData is nil(MakeThumbnail")
             return nil
             }
