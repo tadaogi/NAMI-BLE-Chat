@@ -17,6 +17,8 @@ struct BLEcommTest0App: App {
                 .environmentObject(Devices())
 // NAMI Chat に合わせて修正
 //                .environmentObject(UserMessage())
+                .environmentObject(Params())
+
         }
     }
 }

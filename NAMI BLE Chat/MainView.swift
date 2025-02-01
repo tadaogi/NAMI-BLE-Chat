@@ -12,6 +12,11 @@ struct MainView: View {
         TabView {
             MessageView()
                 .tabItem{Text("Message")}
+            MapView()
+                .tabItem{
+                    Text("map")
+                }
+
             ContentView()
             /*
                 //.environmentObject(User())

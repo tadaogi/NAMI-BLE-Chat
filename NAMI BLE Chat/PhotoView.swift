@@ -139,29 +139,47 @@ extension CIImage {
         let transform = CGAffineTransform(scaleX: resizedSize.width / selfSize.width, y: resizedSize.height / selfSize.height)
         return transformed(by: transform)
     }
+    
+    func resize(side: Double) -> CIImage {
+        // オリジナル画像のサイズからアスペクト比を計算
+        let aspectScale = extent.size.height / extent.size.width
+        var width = side
+        if aspectScale > 1.0 {
+           width = side/aspectScale
+        }
+        // widthからアスペクト比を元にリサイズ後のサイズを取得
+        let resizedSize = CGSize(width: width, height: width * Double(aspectScale))
+ 
+        let selfSize = extent.size
+        let transform = CGAffineTransform(scaleX: resizedSize.width / selfSize.width, y: resizedSize.height / selfSize.height)
+        return transformed(by: transform)
+    }
+
 }
 
 // CGImageのresize
 extension CGImage {
-    func resize(width: Double) -> CGImage? {
+    func resize(newwidth: Double) -> CGImage? {
+        
         // オリジナル画像のサイズからアスペクト比を計算
-        let aspectScale = self.height / self.width
+        //let aspectScale = self.height / self.width
+        let aspectScale = Double(height) / Double(width)
         
         // widthからアスペクト比を元にリサイズ後のサイズを取得
-        let resizedSize = CGSize(width: width, height: width * Double(aspectScale))
+        let resizedSize = CGSize(width: newwidth, height: newwidth * Double(aspectScale))
 
-        let width: Int = Int(resizedSize.width)
-        let height: Int = Int(resizedSize.height)
+        let width0: Int = Int(resizedSize.width)
+        let height0: Int = Int(resizedSize.height)
 
         let bytesPerPixel = self.bitsPerPixel / self.bitsPerComponent
-        let destBytesPerRow = width * bytesPerPixel
+        let destBytesPerRow = width0 * bytesPerPixel
 
 
         guard let colorSpace = self.colorSpace else { return nil }
-        guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: self.bitsPerComponent, bytesPerRow: destBytesPerRow, space: colorSpace, bitmapInfo: self.alphaInfo.rawValue) else { return nil }
+        guard let context = CGContext(data: nil, width: width0, height: height0, bitsPerComponent: self.bitsPerComponent, bytesPerRow: destBytesPerRow, space: colorSpace, bitmapInfo: self.alphaInfo.rawValue) else { return nil }
 
         context.interpolationQuality = .high
-        context.draw(self, in: CGRect(x: 0, y: 0, width: width, height: height))
+        context.draw(self, in: CGRect(x: 0, y: 0, width: width0, height: height0))
 
         return context.makeImage()
     }
@@ -328,7 +346,7 @@ struct PhotoView: View {
                 // 何故か inputmessage だと、うまくいかない。dispmsgだとうまくいく
                 if sendmsg != "" {
                     print("SEND: \(sendmsg)")
-                    self.userMessage.addItem(userMessageText: sendmsg)
+                    self.userMessage.addItemWithGPS(userMessageText: sendmsg)
                     inputmessage = ""
                     
                 }
@@ -686,6 +704,10 @@ struct PhotoView: View {
         let time = CMTime(seconds: seconds, preferredTimescale: 60)
         let capturedImage = try! generator.copyCGImage(at: time, actualTime: nil)
         let thumbnailimage = resize(image: UIImage(cgImage: capturedImage), width: 32)
+ 
+        // CGGImageのwidthとheightがとれないのでデバッグ
+        print(capturedImage.height)
+        print(capturedImage.width)
         
         // videoからexifのあるjpegができるかの実験
         // ciimage経由を試す → 失敗
@@ -749,7 +771,7 @@ struct PhotoView: View {
                 // この時点では fileID が決まっていない
                let dummyfileURL = dirURL.appendingPathComponent("video-thumbnail.jpg")
 
-               let thumbnailCGIImage = capturedImage.resize(width: 32)!
+               let thumbnailCGIImage = capturedImage.resize(newwidth: 32)!
                
                // thumbnailimageを上で作ってある
                if let destination = CGImageDestinationCreateWithURL(dummyfileURL as CFURL, UTType.jpeg.identifier as CFString, 1, nil) {
@@ -961,7 +983,7 @@ struct PhotoView: View {
         let reg = /^(?<fname>.*)\.[^\.]*$/
         let match = filename.firstMatch(of: reg)
         if let match = match {
-            let thumbnailfname = match.fname + "-thumb.jpg"
+            let thumbnailfname = match.fname + "-thumbnail.jpg"
             print(filename)
             print(thumbnailfname)
             //            let thumbnailJpeg = self.thumbnailImage?.jpegData(compressionQuality: 0.9) // 0.9が適当か不明
@@ -985,7 +1007,7 @@ struct PhotoView: View {
     func MakeThumbnailFromCIImage(ciImage: CIImage) -> UIImage? {
         let quality = 0.0 // W64 q=0.0 に固定しておく
         let width = 64
-        let smallciImage = ciImage.resize(width: Double(width))
+        let smallciImage = ciImage.resize(side: Double(width))
         guard let imageData = CIContext().jpegRepresentation(
             of: smallciImage,
             colorSpace: smallciImage.colorSpace ?? CGColorSpaceCreateDeviceRGB(),

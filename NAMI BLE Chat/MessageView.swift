@@ -42,14 +42,31 @@ struct MessageView: View {
                             tmptext = messageitem.userMessageText
                         }
                          */
-                        let tmptext = messageitem.userMessageID+","+messageitem.userMessageText
+                        //let tmptext = messageitem.userMessageID+","+messageitem.userMessageText
                         /*
                         Text(.init(tmptext))
                             .padding([.leading], 15)
                          */
+                        
+                        
+                        MyMessage(message: setmessage(messageitem: messageitem), active: $active)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding([.leading], 5)
+                            .onTapGesture {
+                                print("tap")
+                            }
+                        // 行間が狭すぎるので、以下を入れた
+                        Rectangle()
+                            .fill(Color.white)
+                            .frame(minWidth: 0.0, maxWidth: .infinity)
+                            .frame(height: 0)
+
+                        // 上に置き換える
+                        /*
                         Text(.init(setmessage(messageitem: messageitem)))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding([.leading], 5)
+                        */
                         //Spacer()
                         //}
                     }
@@ -171,10 +188,23 @@ struct MessageView: View {
         if userMessage.debugMessageFlag {
             tmptext = messageitem.userMessageID+","+messageitem.userMessageText
         } else {
-            let arr:[String] = messageitem.userMessageID.components(separatedBy: "-")
-            let arr2:[String] = arr[2].components(separatedBy: "(")
-            let usrID = arr2[0]
-            tmptext = "[\(usrID)] " + messageitem.userMessageText
+            // [GPS で始まっていないメッセージは、データなので、表示しない
+            if messageitem.userMessageText.hasPrefix("[GPS,") {
+                let arr:[String] = messageitem.userMessageID.components(separatedBy: "-")
+                let arr2:[String] = arr[2].components(separatedBy: "(")
+                let usrID = arr2[0]
+                var message = messageitem.userMessageText
+                // [GPS,xxx,xxx] は表示しない
+                let reg = /^\[[^\]]*\](?<message>.*)$/
+                if let match=messageitem.userMessageText.firstMatch(of: reg) {
+                    print(match.0)
+                    print(match.message)
+                    message = String(match.message)
+                }
+                tmptext = "[\(usrID)] " + message
+            } else {
+                tmptext = ""
+            }
         }
         return tmptext
     }

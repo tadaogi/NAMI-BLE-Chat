@@ -81,7 +81,14 @@ struct ContentView: View {
         //print(self.log)
         //self.bleCentral.myinit(message: self.message)
         // ここでは失敗する。早すぎるみたい。
+        guard
+            let documentURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+        else {
+            fatalError("failed to get Document URL")
+        }
         
+        print(documentURL)
+
     }
     
     func Date2String(date: Date)->String {

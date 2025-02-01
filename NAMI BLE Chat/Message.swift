@@ -358,7 +358,16 @@ public class UserMessage: ObservableObject {
             }
             
             for userMessage in self.userMessageList {
-                if userMessage.userMessageID == protocolMessageCommand[1] {
+                var id0 = userMessage.userMessageID
+                var id1 = protocolMessageCommand[1]
+                let reg = /^(?<message>[^(]*)\([0-9]*\)$/
+                if let match = id0.firstMatch(of: reg) {
+                    id0 = String(match.message)
+                }
+                if let match = id1.firstMatch(of: reg) {
+                    id1 = String(match.message)
+                }
+                if id0 == id1 {
                     print("I already have \(userMessage.userMessageID)")
                     if self.bleCentral != nil {
                         self.bleCentral.log.addItem(logText: "I already have \(userMessage.userMessageID) in addItemExternal")
@@ -377,6 +386,9 @@ public class UserMessage: ObservableObject {
                 print("illeagal userMessageID")
                 self.bleCentral.log.addItem(logText: "illeagal userMessageID in addItemExternal")
 
+                // ここで必要なはずなので追加 2024/7/24
+                self.messageIDLock.unlock()
+
                 return
             }
             let IDdateString = String(IDarray[0])
@@ -391,6 +403,9 @@ public class UserMessage: ObservableObject {
                 print("too old userMessageID")
                 self.bleCentral.log.addItem(logText: "too old userMessageID in addItemExternal")
 
+                // ここで必要なはずなので追加 2024/7/24
+                self.messageIDLock.unlock()
+
                 return
 
             }
@@ -403,6 +418,9 @@ public class UserMessage: ObservableObject {
                 print("illeagal userMessageID(hop)")
                 self.bleCentral.log.addItem(logText: "illeagal userMessageID(hop) in addItemExternal")
 
+                // ここで必要なはずなので追加 2024/7/24
+                self.messageIDLock.unlock()
+
                 return
             }
             var originalhopStr = match?.1 ?? "0"
@@ -413,6 +431,9 @@ public class UserMessage: ObservableObject {
                 print("too many hops ")
                 self.bleCentral.log.addItem(logText: "too many hops in addItemExternal")
 
+                // ここで必要なはずなので追加 2024/7/24
+                self.messageIDLock.unlock()
+
                 return
 
             }
@@ -422,12 +443,19 @@ public class UserMessage: ObservableObject {
             
             self.userMessageList.append(UserMessageItem(userMessageID: newID, userMessageText: protocolMessageCommand[2]))
             
+            self.messageIDLock.unlock()
+            self.bleCentral.log.addItem(logText: "addItemExternal append, \(protocolMessageCommand[1]), \(protocolMessageCommand[2]) ")
+
+            
             // ここで split されたデータの処理をする 2024/5/16
             var regex2 = /-(?<sequence>\w*)\((?<hop>\d*)\)/ // hopの回数も分かるので、上の処理を直せるが、とりあえずそのまま
             var match2 = newID.firstMatch(of: regex2) // recUserMessageIDでも同じ
             if match2 == nil {
                 print("illegal message ID ")
                 self.bleCentral.log.addItem(logText: "illegal message ID in addItemExternal")
+
+                // ここで必要なはずなので追加 2024/7/24
+                self.messageIDLock.unlock()
 
                 return
             }
@@ -448,11 +476,11 @@ public class UserMessage: ObservableObject {
             // 到達の順番が変わることがあるので、とにかく毎回チェックする
             mergeSplitData(messageID: newID)
 
+            // append直後に移動 2024/7/24
+            //self.messageIDLock.unlock()
+            //self.bleCentral.log.addItem(logText: "addItemExternal append, \(protocolMessageCommand[1]), \(protocolMessageCommand[2]) ")
             
-            self.messageIDLock.unlock()
-            self.bleCentral.log.addItem(logText: "addItemExternal append, \(protocolMessageCommand[1]), \(protocolMessageCommand[2]) ")
-            
-            // command かどうか確認 2024.2.19
+            // command かどうか確認 2024.2.19 commandなら実行
             MessageCommandCheck(MessageCommand: protocolMessageCommand[2])
             
             // 画面表示を変えないとredrawできないので、姑息な手段で書き換える。
@@ -465,6 +493,9 @@ public class UserMessage: ObservableObject {
         
         // 思ったより長くなっている
         func mergeSplitData(messageID: String) {
+            var lastfound = false
+            self.bleCentral.log.addItem(logText: "mergeSplitData called messageID=\(messageID)")
+
             print("mergeSplitData with ", messageID)
             var regex3 = /^(?<IDbody>.*)-(?<sequence>\w*)\((?<hop>\d*)\)$/
 
@@ -524,6 +555,7 @@ public class UserMessage: ObservableObject {
                     last = String(ItemSequence.suffix(1))
                     var ItemSequenceNum = -1
                     if last=="L" {
+                        lastfound = true
                         ItemSequenceNum = Int(ItemSequence.prefix(ItemSequence.count-1))!
                     } else {
                         ItemSequenceNum = Int(ItemSequence)!
@@ -534,9 +566,13 @@ public class UserMessage: ObservableObject {
                         UserMessageList += Array(repeating: nil, count: ItemSequenceNum-n)
                         n = ItemSequenceNum
                     }
-                    UserMessageList[ItemSequenceNum] = userMessageItem
-
-                    itemCount = itemCount + 1
+                    // 同じメッセージがくる場合がある
+                    // それ自体がバグではあるが、ここでも避ける 2024/7/24
+                    if UserMessageList[ItemSequenceNum] == nil {
+                        UserMessageList[ItemSequenceNum] = userMessageItem
+                        
+                        itemCount = itemCount + 1
+                    }
                 }
                 if itemCount >= n+1 {
                     break
@@ -546,7 +582,10 @@ public class UserMessage: ObservableObject {
             // ここで itemCount が n+1 だったら、全部見つかった。はず。
             // と思ったけど、Lが来ていない状態で、すべて見つかる場合もある。
             // その時は、base64のdecodeで失敗するので、そのまま return するはず
-            if itemCount >= n+1 {
+            // と思ったが、成功する時もあるらしい。なので、lastfoundを確認する
+            if (itemCount >= n+1) && lastfound {
+                self.bleCentral.log.addItem(logText: "mergeSplitData find all splits (maybe)")
+
                 print("find all split")
                 var AllMessage = ""
                 for eachItem in UserMessageList {
@@ -587,6 +626,8 @@ public class UserMessage: ObservableObject {
                             print("write decoded data error")
                         }
                         print("write finish")
+                        self.bleCentral.log.addItem(logText: "mergeSplitData finished for \(messageID)")
+
                     }
 
                 }

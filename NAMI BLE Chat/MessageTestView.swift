@@ -8,6 +8,11 @@
 import SwiftUI
 var MessageTestTimer: Timer = Timer()
 
+struct JsonMessageItem: Codable {
+    var userMessageID: String
+    var userMessageText: String
+}
+
 struct MessageTestView: View {
     @EnvironmentObject var user: User
     @State var message_interval: Int = 600
@@ -15,6 +20,8 @@ struct MessageTestView: View {
     @State var testflag = false
     @State var userMessage: UserMessage
     
+    @State var uploadfname : String = "message.txt"
+
     var body: some View {
         ScrollView([.vertical, .horizontal],showsIndicators: true) {
             Text("Message Test Setting")
@@ -55,6 +62,44 @@ struct MessageTestView: View {
                     }
                 }
             }
+            
+            HStack {
+                Button (action: {
+                    print("write to file button")
+                    WriteMessagetoFile(filename: uploadfname)
+                    //self.log.writeToFile(fname: uploadfname)
+                }) {
+                    Text("WriteToFile")
+                    // テキストのサイズを指定
+                        .frame(width: 140, height: 40, alignment: .center)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color.yellow, lineWidth: 2)
+                        )}
+                Button (action: {
+                    print("read from file button")
+                    ReadMessagefromFile(filename: uploadfname)
+                    //self.log.writeToFile(fname: uploadfname)
+                }) {
+                    Text("ReadFromFile")
+                    // テキストのサイズを指定
+                        .frame(width: 140, height: 40, alignment: .center)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color.yellow, lineWidth: 2)
+                        )}
+            }
+
+        
+            TextField("file name",
+                  text: $uploadfname,
+                  onCommit: {
+                print("uploadfname:\(uploadfname)")
+            })
+            .textFieldStyle(RoundedBorderTextFieldStyle())
+        
+
+            
             Text("NAMI BLE Chat (ver.\(versiontext))")
                 .padding(20)
             Text("NAMI BLE Chat (ver.\(versiontext))")
@@ -70,6 +115,66 @@ struct MessageTestView: View {
         .onDisappear(perform: {
             print("disappear")
         })
+    }
+    
+    func ReadMessagefromFile(filename: String) {
+        print(filename)
+        let path = FileManager.default.urls(
+            for: .documentDirectory,
+            in: .userDomainMask)[0].appendingPathComponent(filename)
+
+        guard let data = try? Data(contentsOf: path) else {
+            fatalError("error in ReadMessagefromFile")
+        }
+        
+        print(data)
+        
+        let decoder = JSONDecoder()
+        guard let messageData = try? decoder.decode([JsonMessageItem].self, from: data) else {
+            fatalError("JSONデコードエラー")
+        }
+        print(messageData)
+        
+        userMessage.userMessageList = []
+        for messageItem in messageData {
+            userMessage.userMessageList.append(
+                UserMessageItem(userMessageID: messageItem.userMessageID, userMessageText: messageItem.userMessageText)
+            )
+        }
+        
+    }
+    
+    func WriteMessagetoFile(filename: String) {
+        print(filename)
+        print(userMessage)
+        let path = FileManager.default.urls(
+            for: .documentDirectory,
+            in: .userDomainMask)[0].appendingPathComponent(filename)
+        let encoder = JSONEncoder()
+        //var jsonArray:[Data] = []
+        var jsonArray : [Dictionary<String, Any>] = []
+        for userMessageItem in userMessage.userMessageList {
+            print(userMessageItem.userMessageID)
+            print(userMessageItem.userMessageText)
+//            print(userMessageItem.user)
+            var jsonDic = Dictionary<String, Any>() // キーString、値AnyのDictionary
+            jsonDic["userMessageID"] = userMessageItem.userMessageID
+            jsonDic["userMessageText"] = userMessageItem.userMessageText
+
+            print(jsonDic)
+            jsonArray.append(jsonDic)
+        }
+        print(jsonArray)
+        let strarr = try! JSONSerialization.data(withJSONObject: jsonArray,options:[])
+        print(String(bytes:strarr, encoding: .utf8)!)
+        let str:String = String(bytes:strarr, encoding: .utf8) ?? "JSON error"
+        print(str)
+        
+        if let stringData = str.data(using: .utf8) {
+            try? stringData.write(to: path)
+        }
+        
+
     }
     
     func startMessage() {
