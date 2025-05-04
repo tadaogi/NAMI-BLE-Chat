@@ -17,6 +17,7 @@ class User: ObservableObject {
     @Published var ConnectMode = true
     @Published var PeripheralMode = false
     @Published var iPhoneMode = false
+    @Published var onlyNAMIMode = UserDefaults.standard.bool(forKey: "onlyNAMIMode")
     @Published var debugLogMode = true
     @Published var myID = "tmp"
     @Published var UUID = "00000002-0000-0000-0000-000000000000"
@@ -31,6 +32,10 @@ class User: ObservableObject {
     @Published var myip = "0.0.0.0"
     @Published var WiFiMessageFlag = false
     @Published var gps = GPS()
+//    @Published var area = "official"
+    @Published var latitude: Double = 35.31937839258047 // 鎌倉市役所
+    @Published var longitude: Double = 139.5472510462028
+
 
     init() {
         self.myID = UserDefaults.standard.object(forKey: "myID") as? String ?? "tadashi"
@@ -187,6 +192,7 @@ struct ContentView: View {
                     Button (action: {
                         if (runflag == false) {
                             // 先にやっておく
+                            self.userMessage.runflag = true
                             bleCentral.myinit(userMessage: self.userMessage)
                             blePeripheral.myinit(userMessage: self.userMessage)
                             devices.myinit(userMessage: self.userMessage)
@@ -223,6 +229,8 @@ struct ContentView: View {
                             wifi.setlog(log: self.log)
                             let wifires = wifi.start()
                             self.log.addItem(logText: "wifi start: \(wifires)")
+                            
+                            movingEdgeInit(userMessage: self.userMessage)
                             
                             //何故か、なくても動く。駄目かな？ないと駄目
                             // 上に移動

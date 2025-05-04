@@ -14,8 +14,8 @@ class GPS: NSObject, CLLocationManagerDelegate{
     
     var locationManager: CLLocationManager!
     var timer: Timer? = nil
-    var lastlatitude = 0.0
-    var lastlongitude = 0.0
+    var lastlatitude = UserDefaults.standard.double(forKey: "latitude")
+    var lastlongitude = UserDefaults.standard.double(forKey: "longitude")
     
     override init(){
         super.init()
@@ -35,6 +35,7 @@ class GPS: NSObject, CLLocationManagerDelegate{
         timerStart(timerInterval: 60) // 60秒に1回呼ばれる
 
         globalgps = self
+        
     }
     
     func dummy()->Int {
@@ -60,10 +61,12 @@ class GPS: NSObject, CLLocationManagerDelegate{
  
         // 緯度
         let latitude = location?.coordinate.latitude
-        lastlatitude = latitude ?? 0.0
+        let tmplat = UserDefaults.standard.double(forKey: "latitude")
+        lastlatitude = latitude ?? tmplat
         // 経度
         let longitude = location?.coordinate.longitude
-        lastlongitude = longitude ?? 0.0
+        let tmplon = UserDefaults.standard.double(forKey: "longitude")
+        lastlongitude = longitude ?? tmplon
  
         print("latitude: \(latitude!)")
         print("longitude: \(longitude!)")

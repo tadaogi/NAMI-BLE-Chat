@@ -42,7 +42,7 @@ struct SettingView: View {
                         .frame(minWidth: 0.0, maxWidth: .infinity)
                         .frame(height: 0)
                 }
-                HStack() {
+                HStack(spacing: 10) {
                     Text("iPhone only")
                     Toggle(isOn: $user.iPhoneMode) {
                         EmptyView()
@@ -51,6 +51,19 @@ struct SettingView: View {
                         .fill(Color.white)
                         .frame(minWidth: 0.0, maxWidth: .infinity)
                         .frame(height: 0)
+
+                }
+                HStack() {
+                    Text("NAMI only")
+                    Toggle(isOn: $user.onlyNAMIMode) {
+                        EmptyView()
+                    }
+                    Rectangle()
+                        .fill(Color.white)
+                        .frame(minWidth: 0.0, maxWidth: .infinity)
+                        .frame(height: 0)
+
+
                 }
                 HStack() {
                     Text("Auto")
@@ -224,6 +237,7 @@ struct SettingView: View {
                 user.ConnectMode = ConnectMode
                 user.iPhoneMode = iPhoneMode
                 user.debugLogMode = debugLogMode
+                user.onlyNAMIMode = UserDefaults.standard.bool(forKey: "onlyNAMIMode")
 
                 self.log.addItem(logText: "enterSetting, INFO, 0000, , \(user.timerInterval), \(user.obsoleteInterval)")
                 
@@ -245,6 +259,9 @@ struct SettingView: View {
                 ConnectMode = user.ConnectMode
                 iPhoneMode = user.iPhoneMode
                 debugLogMode = user.debugLogMode
+                
+                UserDefaults.standard.set(user.onlyNAMIMode, forKey: "onlyNAMIMode")
+
                 
                 self.log.addItem(logText: "exitSetting, INFO, 0000, , \(user.timerInterval), \(user.obsoleteInterval)")
                 

@@ -10,6 +10,7 @@
 		321DC427275D833400497385 /* AlarmSettingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 321DC426275D833400497385 /* AlarmSettingView.swift */; };
 		32228A872C4F2BAD005BF24F /* MapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32228A862C4F2BAD005BF24F /* MapView.swift */; };
 		32228A892C4F2C67005BF24F /* SingleMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32228A882C4F2C67005BF24F /* SingleMessageView.swift */; };
+		322521FF2D4DA3A9008C22DF /* MovingEdge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 322521FE2D4DA390008C22DF /* MovingEdge.swift */; };
 		324BF7FD268AF46100BEC254 /* test.txt in Resources */ = {isa = PBXBuildFile; fileRef = 324BF7FC268AF46100BEC254 /* test.txt */; };
 		3254BA92277BDE3000A1D2D0 /* MessageTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3254BA91277BDE2F00A1D2D0 /* MessageTestView.swift */; };
 		32626E9425B2421B00BEE892 /* BLEcommTest0App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32626E9325B2421B00BEE892 /* BLEcommTest0App.swift */; };
@@ -41,6 +42,7 @@
 		321DC426275D833400497385 /* AlarmSettingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmSettingView.swift; sourceTree = "<group>"; };
 		32228A862C4F2BAD005BF24F /* MapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapView.swift; sourceTree = "<group>"; };
 		32228A882C4F2C67005BF24F /* SingleMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleMessageView.swift; sourceTree = "<group>"; };
+		322521FE2D4DA390008C22DF /* MovingEdge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovingEdge.swift; sourceTree = "<group>"; };
 		324BF7FC268AF46100BEC254 /* test.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = test.txt; sourceTree = "<group>"; };
 		324CC8072B194DC1003ECECB /* Todo.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = Todo.md; sourceTree = "<group>"; };
 		3254BA91277BDE2F00A1D2D0 /* MessageTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageTestView.swift; sourceTree = "<group>"; };
@@ -104,6 +106,7 @@
 		32626E9225B2421B00BEE892 /* NAMI BLE Chat */ = {
 			isa = PBXGroup;
 			children = (
+				322521FE2D4DA390008C22DF /* MovingEdge.swift */,
 				32846F312B832D67008D411E /* NAMI BLE Chat.entitlements */,
 				321DC426275D833400497385 /* AlarmSettingView.swift */,
 				32626EA925B3055900BEE892 /* BLE.swift */,
@@ -237,6 +240,7 @@
 				327CD3FC2B04AFC000045659 /* PhotoShow.swift in Sources */,
 				3254BA92277BDE3000A1D2D0 /* MessageTestView.swift in Sources */,
 				32EBD21B25CA09330032F3AF /* MainView.swift in Sources */,
+				322521FF2D4DA3A9008C22DF /* MovingEdge.swift in Sources */,
 				32626E9625B2421B00BEE892 /* ContentView.swift in Sources */,
 				32F090B125B83D7B005F311A /* Log.swift in Sources */,
 				328AEF622C44F580005FE7F7 /* MyView.swift in Sources */,

@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct MainView: View {
+    @State var userMessage: UserMessage
+    
     var body: some View {
         TabView {
             MessageView()
@@ -39,12 +41,18 @@ struct MainView: View {
         .environmentObject(FileID())
         .environmentObject(WiFi())
         .environmentObject(User())
+        .onAppear {
+            movingEdgeInit(userMessage: userMessage)
+            movingEdgeFlag = UserDefaults.standard.bool(forKey: "movingEdgeFlag")
+            userMessage.movingEdgeFlag = movingEdgeFlag
+
+        }
     }
 }
 
 struct MainView_Previews: PreviewProvider {
     static var previews: some View {
-        MainView()
+        MainView(userMessage: UserMessage())
             .environmentObject(User())
             .environmentObject(Log())
             .environmentObject(Devices())

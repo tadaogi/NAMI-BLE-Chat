@@ -59,6 +59,9 @@ public class UserMessage: ObservableObject {
     var bleCentral : BLECentral!
     var blePeripheral : BLEPeripheral!
     var debugMessageFlag = false
+    var movingEdgeFlag = UserDefaults.standard.bool(forKey: "movingEdgeFlag")
+    var runflag: Bool = false
+//    var area = UserDefaults.standard.string(forKey: "area") ?? "official"
 
     @Published var userMessageList : [UserMessageItem] = [ // array の方が正式名称らしいがとりあえずそのまま
         //UserMessageItem(userMessageID: "  ", userMessageText: "                                                                                        a"),
@@ -162,6 +165,106 @@ public class UserMessage: ObservableObject {
                 self.userMessageCount = self.userMessageCount + 1
 
                 self.userMessageList.append(UserMessageItem(userMessageID: userMessageID, userMessageText: "\(UserMessageTextString)"))
+                
+                if (self.movingEdgeFlag) {
+                    sendMessage(userMessageID:userMessageID, userMessageText:userMessageText)
+                }
+                
+                index = index + amountToSend
+                restToSend = userMessageText.count - index
+                sequence = sequence + 1
+                
+                
+                // 画面表示を変えないとredrawできないので、姑息な手段で書き換える。
+                if self.pStatus == "|" {
+                    self.pStatus="-"
+                } else {
+                    self.pStatus="|"
+                }
+            }
+                        
+            // 画面表示を変えないとredrawできないので、姑息な手段で書き換える。
+            if self.pStatus == "|" {
+                self.pStatus="-"
+            } else {
+                self.pStatus="|"
+            }
+        }
+    }
+    
+    // addItemを改修して、他のパラメータも渡すように改修
+    // MongoEdge から使う
+    func addItem2(userMessageID: String, userMessageText: String) {
+        
+        let IDcomponents = userMessageID.components(separatedBy: "-")
+        var dateString:String
+        if let tmpString = IDcomponents.first {
+            dateString = tmpString
+        } else {
+            dateString = "20250127055900.123"
+        }
+        print(dateString)
+        
+        let userID = IDcomponents[2]
+        print(userID)
+        
+        /*
+        let now = Date() // 現在日時の取得
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "ja_JP") // ロケールの設定
+        dateFormatter.dateFormat = "yyyyMMddHHmmss.SSS"
+        let currenttime = dateFormatter.string(from: now) // -> 2021/01/20 19:57:17.234
+        */
+        let currenttime = dateString
+        print(currenttime + " " + userMessageText)
+        
+        /*
+        let iValue = Int.random(in: 1 ... 0xffff)
+        let sValue = String(format: "%04x", iValue)
+        */
+        let sValue = IDcomponents[1]
+        
+        /*
+        let myID:String = (UserDefaults.standard.string(forKey: "myID") ?? "NONE") as String
+        let UUID:String = (UserDefaults.standard.string(forKey: "UUID") ?? "00000001-0000-0000-0000-000000000001") as String
+        */
+        let myID = userID
+        // let userMessageID = currenttime + "-" + sValue + "-" + myID + "(0)" // 最後の()はホップの回数とする
+        
+        // Split Send の実装 2024/5/16
+        let mtu = 512 // ここは相手が決まっていないので、MTUを知ることが出来ない。なので、決め打ちで512にしておく。
+        //let mtu = 4
+        let userMessageIDformat = currenttime + "-" + sValue + "-" + myID + "-%@(0)" // %@は下で、シーケンス番号に置き換える
+        let headerLength = userMessageIDformat.count + 3 // シーケンス番号が３桁までとしておく
+        //var userMessageID : String = ""
+        var sequence = 0 // シーケンス番号、０から始まる
+        var index = 0 // データを、どこから送るか
+        var restToSend = userMessageText.data(using: .utf8)!.count - index // 日本語の時に、count だとずれるので、data にして長さを知る
+        var dataToSend = userMessageText.data(using: .utf8)
+        
+        DispatchQueue.main.async {
+            // ここから下が、Splitのロジック
+            while (restToSend>0) {
+                var amountToSend = min(restToSend,mtu-headerLength) // 今回送るデータ長
+                print("amountToSend=", amountToSend)
+                
+                var chunk = dataToSend?.subdata(in: index..<(index + amountToSend)) // 今回送るデータ
+                var userMessageID : String = ""
+                if (index + amountToSend < dataToSend!.count) {
+                    print("sequence=",sequence)
+                    userMessageID = String(format: userMessageIDformat, String(sequence))
+                } else {
+                    print("sequence=",sequence)
+                    print("last")
+                    userMessageID = String(format: userMessageIDformat, String(sequence)+"L")
+                }
+                print("userMessageID=", userMessageID)
+                // print("debugMessageFlag:",self.debugMessageFlag) // メッセージ長さが変わってしまうので、とりあえずここでは使わない
+                var UserMessageTextString = String(data:chunk ?? Data(), encoding: .utf8)! // encodeした送るテキスト
+                print(UserMessageTextString)
+                self.userMessageCount = self.userMessageCount + 1
+
+                self.userMessageList.append(UserMessageItem(userMessageID: userMessageID, userMessageText: "\(UserMessageTextString)"))
 
                 index = index + amountToSend
                 restToSend = userMessageText.count - index
@@ -175,32 +278,7 @@ public class UserMessage: ObservableObject {
                     self.pStatus="|"
                 }
             }
-            
-            // ここから下がオリジナル
-            /*
-            print("debugMessageFlag:",self.debugMessageFlag)
-            print(userMessageText)
-            self.userMessageCount = self.userMessageCount + 1
-            if self.debugMessageFlag {
-                self.userMessageList.append(UserMessageItem(userMessageID: userMessageID, userMessageText: "\(currenttime)[\(self.userMessageCount)]: \(userMessageText)"))
-            } else {
-                self.userMessageList.append(UserMessageItem(userMessageID: userMessageID, userMessageText: "\(userMessageText)"))
-            }
-            */
-            
-            
-            // debug
-            // 相手が決まらないとかけなくなるので、コメントアウト 2021/12/15
-            /*
-             if bleCentral != nil {
-             let connectedPeripheral = self.bleCentral.connectedPeripheral
-             print("debug \(String(describing: connectedPeripheral))")
-             if connectedPeripheral != nil {
-             self.bleCentral.writecurrent()
-             }
-             }
-             */
-            
+                        
             // 画面表示を変えないとredrawできないので、姑息な手段で書き換える。
             if self.pStatus == "|" {
                 self.pStatus="-"
@@ -378,17 +456,17 @@ public class UserMessage: ObservableObject {
             }
             
             self.userMessageCount = self.userMessageCount + 1 // これを増やす必要があるか不明
-
+            
             // IDから時刻を取り出して、現在時刻と比較
             var recUserMessageID = protocolMessageCommand[1]
             let IDarray = recUserMessageID.split(separator:"-")
             if IDarray.count <= 1 {
                 print("illeagal userMessageID")
                 self.bleCentral.log.addItem(logText: "illeagal userMessageID in addItemExternal")
-
+                
                 // ここで必要なはずなので追加 2024/7/24
                 self.messageIDLock.unlock()
-
+                
                 return
             }
             let IDdateString = String(IDarray[0])
@@ -402,25 +480,25 @@ public class UserMessage: ObservableObject {
             if diffsec > 3600 { // 1hour
                 print("too old userMessageID")
                 self.bleCentral.log.addItem(logText: "too old userMessageID in addItemExternal")
-
+                
                 // ここで必要なはずなので追加 2024/7/24
                 self.messageIDLock.unlock()
-
+                
                 return
-
+                
             }
             
             // hop 回数
             var regex = /\((\d+)\)/
-
+            
             var match = recUserMessageID.firstMatch(of: regex)
             if match == nil {
                 print("illeagal userMessageID(hop)")
                 self.bleCentral.log.addItem(logText: "illeagal userMessageID(hop) in addItemExternal")
-
+                
                 // ここで必要なはずなので追加 2024/7/24
                 self.messageIDLock.unlock()
-
+                
                 return
             }
             var originalhopStr = match?.1 ?? "0"
@@ -430,12 +508,12 @@ public class UserMessage: ObservableObject {
             if hop > 10 {
                 print("too many hops ")
                 self.bleCentral.log.addItem(logText: "too many hops in addItemExternal")
-
+                
                 // ここで必要なはずなので追加 2024/7/24
                 self.messageIDLock.unlock()
-
+                
                 return
-
+                
             }
             var newID = recUserMessageID.replacingOccurrences(of: "("+originalhopStr+")", with: "("+String(hop)+")")
             print(newID)
@@ -445,7 +523,11 @@ public class UserMessage: ObservableObject {
             
             self.messageIDLock.unlock()
             self.bleCentral.log.addItem(logText: "addItemExternal append, \(protocolMessageCommand[1]), \(protocolMessageCommand[2]) ")
-
+            
+            if (self.movingEdgeFlag) {
+                sendMessage(userMessageID:newID, userMessageText:protocolMessageCommand[2])
+            }
+            
             
             // ここで split されたデータの処理をする 2024/5/16
             var regex2 = /-(?<sequence>\w*)\((?<hop>\d*)\)/ // hopの回数も分かるので、上の処理を直せるが、とりあえずそのまま
@@ -453,15 +535,15 @@ public class UserMessage: ObservableObject {
             if match2 == nil {
                 print("illegal message ID ")
                 self.bleCentral.log.addItem(logText: "illegal message ID in addItemExternal")
-
+                
                 // ここで必要なはずなので追加 2024/7/24
                 self.messageIDLock.unlock()
-
+                
                 return
             }
             let seq = match2!.sequence
             let last = String(seq.suffix(1))
-
+            
             if last=="L" {
                 print("LAST")
                 let n = Int(seq.prefix(seq.count-1))!
@@ -471,17 +553,17 @@ public class UserMessage: ObservableObject {
                     print("last of split data ",newID)
                     // mergeSplitData(messageID: newID)
                 }
-
+                
             }
             // 到達の順番が変わることがあるので、とにかく毎回チェックする
-            mergeSplitData(messageID: newID)
-
+            self.mergeSplitData(messageID: newID)
+            
             // append直後に移動 2024/7/24
             //self.messageIDLock.unlock()
             //self.bleCentral.log.addItem(logText: "addItemExternal append, \(protocolMessageCommand[1]), \(protocolMessageCommand[2]) ")
             
             // command かどうか確認 2024.2.19 commandなら実行
-            MessageCommandCheck(MessageCommand: protocolMessageCommand[2])
+            self.MessageCommandCheck(MessageCommand: protocolMessageCommand[2])
             
             // 画面表示を変えないとredrawできないので、姑息な手段で書き換える。
             if self.pStatus == "|" {
@@ -490,6 +572,7 @@ public class UserMessage: ObservableObject {
                 self.pStatus="|"
             }
         }
+    }
         
         // 思ったより長くなっている
         func mergeSplitData(messageID: String) {
@@ -725,7 +808,7 @@ public class UserMessage: ObservableObject {
 
         }
 
-    }
+    
 }
 
 

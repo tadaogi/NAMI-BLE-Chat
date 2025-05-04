@@ -24,6 +24,38 @@ struct MessageTestView: View {
 
     var body: some View {
         ScrollView([.vertical, .horizontal],showsIndicators: true) {
+            Text("Moving Edge Setting")
+            HStack {
+                Text("moving edge")
+                Toggle(isOn: $userMessage.movingEdgeFlag) {
+                    EmptyView()
+                }
+            }
+            /*
+            HStack {
+                Text("Area")
+                TextField("",
+                          text: $user.area,
+                      onCommit: {
+                    print("area:\(user.area)")
+                })
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+            }
+            */
+            HStack {
+                Text("lat")
+                TextField("",
+                          value: $user.latitude,
+                    format: .number)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                Text("lon")
+                TextField("",
+                          value: $user.longitude,
+                    format: .number)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+
+            }
+
             Text("Message Test Setting")
             VStack {
                 HStack {
@@ -62,7 +94,16 @@ struct MessageTestView: View {
                     }
                 }
             }
-            
+            Text("DocumentPath:")
+            Text("\(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.path)")
+                .frame(width:300)
+//                .textSelection(.enabled)
+//            Text("Copy DocumentPath")
+            .contextMenu(ContextMenu(menuItems: {
+              Button("Copy", action: {
+                  UIPasteboard.general.string =  FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.path
+              })
+            }))
             HStack {
                 Button (action: {
                     print("write to file button")
@@ -111,9 +152,36 @@ struct MessageTestView: View {
             } else {
                 buttonText = "Start"
             }
+            userMessage.movingEdgeFlag = UserDefaults.standard.object(forKey: "movingEdgeFlag") as? Bool ?? false
+//            userMessage.area = UserDefaults.standard.string(forKey: "area") ?? "official"
+            //@Published var latitude: Double = 35.31937839258047 // 鎌倉市役所
+            //@Published var longitude: Double = 139.5472510462028
+
+            user.latitude = UserDefaults.standard.double(forKey: "latitude")
+            if user.latitude == 0 {
+                user.latitude = 35.31937839258047
+            }
+            user.longitude = UserDefaults.standard.double(forKey: "longitude")
+            if user.longitude == 0 {
+                user.longitude = 139.5472510462028
+            }
+
+
         })
         .onDisappear(perform: {
             print("disappear")
+            UserDefaults.standard.set(userMessage.movingEdgeFlag, forKey: "movingEdgeFlag")
+            movingEdgeFlag = userMessage.movingEdgeFlag
+//            UserDefaults.standard.set(userMessage.area, forKey: "area")
+            UserDefaults.standard.set(user.latitude, forKey: "latitude")
+            UserDefaults.standard.set(user.longitude, forKey: "longitude")
+            // 以下をやると、現在の値に上書きされてしまう。
+            /*
+            if globalgps != nil {
+                globalgps!.lastlatitude = user.latitude
+                globalgps!.lastlongitude = user.longitude
+            }
+            */
         })
     }
     
@@ -122,7 +190,7 @@ struct MessageTestView: View {
         let path = FileManager.default.urls(
             for: .documentDirectory,
             in: .userDomainMask)[0].appendingPathComponent(filename)
-
+        print(path)
         guard let data = try? Data(contentsOf: path) else {
             fatalError("error in ReadMessagefromFile")
         }

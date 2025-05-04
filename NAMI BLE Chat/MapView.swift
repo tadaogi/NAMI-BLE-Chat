@@ -60,8 +60,8 @@ struct MapView: View {
         span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
     ))
 
-    @State private var markerPos = CLLocationCoordinate2D(latitude: 35.6895, longitude: 139.6917)
-    @State private var markerPos2 = CLLocationCoordinate2D(latitude: 35.6890, longitude: 139.6917)
+    @State private var markerPos = CLLocationCoordinate2D(latitude: 35.64488, longitude: 139.40846)
+    @State private var markerPos2 = CLLocationCoordinate2D(latitude: 35.64488, longitude: 139.40846)
     @State private var items = [1,2]
 
     //@State var msgDataList : [MsgData] = []:
@@ -337,8 +337,9 @@ struct MapView: View {
 
     func getPosFromMessage(userMessageText: String)-> CLLocationCoordinate2D? {
         // for debug
-        var dlat = 35.29974550558887
-        var dlon = 139.4809719829731
+        // 明星大学 35.64488, 139.40846
+        var dlat = 35.64488
+        var dlon = 139.40846
         let reg = /\[GPS,(?<latitude>[0-9.\-]*),(?<longitude>[0-9.\-]*)\]/
         if let match=userMessageText.firstMatch(of: reg) {
             print(match.0)
@@ -441,7 +442,7 @@ struct MapView: View {
     func makeMsgDataList() {
         
         params.msgDataList = []
-        // 写真が１枚もないとこの場所がセンターになる。明星大学
+        // 写真が１枚もないとこの場所がセンターになる。明星大学 35.64488, 139.40846
         var initialpos:CLLocationCoordinate2D = CLLocationCoordinate2D(latitude: 35.64488, longitude: 139.40846)
         
         for userMessageItem in self.userMessage.userMessageList {
@@ -482,13 +483,7 @@ struct MapView: View {
             center: initialpos,
             span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
         ))
-        /*
-        params.msgDataList = []
-        var newMsgData = MsgData(pos: CLLocationCoordinate2D(latitude: 35.6885, longitude: 139.6917), userMessageText: "111")
-        params.msgDataList.append(newMsgData)
-        var newMsgData2 = MsgData(pos: CLLocationCoordinate2D(latitude: 35.6800, longitude: 139.6917), userMessageText: "222")
-        params.msgDataList.append(newMsgData2)
-        */
+
     }
     
     // MyView からコピペ。本当は共通のライブラリにする必要がある

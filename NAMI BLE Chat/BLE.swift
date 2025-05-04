@@ -146,7 +146,12 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         //self.centralManager.scanForPeripherals(withServices: [UUID_str], options: nil)
 
         // 本当は、サービスのUUIDを指定するのが正しいはずだがうまく動かない
-        self.centralManager.scanForPeripherals(withServices: nil, options: nil)
+        // advertisement data の方が間違えていたので、これで動くはず
+        if user.onlyNAMIMode {
+            self.centralManager.scanForPeripherals(withServices: [UUID_Service], options: nil)
+        } else {
+            self.centralManager.scanForPeripherals(withServices: nil, options: nil)
+        }
         // 以下の方法ならうまくいく。ただし、FD6Fが入るとNG
         
         //let UUID0 = CBUUID(string: "180D") // heart rate
@@ -366,6 +371,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             case CBPeripheralState.connected:
                 self.log.addItem(logText: "CBPeripheralState.connected, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString)")
                 print("connected")
+                doconnect = true // connectされていてもservicesが読めない時があるらしいので、そのときのために connect する。2025/5/2
             case CBPeripheralState.disconnecting:
                 self.log.addItem(logText: "CBPeripheralState.disconnecting, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString)")
                 print("disconnecting")
@@ -572,7 +578,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             //let UUID_Read = CBUUID(string: "1BE31CB9-9E07-4892-AA26-30E87ABE9F70")
             //let UUID_Write = CBUUID(string: "0C136FCC-3381-4F1E-9602-E2A3F8B70CEB")
 
-            if (serviceUUID1=="180A") {
+            if (serviceUUID1=="180A") { // こっちにはこないみたい
                 print("C: call discoverCharacteristics for 180A")
                 peripheral.discoverCharacteristics(nil, for:service as CBService)
                 cancancel = false
@@ -1137,9 +1143,13 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
 
         //let advertisementData = [CBAdvertisementDataLocalNameKey: "BLEcommTest0"]
         // only NAMI test
-        let advertisementData = [CBAdvertisementDataLocalNameKey: "BLEcommTest0",
-                              CBAdvertisementDataServiceUUIDsKey: BLEcommService.UUID_Service] as [String : Any]
-        //let advertisementData = [CBAdvertisementDataServiceUUIDsKey: BLEcommService.UUID_Service]
+        // 2025/5/1 ZenSample との差異を探した時に、アドバタイズの方法が違っている
+        // これまではNAMIは上のやり方だったけど、下で確認してみる。（戻さないといけないかも）
+        // NGだったので戻す. ロジックを見ると、どこでも使っていないので、使わない方にする
+        //let advertisementData = [CBAdvertisementDataLocalNameKey: "BLEcommTest0",
+        //                      CBAdvertisementDataServiceUUIDsKey: BLEcommService.UUID_Service] as [String : Any]
+//        let advertisementData = [CBAdvertisementDataServiceUUIDsKey: BLEcommService.UUID_Service]
+        let advertisementData = [CBAdvertisementDataServiceUUIDsKey: [BLEcommService.UUID_Service]] // ZenSampleの書き方 これが正しい方法らしい
         if (peripheralMode) {
             self.log.addItem(logText:"startAdvertising")
 

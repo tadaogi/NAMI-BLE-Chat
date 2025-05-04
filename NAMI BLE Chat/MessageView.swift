@@ -16,13 +16,35 @@ struct MessageView: View {
     @State private var active = false
     @EnvironmentObject var fileID: FileID
     @EnvironmentObject var user : User
-
+    
+    @State private var ShowOfficial = true
+    @State private var ShowLocal = true
+    
     var body: some View {
         NavigationView {
             VStack(alignment: .leading) {
                 HStack {
                     Text("UserMessages")
                     Spacer()
+                    Button(action: {
+                        ShowOfficial.toggle()
+                    }) {
+                        Text("Official")
+                            .padding(5)
+                            .frame(width: 90, height: 19)
+                            .background(ShowOfficial ? Color("lightBackground") : Color("lightGray"))
+                            .foregroundColor(ShowOfficial ? Color.black : Color.gray)
+                    }
+                    Button(action: {
+                        ShowLocal.toggle()
+                    }) {
+                        Text("Local")
+                            .padding(5)
+                            .frame(width: 90, height: 19)
+                            .background(ShowLocal ? Color("lightBackground") : Color("lightGray"))
+                            .foregroundColor(ShowLocal ? Color.black : Color.gray)
+
+                    }
                     Text(userMessage.pStatus)
                 }
                 
@@ -48,18 +70,52 @@ struct MessageView: View {
                             .padding([.leading], 15)
                          */
                         
-                        
+                        var ShowFlag = true
+                        if messageitem.userMessageText.contains("#official") {
+                            if ShowOfficial {
+                                MyMessage(message: setmessage(messageitem: messageitem), active: $active)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding([.leading], 5)
+                                    .onTapGesture {
+                                        print("tap")
+                                    }
+                                // 行間が狭すぎるので、以下を入れた
+                                Rectangle()
+                                    .fill(Color.white)
+                                    .frame(minWidth: 0.0, maxWidth: .infinity)
+                                    .frame(height: 0)
+
+                            }
+                        } else {
+                            if ShowLocal {
+                                MyMessage(message: setmessage(messageitem: messageitem), active: $active)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding([.leading], 5)
+                                    .onTapGesture {
+                                        print("tap")
+                                    }
+                                // 行間が狭すぎるので、以下を入れた
+                                Rectangle()
+                                    .fill(Color.white)
+                                    .frame(minWidth: 0.0, maxWidth: .infinity)
+                                    .frame(height: 0)
+
+                            }
+                        }
+                        /*
                         MyMessage(message: setmessage(messageitem: messageitem), active: $active)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding([.leading], 5)
                             .onTapGesture {
                                 print("tap")
                             }
+                         
                         // 行間が狭すぎるので、以下を入れた
                         Rectangle()
                             .fill(Color.white)
                             .frame(minWidth: 0.0, maxWidth: .infinity)
                             .frame(height: 0)
+                         */
 
                         // 上に置き換える
                         /*

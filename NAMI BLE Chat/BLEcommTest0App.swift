@@ -11,7 +11,7 @@ import SwiftUI
 struct BLEcommTest0App: App {
     var body: some Scene {
         WindowGroup {
-            MainView()
+            MainView(userMessage: UserMessage())
 //                .environmentObject(User())
                 .environmentObject(Log())
                 .environmentObject(Devices())
