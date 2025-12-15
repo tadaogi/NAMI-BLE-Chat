@@ -8,6 +8,7 @@
 import SwiftUI
 import CoreBluetooth
 
+
 class User: ObservableObject {
     @Published var AutoMode = false
     @Published var Ptime = 300

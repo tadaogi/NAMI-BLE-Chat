@@ -18,6 +18,7 @@ struct PeripheralInfo {
     var username: String
     var firstDate: Date
     var lastDate: Date
+    var logicalId: String      // ★ 追加
 }
 
 var UUID_Service_str = "73C98F4C-F74F-4918-9B0A-5EF4C6C021C6"
@@ -25,6 +26,10 @@ struct BLEcommService {
     static let UUID_Service = CBUUID(string: UUID_Service_str)
     static let UUID_Read = CBUUID(string: "1BE31CB9-9E07-4892-AA26-30E87ABE9F70")
     static let UUID_Write = CBUUID(string: "0C136FCC-3381-4F1E-9602-E2A3F8B70CEB")
+    
+    // ★ Android Device ID 用
+    static let UUID_DeviceId = CBUUID(string: "D0A9F6B5-1234-4D8E-9E10-ABCDEF123456")
+
 }
 // Centralとして動く時の処理はこちら
 var ConnectMode : Bool = true
@@ -215,6 +220,45 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     
     public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
         
+        print("=== didDiscover ===")
+        print("peripheral: \(peripheral)")
+        print("name: \(peripheral.name ?? "nil")")
+        print("identifier: \(peripheral.identifier.uuidString)")
+        print("advertisementData keys: \(advertisementData.keys)")
+
+        if let serviceData =
+            advertisementData[CBAdvertisementDataServiceDataKey] as? [CBUUID: Data] {
+            print("ServiceData dict:")
+            for (uuid, data) in serviceData {
+                let hex = data.map { String(format: "%02X", $0) }.joined()
+                print("  \(uuid.uuidString): \(hex)")
+            }
+        } else {
+            print("ServiceData: nil")
+        }
+        let shortServiceUUID = CBUUID(string: "8F4C")  // 73C98F4C... の下位16bit
+
+        if let serviceData =
+            advertisementData[CBAdvertisementDataServiceDataKey] as? [CBUUID: Data],
+           let devIdData = serviceData[shortServiceUUID] {
+
+            print("devIdData bytes = \(devIdData as NSData)")
+            // ここで Android 側で入れた devIdBytes を復元する
+        } else {
+            print("ServiceData for 8F4C not found")
+        }
+        let shortServiceUUID2 = CBUUID(string: "73C98F4C")  // 73C98F4C... の下位16bit
+
+        if let serviceData =
+            advertisementData[CBAdvertisementDataServiceDataKey] as? [CBUUID: Data],
+           let devIdData = serviceData[shortServiceUUID2] {
+
+            print("devIdData bytes = \(devIdData as NSData)")
+            // ここで Android 側で入れた devIdBytes を復元する
+        } else {
+            print("ServiceData for 73C98F4C not found")
+        }
+
         // stop後の処理は無視する
         if self.state == BLECentralState.stop {
             self.log.addItem(logText: "Central didDiscover while stop state")
@@ -283,8 +327,16 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
                 p.identifier.UUIDString == peripheral.identifier.UUIDString
             }
             */
+            /*
             let index = self.peripheralInfoArray.firstIndex { (p: PeripheralInfo) -> Bool in
                 p.peripheral.identifier.uuidString == peripheral.identifier.uuidString
+            }
+             */
+            let logicalId = makeLogicalId(peripheral: peripheral,
+                                          advertisementData: advertisementData)
+
+            let index = self.peripheralInfoArray.firstIndex { (p: PeripheralInfo) -> Bool in
+                p.logicalId == logicalId      // ★ uuidString ではなく logicalId で比較
             }
             // UUIDは同じだけど、peripheralは違うという事はないのか？
             if index != nil {
@@ -296,7 +348,8 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             if index == nil {
                 print("index is nil ???")
                 let currentDate = Date()
-                let peripheralInfo = PeripheralInfo(peripheral: peripheral, rssi: RSSI,     username: peripheral.name ?? "unknown", firstDate: currentDate, lastDate: currentDate)
+                let peripheralInfo = PeripheralInfo(peripheral: peripheral, rssi: RSSI,     username: peripheral.name ?? "unknown", firstDate: currentDate, lastDate: currentDate, logicalId: logicalId)
+                self.peripheralInfoArray.append(peripheralInfo)
                 self.peripheralInfoArray.append(peripheralInfo as PeripheralInfo)
                 //self.tableView.reloadData()
                 print("new peripheralInfo.firstDate    \(peripheralInfo.firstDate)")
@@ -694,6 +747,13 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
                 }
             }
             
+            // ★ DEVICE_ID を読む
+            if characteristic.uuid == BLEcommService.UUID_DeviceId {
+                print("find UUID_DeviceId → read value")
+
+                peripheral.readValue(for: characteristic)
+            }
+            
             let UUID_Manu = CBUUID(string: "0x2a29") // Manufacturer Name String
             if characteristic.uuid == UUID_Manu {
                 print("UUID_Manu")
@@ -833,6 +893,24 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             //書き込み
             //peripheral.writeValue(data , for: characteristic, type: .withResponse)
             //writeData("abcdefg", peripheral: peripheral)
+        }
+        
+        // ★ DeviceId の読み取り
+        if characteristic.uuid == BLEcommService.UUID_DeviceId {
+            // 1. Data? を安全に unwrap
+            guard let devData = characteristic.value else {
+                print("DEVICE_ID: value is nil")
+                return
+            }
+
+            // 2. Data → String(UTF-8) へ変換
+            if let devIdStr = String(data: devData, encoding: .utf8) {
+                print("DEVICE_ID from peripheral = \(devIdStr)")
+                // ここで devIdStr を logicalId として使う処理を書く
+            } else {
+                print("DEVICE_ID decode error (not UTF-8)")
+            }
+            return    // 他の if には行かないようにするなら return してもよい
         }
         
         let UUID_Manu = CBUUID(string: "0x2a29") //
@@ -995,6 +1073,29 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         self.startScan()
         */
     }
+    
+    // android の UUID が同じにならないための改修 2025/12/14
+    // BLE.swift 内のどこか（BLECentral のメソッドとしてでOK）
+
+    func makeLogicalId(peripheral: CBPeripheral,
+                       advertisementData: [String: Any]) -> String {
+        // 1. Service Data に Android の deviceId が入っていればそれを logicalId とする
+        if let serviceDataDict =
+            advertisementData[CBAdvertisementDataServiceDataKey] as? [CBUUID: Data],
+           let data = serviceDataDict[BLEcommService.UUID_Service],
+           !data.isEmpty {
+
+            // 8バイトでも16バイトでも、全部 hex 文字列にする
+            let hex = data.map { String(format: "%02X", $0) }.joined()
+            print("hex is \(hex)")
+            return hex
+        }
+
+        // 2. それ以外（iPhoneなど）は従来通り identifier.uuidString を使う
+        print("uuidString=\(peripheral.identifier.uuidString)d")
+        return peripheral.identifier.uuidString
+    }
+
 }
 
 public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObject {
@@ -1034,7 +1135,8 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
         }
         
         // 取り敢えずアドバタイズ開始 2021/12/28 stop が出ているのに、 start が１回しか出ないので、試しに出してみる。
-        if (peripheralMode) {
+        //if (peripheralMode) {
+        if (true) { // for debug 2025/5/15 // 戻しても良いような気もするが、２回読んでも大丈夫みたいなのでそのままにしておく。
             startAdvertise()
         }
         
@@ -1091,6 +1193,8 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
     let UUID_Service = BLEcommService.UUID_Service
     let UUID_Read = BLEcommService.UUID_Read
     let UUID_Write = BLEcommService.UUID_Write
+    // ★ 追加
+    let UUID_DeviceId = BLEcommService.UUID_DeviceId
     
     func publishservice() {
         
@@ -1107,18 +1211,41 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
         let characteristicW = CBMutableCharacteristic(type: UUID_Write, properties: propertiesW,
                                                       value: nil, permissions: permissionsW)
 
+        // ★ 追加: DeviceId を返すための Read-only characteristic
+        let characteristicDeviceId = CBMutableCharacteristic(
+            type: UUID_DeviceId,
+            properties: [.read],
+            value: nil,
+            permissions: [.readable]
+        )
+
+        
         // sample code
 //        let transferCharacteristic = CBMutableCharacteristic(type: TransferService.characteristicUUID,
 //                                                         properties: [.notify, .writeWithoutResponse],
 //                                                         value: nil,
 //                                                         permissions: [.readable, .writeable])
         // キャラクタリスティックをサービスにセット
-        service.characteristics = [characteristicR,characteristicW]
+        //service.characteristics = [characteristicR,characteristicW]
+        // キャラクタリスティックをサービスにセット
+        service.characteristics = [characteristicR, characteristicW, characteristicDeviceId]
         
         // サービスを Peripheral Manager にセット
         self.peripheralManager.add(service)
+
     }
     
+        // ★ 追加: iPhone 用の deviceId を永続化
+    private func getDeviceId() -> String {
+            let key = "BLE_DeviceId"
+            if let existing = UserDefaults.standard.string(forKey: key) {
+                return existing
+            }
+            let newId = UUID().uuidString
+            UserDefaults.standard.set(newId, forKey: key)
+            return newId
+    }
+
     public func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
         print("enter periperalManager:didAddService")
         
@@ -1176,6 +1303,18 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
         print("Received read request: MTU=\(request.central.maximumUpdateValueLength)");
         
         //let myname = UserDefaults.standard.string(forKey: "myID")
+        // ★ 1) まず DEVICE_ID 用の read を処理
+        if request.characteristic.uuid.isEqual(UUID_DeviceId) {
+                let devId = getDeviceId()
+                print("DEVICE_ID read requested, devId = \(devId)")
+                self.log.addItem(logText: "didReceiveReadRequest DEVICE_ID \(devId)")
+
+                request.value = devId.data(using: .utf8, allowLossyConversion: true)
+
+                // 同期でそのまま返して問題ありません
+                self.peripheralManager.respond(to: request, withResult: .success)
+                return
+        }
         
         if request.characteristic.uuid.isEqual(UUID_Read) {
             //let queue = DispatchQueue.global(qos:.default)

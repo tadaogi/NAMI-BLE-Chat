@@ -710,9 +710,25 @@ public class UserMessage: ObservableObject {
                         }
                         print("write finish")
                         self.bleCentral.log.addItem(logText: "mergeSplitData finished for \(messageID)")
-
                     }
-
+                } else {
+                    // base64 がない場合
+                    // ファイルでもないのに文字数が多くなるとここにくる
+                    // healthcare data だと、WatchOS側のMTUが小さい（240）ので、ヘルスケアデータが分割される
+                    // 今まで処理がなかったのを発見した 2025/5/25
+                    // NAMI同志の場合は、何もしなくても良い（同じメッセージが送られるだけだから）
+                    // 自分が edge の場合は、マージしたデータを BBS に送るようにする
+                    //     func addItem(userMessageText: String) {
+                    // からロジックを持ってくる
+                    
+                    if (self.movingEdgeFlag) {
+                        let userMessageText = AllMessage
+                        let userMessageID = IDbody + "-0L(0)"
+                        print(userMessageText)
+                        DispatchQueue.main.async {
+                            sendMessage(userMessageID:userMessageID, userMessageText:userMessageText)
+                        }
+                    }
                 }
 
             } else {
@@ -720,12 +736,12 @@ public class UserMessage: ObservableObject {
                 // 見つからなかった。エラー処理が必要か？
                 // エラーの原因が不明なので、対応方法も不明
                 // 全部揃ってから、手作業でマージできる方法を残しておくのが良いかも
+                self.bleCentral.log.addItem(logText: "mergeSplitData something is missing for \(messageID)")
                 for i in 0..<n+1 { // 実際には n は最後なので抜けていることはない
                     if UserMessageList[i] == nil {
                         print("UserMessageList[",i,"] is missing")
                     }
                 }
-
             }
         }
         
@@ -807,8 +823,6 @@ public class UserMessage: ObservableObject {
             print(res)
 
         }
-
-    
 }
 
 
