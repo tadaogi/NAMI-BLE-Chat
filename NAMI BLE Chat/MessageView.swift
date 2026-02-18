@@ -20,6 +20,8 @@ struct MessageView: View {
     @State private var ShowOfficial = true
     @State private var ShowLocal = true
     
+    @EnvironmentObject var server: WebServerManager
+    
     var body: some View {
         NavigationView {
             VStack(alignment: .leading) {
@@ -191,6 +193,12 @@ struct MessageView: View {
                 }) {
                     Text("SEND")
                 }
+                // server が呼ばれることの確認。OK
+                /*
+                Button ("debug"){
+                    server.debug()
+                }
+                 */
                 //}
             }
             .navigationBarTitle("Message", displayMode: .inline)
@@ -271,7 +279,7 @@ struct MessageView_Previews: PreviewProvider {
         /// 以下の行を追加
         ForEach(["iPhone SE (2nd generation)", "iPhone 6s Plus", "iPad Pro (9.7-inch)"], id: \.self) { deviceName in
             MessageView()
-                .environmentObject(UserMessage())
+                .environmentObject(UserMessage(store: MessageStore()))
                 .environmentObject(FileID())
                 /// 以下の2行を追加
                 .previewDevice(PreviewDevice(rawValue: deviceName))

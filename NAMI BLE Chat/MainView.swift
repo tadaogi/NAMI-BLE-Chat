@@ -9,6 +9,20 @@ import SwiftUI
 
 struct MainView: View {
     @State var userMessage: UserMessage
+    @StateObject private var vm: UserMessage
+    
+    init(userMessage: UserMessage) {
+        self.userMessage = userMessage
+        let url = FileManager.default
+            .urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("message.txt")
+
+        _vm = StateObject(
+            wrappedValue: UserMessage(
+                store: MessageStore()
+            )
+        )
+    }
     
     var body: some View {
         TabView {
@@ -35,8 +49,11 @@ struct MainView: View {
                 .tabItem{Text("WiFi")}
             ThreeCsView()
                 .tabItem{Text("3Cs")}
+            ServerControlView()
+                .tabItem{Text("WebServer")}
+            
         }
-        .environmentObject(UserMessage())
+        .environmentObject(UserMessage(store: MessageStore()))
         .environmentObject(UserDefine())
         .environmentObject(FileID())
         .environmentObject(WiFi())
@@ -52,7 +69,7 @@ struct MainView: View {
 
 struct MainView_Previews: PreviewProvider {
     static var previews: some View {
-        MainView(userMessage: UserMessage())
+        MainView(userMessage: UserMessage(store: MessageStore()))
             .environmentObject(User())
             .environmentObject(Log())
             .environmentObject(Devices())

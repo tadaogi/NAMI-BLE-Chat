@@ -14,8 +14,10 @@ class GPS: NSObject, CLLocationManagerDelegate{
     
     var locationManager: CLLocationManager!
     var timer: Timer? = nil
-    var lastlatitude = UserDefaults.standard.double(forKey: "latitude")
-    var lastlongitude = UserDefaults.standard.double(forKey: "longitude")
+    // 明星大学 35.64488, 139.40846
+    
+    var lastlatitude = UserDefaults.standard.double(forKey: "latitude") as? Double ?? 35.64488
+    var lastlongitude = UserDefaults.standard.double(forKey: "longitude") as? Double ?? 139.40846
     
     override init(){
         super.init()

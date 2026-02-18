@@ -107,7 +107,8 @@ struct MessageTestView: View {
             HStack {
                 Button (action: {
                     print("write to file button")
-                    WriteMessagetoFile(filename: uploadfname)
+                    userMessage.WriteMessagetoFile(filename: uploadfname)
+                    //WriteMessagetoFile(filename: uploadfname)
                     //self.log.writeToFile(fname: uploadfname)
                 }) {
                     Text("WriteToFile")
@@ -119,7 +120,8 @@ struct MessageTestView: View {
                         )}
                 Button (action: {
                     print("read from file button")
-                    ReadMessagefromFile(filename: uploadfname)
+                    userMessage.ReadMessagefromFile(filename: uploadfname)
+                    //ReadMessagefromFile(filename: uploadfname)
                     //self.log.writeToFile(fname: uploadfname)
                 }) {
                     Text("ReadFromFile")
@@ -136,6 +138,7 @@ struct MessageTestView: View {
                   text: $uploadfname,
                   onCommit: {
                 print("uploadfname:\(uploadfname)")
+                userMessage.uploadfname = uploadfname
             })
             .textFieldStyle(RoundedBorderTextFieldStyle())
         
@@ -165,6 +168,8 @@ struct MessageTestView: View {
             if user.longitude == 0 {
                 user.longitude = 139.5472510462028
             }
+            uploadfname = UserDefaults.standard.string(forKey: "uploadfname") ?? "message.txt"
+            userMessage.uploadfname = uploadfname
 
 
         })
@@ -175,6 +180,7 @@ struct MessageTestView: View {
 //            UserDefaults.standard.set(userMessage.area, forKey: "area")
             UserDefaults.standard.set(user.latitude, forKey: "latitude")
             UserDefaults.standard.set(user.longitude, forKey: "longitude")
+            UserDefaults.standard.set(uploadfname, forKey: "uploadfname")
             // 以下をやると、現在の値に上書きされてしまう。
             /*
             if globalgps != nil {
@@ -185,12 +191,41 @@ struct MessageTestView: View {
         })
     }
     
-    func ReadMessagefromFile(filename: String) {
+    func OldReadMessagefromFile(filename: String) {
         print(filename)
         let path = FileManager.default.urls(
             for: .documentDirectory,
             in: .userDomainMask)[0].appendingPathComponent(filename)
         print(path)
+        
+        if FileManager.default.fileExists(atPath: path.path) {
+            do {
+                let data = try Data(contentsOf: path)
+                // 使用処理
+                print(data)
+                
+                let decoder = JSONDecoder()
+                guard let messageData = try? decoder.decode([JsonMessageItem].self, from: data) else {
+                    fatalError("JSONデコードエラー")
+                }
+                print(messageData)
+                
+                userMessage.userMessageList = []
+                for messageItem in messageData {
+                    userMessage.userMessageList.append(
+                        UserMessageItem(userMessageID: messageItem.userMessageID, userMessageText: messageItem.userMessageText)
+                    )
+                }
+
+                
+            } catch {
+                print("read error: \(error)")
+            }
+        } else {
+            print("file not found \(path)")
+        }
+        // 以下のロジックだと、ファイルが存在しないとアプリが死ぬので上に修正した
+        /*
         guard let data = try? Data(contentsOf: path) else {
             fatalError("error in ReadMessagefromFile")
         }
@@ -209,10 +244,46 @@ struct MessageTestView: View {
                 UserMessageItem(userMessageID: messageItem.userMessageID, userMessageText: messageItem.userMessageText)
             )
         }
+         */
         
     }
-    
-    func WriteMessagetoFile(filename: String) {
+
+    func ReadMessagefromFile(filename: String) {
+        print(filename)
+        let path = FileManager.default.urls(
+            for: .documentDirectory,
+            in: .userDomainMask)[0].appendingPathComponent(filename)
+        print(path)
+        let decoder = JSONDecoder()
+        
+        if FileManager.default.fileExists(atPath: path.path) {
+            do {
+                let text = try String(contentsOf: path, encoding: .utf8)
+                let lines = text.split(separator: "\n")
+
+                for line in lines {
+                    let data = Data(line.utf8)
+                    let message = try decoder.decode(JsonMessageItem.self, from: data)
+                    print(message.userMessageID)
+                    print(message.userMessageText)
+                    userMessage.userMessageList.append(
+                        UserMessageItem(userMessageID: message.userMessageID, userMessageText: message.userMessageText)
+                    )
+
+                }
+                
+                
+                
+            } catch {
+                print("read error: \(error)")
+            }
+        } else {
+            print("file not found \(path)")
+        }
+        
+    }
+
+    func OldWriteMessagetoFile(filename: String) {
         print(filename)
         print(userMessage)
         let path = FileManager.default.urls(
@@ -245,6 +316,82 @@ struct MessageTestView: View {
 
     }
     
+    func WriteMessagetoFile(filename: String) {
+        print(filename)
+        print(userMessage)
+        let path = FileManager.default.urls(
+            for: .documentDirectory,
+            in: .userDomainMask)[0].appendingPathComponent(filename)
+        let encoder = JSONEncoder()
+        //var jsonArray:[Data] = []
+        var jsonArray : [Dictionary<String, Any>] = []
+        for userMessageItem in userMessage.userMessageList {
+            print(userMessageItem.userMessageID)
+            print(userMessageItem.userMessageText)
+            
+            do {
+                try appendUserMessage(
+                    message: userMessageItem,
+                    to: path
+                )
+            } catch {
+                print("append error:", error)
+            }
+//            print(userMessageItem.user)
+/*            var jsonDic = Dictionary<String, Any>() // キーString、値AnyのDictionary
+            jsonDic["userMessageID"] = userMessageItem.userMessageID
+            jsonDic["userMessageText"] = userMessageItem.userMessageText
+
+            print(jsonDic)
+            jsonArray.append(jsonDic)
+ */
+        }
+        /*
+        print(jsonArray)
+        let strarr = try! JSONSerialization.data(withJSONObject: jsonArray,options:[])
+        print(String(bytes:strarr, encoding: .utf8)!)
+        let str:String = String(bytes:strarr, encoding: .utf8) ?? "JSON error"
+        print(str)
+         
+        
+        if let stringData = str.data(using: .utf8) {
+            try? stringData.write(to: path)
+        }
+        */
+
+    }
+
+    func appendUserMessage(
+        message: UserMessageItem,
+        to path: URL
+    ) throws {
+
+        let jsonObject: [String: Any] = [
+            "userMessageID": message.userMessageID,
+            "userMessageText": message.userMessageText
+        ]
+
+        let jsonData = try JSONSerialization.data(withJSONObject: jsonObject)
+
+        guard let jsonString = String(data: jsonData, encoding: .utf8) else {
+            throw NSError(domain: "JSONEncodeError", code: -1)
+        }
+
+        let line = jsonString + "\n"
+        let lineData = line.data(using: .utf8)!
+
+
+        if FileManager.default.fileExists(atPath: path.path) {
+            let fileHandle = try FileHandle(forWritingTo: path)
+            try fileHandle.seekToEnd()
+            try fileHandle.write(contentsOf: lineData)
+            try fileHandle.close()
+        } else {
+            try lineData.write(to: path)
+        }
+    }
+
+    
     func startMessage() {
         print("startMessage")
         MessageTestTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(message_interval), repeats: true, block: {(timer) in
@@ -265,7 +412,7 @@ struct MessageTestView: View {
 
 struct MessageTestView_Previews: PreviewProvider {
     static var previews: some View {
-        MessageTestView(userMessage: UserMessage())
+        MessageTestView(userMessage: UserMessage(store: MessageStore()))
             .environmentObject(User())
     }
 }

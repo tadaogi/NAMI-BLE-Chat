@@ -3,10 +3,11 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		321B564C2F404B060086574E /* ServerControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 321B564B2F404AFB0086574E /* ServerControlView.swift */; };
 		321DC427275D833400497385 /* AlarmSettingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 321DC426275D833400497385 /* AlarmSettingView.swift */; };
 		32228A872C4F2BAD005BF24F /* MapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32228A862C4F2BAD005BF24F /* MapView.swift */; };
 		32228A892C4F2C67005BF24F /* SingleMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32228A882C4F2C67005BF24F /* SingleMessageView.swift */; };
@@ -29,6 +30,8 @@
 		329D39BA2BBA2A4A00EBDE53 /* WiFiView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 329D39B92BBA2A4A00EBDE53 /* WiFiView.swift */; };
 		329D39BC2BBA303100EBDE53 /* WiFiCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 329D39BB2BBA303100EBDE53 /* WiFiCheck.swift */; };
 		32BF689C2B17114D008779DF /* SAMPLE.MOV in Resources */ = {isa = PBXBuildFile; fileRef = 32BF689B2B17114D008779DF /* SAMPLE.MOV */; };
+		32CDB3812F4052930062A184 /* GCDWebServer in Frameworks */ = {isa = PBXBuildFile; productRef = 32CDB3802F4052930062A184 /* GCDWebServer */; };
+		32CDB3852F407D3C0062A184 /* MessageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32CDB3842F407D300062A184 /* MessageStore.swift */; };
 		32EBD21125CA00870032F3AF /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32EBD21025CA00870032F3AF /* Message.swift */; };
 		32EBD21525CA03210032F3AF /* Hello.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32EBD21425CA03210032F3AF /* Hello.swift */; };
 		32EBD21825CA08210032F3AF /* MessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32EBD21725CA08210032F3AF /* MessageView.swift */; };
@@ -39,6 +42,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		321B564B2F404AFB0086574E /* ServerControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerControlView.swift; sourceTree = "<group>"; };
 		321DC426275D833400497385 /* AlarmSettingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmSettingView.swift; sourceTree = "<group>"; };
 		32228A862C4F2BAD005BF24F /* MapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapView.swift; sourceTree = "<group>"; };
 		32228A882C4F2C67005BF24F /* SingleMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleMessageView.swift; sourceTree = "<group>"; };
@@ -65,6 +69,7 @@
 		329D39B92BBA2A4A00EBDE53 /* WiFiView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiView.swift; sourceTree = "<group>"; };
 		329D39BB2BBA303100EBDE53 /* WiFiCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiCheck.swift; sourceTree = "<group>"; };
 		32BF689B2B17114D008779DF /* SAMPLE.MOV */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = SAMPLE.MOV; sourceTree = "<group>"; };
+		32CDB3842F407D300062A184 /* MessageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageStore.swift; sourceTree = "<group>"; };
 		32EBD21025CA00870032F3AF /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
 		32EBD21425CA03210032F3AF /* Hello.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Hello.swift; sourceTree = "<group>"; };
 		32EBD21725CA08210032F3AF /* MessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageView.swift; sourceTree = "<group>"; };
@@ -80,6 +85,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				326DA1412696C744004F0442 /* CoreLocation.framework in Frameworks */,
+				32CDB3812F4052930062A184 /* GCDWebServer in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -106,6 +112,8 @@
 		32626E9225B2421B00BEE892 /* NAMI BLE Chat */ = {
 			isa = PBXGroup;
 			children = (
+				32CDB3842F407D300062A184 /* MessageStore.swift */,
+				321B564B2F404AFB0086574E /* ServerControlView.swift */,
 				322521FE2D4DA390008C22DF /* MovingEdge.swift */,
 				32846F312B832D67008D411E /* NAMI BLE Chat.entitlements */,
 				321DC426275D833400497385 /* AlarmSettingView.swift */,
@@ -200,6 +208,9 @@
 				Base,
 			);
 			mainGroup = 32626E8725B2421B00BEE892;
+			packageReferences = (
+				32CDB37F2F4052930062A184 /* XCRemoteSwiftPackageReference "GCDWebServer" */,
+			);
 			productRefGroup = 32626E9125B2421B00BEE892 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -247,8 +258,10 @@
 				32EBD21125CA00870032F3AF /* Message.swift in Sources */,
 				32EBD21825CA08210032F3AF /* MessageView.swift in Sources */,
 				32228A892C4F2C67005BF24F /* SingleMessageView.swift in Sources */,
+				321B564C2F404B060086574E /* ServerControlView.swift in Sources */,
 				32EBD21525CA03210032F3AF /* Hello.swift in Sources */,
 				32626E9425B2421B00BEE892 /* BLEcommTest0App.swift in Sources */,
+				32CDB3852F407D3C0062A184 /* MessageStore.swift in Sources */,
 				32626EAA25B3055900BEE892 /* BLE.swift in Sources */,
 				32F1DF8A268B31B0006493C4 /* Device.swift in Sources */,
 				329CE6162B86D09E00B0141C /* WiFi.swift in Sources */,
@@ -462,6 +475,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		32CDB37F2F4052930062A184 /* XCRemoteSwiftPackageReference "GCDWebServer" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/yene/GCDWebServer";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.5.7;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		32CDB3802F4052930062A184 /* GCDWebServer */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 32CDB37F2F4052930062A184 /* XCRemoteSwiftPackageReference "GCDWebServer" */;
+			productName = GCDWebServer;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 32626E8825B2421B00BEE892 /* Project object */;
 }

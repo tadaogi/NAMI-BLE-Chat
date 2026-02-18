@@ -231,6 +231,6 @@ struct WiFiView: View {
 #Preview {
     WiFiView()
         .environmentObject(User())
-        .environmentObject(UserMessage())
+        .environmentObject(UserMessage(store: MessageStore()))
 }
 

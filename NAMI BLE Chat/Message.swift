@@ -76,6 +76,13 @@ public class UserMessage: ObservableObject {
     var wifi:WiFi!
     var user:User!
     
+    private let store: MessageStore
+    @Published var uploadfname: String = "message.txt"
+    
+    init(store: MessageStore) {
+        self.store = store
+    }
+    
     func initBLE(bleCentral:BLECentral, blePeripheral:BLEPeripheral, log: Log) {
         self.bleCentral = bleCentral
         self.blePeripheral = blePeripheral
@@ -165,7 +172,19 @@ public class UserMessage: ObservableObject {
                 self.userMessageCount = self.userMessageCount + 1
 
                 self.userMessageList.append(UserMessageItem(userMessageID: userMessageID, userMessageText: "\(UserMessageTextString)"))
-                
+                // message.txt に追加
+                let path = FileManager.default.urls(
+                    for: .documentDirectory,
+                    in: .userDomainMask)[0].appendingPathComponent(self.uploadfname)
+                do {
+                    try self.appendUserMessage(
+                        message: UserMessageItem(userMessageID: userMessageID, userMessageText: UserMessageTextString),
+                        to: path
+                    )
+                } catch {
+                    print("append error:", error)
+                }
+
                 if (self.movingEdgeFlag) {
                     sendMessage(userMessageID:userMessageID, userMessageText:userMessageText)
                 }
@@ -265,7 +284,19 @@ public class UserMessage: ObservableObject {
                 self.userMessageCount = self.userMessageCount + 1
 
                 self.userMessageList.append(UserMessageItem(userMessageID: userMessageID, userMessageText: "\(UserMessageTextString)"))
-
+                // message.txt に追加
+                let path = FileManager.default.urls(
+                    for: .documentDirectory,
+                    in: .userDomainMask)[0].appendingPathComponent(self.uploadfname)
+                do {
+                    try self.appendUserMessage(
+                        message: UserMessageItem(userMessageID: userMessageID, userMessageText: UserMessageTextString),
+                        to: path
+                    )
+                } catch {
+                    print("append error:", error)
+                }
+                
                 index = index + amountToSend
                 restToSend = userMessageText.count - index
                 sequence = sequence + 1
@@ -520,6 +551,18 @@ public class UserMessage: ObservableObject {
             
             
             self.userMessageList.append(UserMessageItem(userMessageID: newID, userMessageText: protocolMessageCommand[2]))
+            // message.txt に追加
+            let path = FileManager.default.urls(
+                for: .documentDirectory,
+                in: .userDomainMask)[0].appendingPathComponent(self.uploadfname)
+            do {
+                try self.appendUserMessage(
+                    message: UserMessageItem(userMessageID: newID, userMessageText: protocolMessageCommand[2]),
+                    to: path
+                )
+            } catch {
+                print("append error:", error)
+            }
             
             self.messageIDLock.unlock()
             self.bleCentral.log.addItem(logText: "addItemExternal append, \(protocolMessageCommand[1]), \(protocolMessageCommand[2]) ")
@@ -823,6 +866,120 @@ public class UserMessage: ObservableObject {
             print(res)
 
         }
+    
+    // messageのセーブ・リストア機能
+    
+    func ReadMessagefromFile(filename: String) {
+        print(filename)
+        let path = FileManager.default.urls(
+            for: .documentDirectory,
+            in: .userDomainMask)[0].appendingPathComponent(filename)
+        print(path)
+        let decoder = JSONDecoder()
+        
+        if FileManager.default.fileExists(atPath: path.path) {
+            do {
+                let text = try String(contentsOf: path, encoding: .utf8)
+                let lines = text.split(separator: "\n")
+
+                for line in lines {
+                    let data = Data(line.utf8)
+                    let message = try decoder.decode(JsonMessageItem.self, from: data)
+                    print(message.userMessageID)
+                    print(message.userMessageText)
+                    self.userMessageList.append(
+                        UserMessageItem(userMessageID: message.userMessageID, userMessageText: message.userMessageText)
+                    )
+
+                }
+                
+                
+                
+            } catch {
+                print("read error: \(error)")
+            }
+        } else {
+            print("file not found \(path)")
+        }
+        
+    }
+    
+    func WriteMessagetoFile(filename: String) {
+        print(filename)
+        print(self)
+        let path = FileManager.default.urls(
+            for: .documentDirectory,
+            in: .userDomainMask)[0].appendingPathComponent(filename)
+        let encoder = JSONEncoder()
+        //var jsonArray:[Data] = []
+        var jsonArray : [Dictionary<String, Any>] = []
+        for userMessageItem in self.userMessageList {
+            print(userMessageItem.userMessageID)
+            print(userMessageItem.userMessageText)
+            
+            do {
+                try appendUserMessage(
+                    message: userMessageItem,
+                    to: path
+                )
+            } catch {
+                print("append error:", error)
+            }
+//            print(userMessageItem.user)
+/*            var jsonDic = Dictionary<String, Any>() // キーString、値AnyのDictionary
+            jsonDic["userMessageID"] = userMessageItem.userMessageID
+            jsonDic["userMessageText"] = userMessageItem.userMessageText
+
+            print(jsonDic)
+            jsonArray.append(jsonDic)
+ */
+        }
+        /*
+        print(jsonArray)
+        let strarr = try! JSONSerialization.data(withJSONObject: jsonArray,options:[])
+        print(String(bytes:strarr, encoding: .utf8)!)
+        let str:String = String(bytes:strarr, encoding: .utf8) ?? "JSON error"
+        print(str)
+         
+        
+        if let stringData = str.data(using: .utf8) {
+            try? stringData.write(to: path)
+        }
+        */
+
+    }
+
+    func appendUserMessage(
+        message: UserMessageItem,
+        to path: URL
+    ) throws {
+
+        let jsonObject: [String: Any] = [
+            "userMessageID": message.userMessageID,
+            "userMessageText": message.userMessageText
+        ]
+
+        let jsonData = try JSONSerialization.data(withJSONObject: jsonObject)
+
+        guard let jsonString = String(data: jsonData, encoding: .utf8) else {
+            throw NSError(domain: "JSONEncodeError", code: -1)
+        }
+
+        let line = jsonString + "\n"
+        let lineData = line.data(using: .utf8)!
+
+
+        if FileManager.default.fileExists(atPath: path.path) {
+            let fileHandle = try FileHandle(forWritingTo: path)
+            try fileHandle.seekToEnd()
+            try fileHandle.write(contentsOf: lineData)
+            try fileHandle.close()
+        } else {
+            try lineData.write(to: path)
+        }
+    }
+
+
 }
 
 

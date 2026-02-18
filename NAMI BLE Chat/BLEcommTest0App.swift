@@ -9,16 +9,17 @@ import SwiftUI
 
 @main
 struct BLEcommTest0App: App {
+    @StateObject private var server = WebServerManager()
     var body: some Scene {
         WindowGroup {
-            MainView(userMessage: UserMessage())
+            MainView(userMessage: UserMessage(store: MessageStore()))
 //                .environmentObject(User())
                 .environmentObject(Log())
                 .environmentObject(Devices())
 // NAMI Chat に合わせて修正
 //                .environmentObject(UserMessage())
                 .environmentObject(Params())
-
+                .environmentObject(server)
         }
     }
 }
