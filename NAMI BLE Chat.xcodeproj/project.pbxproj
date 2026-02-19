@@ -29,6 +29,11 @@
 		329CE6162B86D09E00B0141C /* WiFi.swift in Sources */ = {isa = PBXBuildFile; fileRef = 329CE6152B86D09E00B0141C /* WiFi.swift */; };
 		329D39BA2BBA2A4A00EBDE53 /* WiFiView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 329D39B92BBA2A4A00EBDE53 /* WiFiView.swift */; };
 		329D39BC2BBA303100EBDE53 /* WiFiCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 329D39BB2BBA303100EBDE53 /* WiFiCheck.swift */; };
+		32A7EE3F2F45E7EC004989F4 /* mydownload.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 32A7EE3E2F45E7EC004989F4 /* mydownload.jpg */; };
+		32A7EE412F45E80D004989F4 /* myqrcode.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 32A7EE402F45E80D004989F4 /* myqrcode.jpg */; };
+		32A7EE432F45E81B004989F4 /* myhome.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 32A7EE422F45E81B004989F4 /* myhome.jpg */; };
+		32A7EE452F45E827004989F4 /* mysetting.png in Resources */ = {isa = PBXBuildFile; fileRef = 32A7EE442F45E827004989F4 /* mysetting.png */; };
+		32A7EE472F45E851004989F4 /* mysetting3.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 32A7EE462F45E851004989F4 /* mysetting3.jpg */; };
 		32BF689C2B17114D008779DF /* SAMPLE.MOV in Resources */ = {isa = PBXBuildFile; fileRef = 32BF689B2B17114D008779DF /* SAMPLE.MOV */; };
 		32CDB3812F4052930062A184 /* GCDWebServer in Frameworks */ = {isa = PBXBuildFile; productRef = 32CDB3802F4052930062A184 /* GCDWebServer */; };
 		32CDB3852F407D3C0062A184 /* MessageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32CDB3842F407D300062A184 /* MessageStore.swift */; };
@@ -68,6 +73,11 @@
 		329CE6152B86D09E00B0141C /* WiFi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFi.swift; sourceTree = "<group>"; };
 		329D39B92BBA2A4A00EBDE53 /* WiFiView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiView.swift; sourceTree = "<group>"; };
 		329D39BB2BBA303100EBDE53 /* WiFiCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiCheck.swift; sourceTree = "<group>"; };
+		32A7EE3E2F45E7EC004989F4 /* mydownload.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = mydownload.jpg; sourceTree = "<group>"; };
+		32A7EE402F45E80D004989F4 /* myqrcode.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = myqrcode.jpg; sourceTree = "<group>"; };
+		32A7EE422F45E81B004989F4 /* myhome.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = myhome.jpg; sourceTree = "<group>"; };
+		32A7EE442F45E827004989F4 /* mysetting.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = mysetting.png; sourceTree = "<group>"; };
+		32A7EE462F45E851004989F4 /* mysetting3.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = mysetting3.jpg; sourceTree = "<group>"; };
 		32BF689B2B17114D008779DF /* SAMPLE.MOV */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = SAMPLE.MOV; sourceTree = "<group>"; };
 		32CDB3842F407D300062A184 /* MessageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageStore.swift; sourceTree = "<group>"; };
 		32EBD21025CA00870032F3AF /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
@@ -112,6 +122,11 @@
 		32626E9225B2421B00BEE892 /* NAMI BLE Chat */ = {
 			isa = PBXGroup;
 			children = (
+				32A7EE3E2F45E7EC004989F4 /* mydownload.jpg */,
+				32A7EE402F45E80D004989F4 /* myqrcode.jpg */,
+				32A7EE422F45E81B004989F4 /* myhome.jpg */,
+				32A7EE442F45E827004989F4 /* mysetting.png */,
+				32A7EE462F45E851004989F4 /* mysetting3.jpg */,
 				32CDB3842F407D300062A184 /* MessageStore.swift */,
 				321B564B2F404AFB0086574E /* ServerControlView.swift */,
 				322521FE2D4DA390008C22DF /* MovingEdge.swift */,
@@ -225,10 +240,15 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				32A7EE472F45E851004989F4 /* mysetting3.jpg in Resources */,
+				32A7EE432F45E81B004989F4 /* myhome.jpg in Resources */,
 				32626EA425B24C4B00BEE892 /* Colors.xcassets in Resources */,
 				32626E9B25B2421C00BEE892 /* Preview Assets.xcassets in Resources */,
+				32A7EE412F45E80D004989F4 /* myqrcode.jpg in Resources */,
 				32F1DF88268B11CC006493C4 /* Assets.xcassets in Resources */,
+				32A7EE3F2F45E7EC004989F4 /* mydownload.jpg in Resources */,
 				32BF689C2B17114D008779DF /* SAMPLE.MOV in Resources */,
+				32A7EE452F45E827004989F4 /* mysetting.png in Resources */,
 				324BF7FD268AF46100BEC254 /* test.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
