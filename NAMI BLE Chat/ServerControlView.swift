@@ -49,6 +49,37 @@ struct AppConfig: Codable {
     let showDebug: String?
 }
 
+struct IDRow: Codable {
+    let userMessageID: String
+}
+
+struct GetIDResponse: Codable {
+    let userMessageIDs: [IDRow]
+}
+
+struct GetMessageResponse: Codable {
+    let userID: String
+    let userMessageID: String
+    let message: String
+    let date: String      // Flaskの isoformat 相当（文字列で返す）
+    let group: String
+}
+
+struct ErrorResponse: Codable {
+    let error: String
+}
+
+struct SendMessageRequest: Codable {
+    let message: String?
+    let userMessageID: String?
+    let group: String?     // Flaskでは受け取るが最終的に上書きする
+}
+
+struct ParsedID {
+    let userID: String
+    let dateISO: String   // SQLiteには文字列で保存（ISO推奨）-> messageIDからとってきた文字列
+    let incrementedUserMessageID: String
+}
 
 // ------------------------------
 // SQLite (no external deps)
@@ -215,6 +246,41 @@ final class MessageDB {
             return out
         }
     }
+    
+    func getMessage(userMessageID: String) throws -> [Message] {
+        try withDB {
+            // after があれば ts > after で取得
+            let sql: String
+            sql = "SELECT userMessageID, message, userID, date, groupName FROM messages WHERE userMessageID=?;"
+            
+            var stmt: OpaquePointer?
+            print("list SQL => \(sql)")   // ★これがないと場所が追えません
+            guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else {
+                throw NSError(domain: "sqlite", code: 5, userInfo: [NSLocalizedDescriptionKey: "prepare failed"])
+            }
+            defer { sqlite3_finalize(stmt) }
+            
+            sqlite3_bind_text(stmt, 1, (userMessageID as NSString).utf8String, -1, nil)
+            
+            var out: [Message] = []
+            while sqlite3_step(stmt) == SQLITE_ROW {
+                let userMessageID = String(cString: sqlite3_column_text(stmt, 0))
+                let message = String(cString: sqlite3_column_text(stmt, 1))
+                let userID = String(cString: sqlite3_column_text(stmt, 2))
+                let date = String(cString: sqlite3_column_text(stmt, 3))
+                let groupName = String(cString: sqlite3_column_text(stmt, 4))
+                out.append(Message(
+                    userMessageID: userMessageID,
+                    message: message,
+                    userID: userID,
+                    date: date,
+                    groupName: groupName))
+            }
+            
+            return out
+        }
+    }
+
 }
 
 // ------------------------------
@@ -610,6 +676,29 @@ final class WebServerManager: ObservableObject {
                 let date = String(IDparts[0])
                 //let groupName = group // ここはあとで修正する
                 
+                // 3) date文字列 → Date → ISO文字列
+                // Flask: date_string = m.group('date'); date_string += "000"
+                // "%Y%m%d%H%M%S.%f" なので、datePart は "YYYYMMDDHHMMSS.SSS" みたいな想定
+                // ここでは末尾に "000" を付けてマイクロ秒 6桁にする
+                let dateString = date + "000"
+
+                let df = DateFormatter()
+                df.calendar = Calendar(identifier: .gregorian)
+                df.locale = Locale(identifier: "en_US_POSIX")
+                df.timeZone = TimeZone(secondsFromGMT: 0) // Flaskと一致させたいならUTC推奨（必要なら変更）
+                df.dateFormat = "yyyyMMddHHmmss.SSSSSS"
+
+                guard let date = df.date(from: dateString) else {
+                    throw NSError(domain: "sendMessage", code: 2,
+                                  userInfo: [NSLocalizedDescriptionKey: "date parse failed: \(dateString)"])
+                }
+
+                let iso = ISO8601DateFormatter()
+                iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                let dateISO = iso.string(from: date)
+
+            
+                
                 // ここから下が、Splitのロジック
                 while (restToSend>0) {
                     var amountToSend = min(restToSend,mtu-headerLength) // 今回送るデータ長
@@ -640,7 +729,7 @@ final class WebServerManager: ObservableObject {
                         userMessageID: userMessageID,
                         message: UserMessageTextString,
                         userID: userID,
-                        date: date,
+                        date: dateISO,
                         groupName: groupName
                     )
 
@@ -664,6 +753,168 @@ final class WebServerManager: ObservableObject {
                 return GCDWebServerDataResponse(jsonObject: ["ok": false, "error": "\(error)"])
             }
         }
+        
+        /*
+         server.addHandler(forMethod: "GET", path: "/api/messages", request: GCDWebServerRequest.self) { [weak self] req in
+             guard let self else { return GCDWebServerResponse(statusCode: 500) }
+
+         */
+        // sync用 getID
+        server.addHandler(
+            forMethod: "GET",
+            path: "/getID",
+            request: GCDWebServerRequest.self
+        ) { [weak self] request -> GCDWebServerResponse? in
+
+            guard let self else {
+                return GCDWebServerResponse(statusCode: 500)
+            }
+
+            do {
+                let ids = try getMessageIDList()
+                let payload = GetIDResponse(
+                    userMessageIDs: ids.map { IDRow(userMessageID: $0) }
+                )
+
+                let encoder = JSONEncoder()
+                let data = try encoder.encode(payload)
+
+                return GCDWebServerDataResponse(
+                    data: data,
+                    contentType: "application/json"
+                )
+            } catch {
+                return GCDWebServerDataResponse(
+                    jsonObject: ["error": error.localizedDescription]
+                )
+            }
+        }
+
+        // sync用 /getMessage
+        server.addHandler(
+                   forMethod: "GET",
+                   path: "/getMessage",
+                   request: GCDWebServerRequest.self
+               ) { [weak self] req -> GCDWebServerResponse? in
+                   guard let self else { return GCDWebServerResponse(statusCode: 500) }
+
+                   // クエリ取得
+                   let userMessageID = req.query?["userMessageID"] as? String
+
+                   guard let userMessageID, !userMessageID.isEmpty else {
+                       return GCDWebServerDataResponse(
+                           jsonObject: ["error": "userMessageID が指定されていません"]
+                       )?.withStatus(400)
+                   }
+
+                   do {
+                       let rows = try self.db.getMessage(userMessageID: userMessageID)
+                       
+                       if rows.isEmpty {
+                           return GCDWebServerDataResponse(
+                            jsonObject: ["error": "no message found"]
+                           )?.withStatus(500)
+                       }
+                       let    row = rows[0]
+                       
+                       let payload = GetMessageResponse(
+                           userID: row.userID,
+                           userMessageID: row.userMessageID,
+                           message: row.message,
+                           date: row.date,        // DBにISO文字列を保存している前提
+                           group: row.groupName
+                       )
+
+                       let enc = JSONEncoder()
+                       let data = try enc.encode(payload)
+                       let resp = GCDWebServerDataResponse(data: data, contentType: "application/json; charset=utf-8")
+                       return resp
+                   
+                   } catch {
+                       return GCDWebServerDataResponse(
+                           jsonObject: ["error": error.localizedDescription]
+                       )?.withStatus(500)
+                   }
+               }
+
+        // sync要 /sendMessage
+        server.addHandler(
+                    forMethod: "POST",
+                    path: "/sendMessage",
+                    request: GCDWebServerDataRequest.self
+                ) { [weak self] req -> GCDWebServerResponse? in
+                    guard let self else { return GCDWebServerResponse(statusCode: 500) }
+
+                    // Config 読み込み（Flask同様、毎回読む）
+                    let fname = "config.json"
+                    let config = loadConfigFromDocuments(fname: fname)
+                    let defaultarea = config.defaultarea
+                    // optionareaはFlaskで作ってるが、この処理では使っていないので省略（必要なら join も可）
+                    // let optionarea = config.optionarea.joined(separator: "\n")
+
+                    // JSON decode
+                    guard let dataReq = req as? GCDWebServerDataRequest else {
+                        return GCDWebServerDataResponse(jsonObject: ["error": "no body"])?.withStatus(400)
+                    }
+
+                    let body = dataReq.data
+
+                    let decoded: SendMessageRequest
+                    do {
+                        decoded = try JSONDecoder().decode(SendMessageRequest.self, from: body)
+                    } catch {
+                        return GCDWebServerDataResponse(jsonObject: ["error": "invalid json"])?.withStatus(400)
+                    }
+
+                    guard let message = decoded.message, !message.isEmpty,
+                          let userMessageID0 = decoded.userMessageID, !userMessageID0.isEmpty else {
+                        return GCDWebServerDataResponse(jsonObject: ["error": "missing message/userMessageID"])?.withStatus(400)
+                    }
+
+                    // dup check
+                    do {
+                        if try self.countID(userMessageID: userMessageID0) > 0 {
+                            // Flaskのスペルに合わせる
+                            return GCDWebServerDataResponse(jsonObject: ["status": "dupulicated ID"])
+                        }
+                    } catch {
+                        return GCDWebServerDataResponse(jsonObject: ["error": error.localizedDescription])?.withStatus(500)
+                    }
+
+                    // group 判定
+                    // この処理が正しいか要確認
+                    let groupName: String
+                    if message.contains("#official") {
+                        groupName = "official"
+                    } else {
+                        groupName = defaultarea
+                    }
+
+                    // userID/date 抽出 & hop+1
+                    let parsed: ParsedID
+                    do {
+                        parsed = try parseAndIncrement(userMessageID: userMessageID0)
+                    } catch {
+                        return GCDWebServerDataResponse(jsonObject: ["error": error.localizedDescription])?.withStatus(400)
+                    }
+
+                    // INSERT
+                    /*
+                     func insert(userMessageID: String, message: String, userID: String, date: String, groupName: String) throws {
+                     */
+                    do {
+                        try self.db.insert(
+                            userMessageID: parsed.incrementedUserMessageID,
+                            message: message,
+                            userID: parsed.userID,
+                            date: parsed.dateISO,
+                            groupName: groupName
+                        )
+                        return GCDWebServerDataResponse(jsonObject: ["status": "OK"])
+                    } catch {
+                        return GCDWebServerDataResponse(jsonObject: ["error": error.localizedDescription])?.withStatus(500)
+                    }
+                }
 
         do {
             try server.start(options: [
@@ -688,6 +939,10 @@ final class WebServerManager: ObservableObject {
         webServer?.stop()
         webServer = nil
         status = "stopped"
+    }
+    
+    func sync() {
+        print("server.sync() is called")
     }
 
     private func logHead(_ path: String) {
@@ -734,11 +989,27 @@ final class WebServerManager: ObservableObject {
         return userMessageIDformat
     }
     func mkGroupPullDown() -> String {
-        """
-          <option value="official" >official </option>
-          <option value="tebiro" >tebiro</option>
-          <option value="nishikamakura" >nishikamakkura</option>
-        """
+        let fname = "config.json"
+        let config = loadConfigFromDocuments(fname: fname)
+        let defaultarea = config.defaultarea
+        let optionarea = config.optionarea
+
+        print("defaultares = \(config.defaultarea)")
+        print("optionares = \(config.optionarea)")
+        
+        var pullDownHtml = "<option value = \"\(defaultarea)\">\(defaultarea)</option>\n"
+        
+        let optionlist = optionarea.components(separatedBy: "\n")
+        for optionarea1 in optionlist {
+            pullDownHtml += "<option value = \"\(optionarea1)\">\(optionarea1)</option>\n"
+        }
+        if !pullDownHtml.contains("official") {
+            pullDownHtml += "<option value = \"official\">official</option>\n"
+
+        }
+
+        print(pullDownHtml)
+        return pullDownHtml
     }
     // ブラウザUI（最小）
     private static let ipaddress = "127.0.0.1(dummy)"
@@ -747,6 +1018,13 @@ final class WebServerManager: ObservableObject {
         // checked を差し込む
         let officialChecked = showOfficial ? "checked" : ""
         let localChecked = showLocal ? "checked" : ""
+        let fname = "config.json"
+        let config = loadConfigFromDocuments(fname: fname)
+        let defaultarea = config.defaultarea
+        let optionarea = config.optionarea
+
+        print("defaultares = \(config.defaultarea)")
+        print("optionares = \(config.optionarea)")
         
         return(
 """
@@ -851,6 +1129,29 @@ final class WebServerManager: ObservableObject {
             justify-content: space-between;
             width: 100%;
         }
+      .toast {
+        position: fixed;
+        top: 70px;            /* アイコン列の下に出すなら */
+        right: 20px;
+        max-width: 70vw;
+        padding: 10px 14px;
+        border-radius: 10px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+        background: rgba(30, 30, 30, 0.92);
+        color: white;
+        font-size: 14px;
+        z-index: 9999;
+
+        opacity: 0;
+        transform: translateY(-8px);
+        pointer-events: none;
+        transition: opacity 160ms ease, transform 160ms ease;
+      }
+
+      .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
 
   </style>
 </head>
@@ -877,7 +1178,42 @@ final class WebServerManager: ObservableObject {
       <img src="/mydownload.jpg" width="24" height="24">
     </button>
 <script>
-function downloadMessages() {
+let toastTimer = null;
+
+function showToast(message, ms = 1800) {
+  const el = document.getElementById('toast');
+  el.textContent = message;
+  el.classList.add('show');
+
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), ms);
+}
+
+async function downloadMessages() {
+  try {
+    showToast('Saving...', 1200);
+
+    const res = await fetch('/downloadmsg', { method: 'GET' });
+
+    // 失敗時はサーバの本文も拾う（デバッグに有用）
+    const body = await res.text();
+
+    if (!res.ok) {
+      console.error('downloadmsg failed:', res.status, body);
+      showToast('Failed to save', 2200);
+      return;
+    }
+
+    // body が "OK" でも表示は変わらない（fetchだから）
+    showToast('Saved ✅', 1800);
+
+  } catch (e) {
+    console.error(e);
+    showToast('Network error', 2200);
+  }
+}
+
+function OLDdownloadMessages() {
     fetch('/downloadmsg', { method: 'GET' })
         .then(response => {
             if (!response.ok) {
@@ -887,6 +1223,8 @@ function downloadMessages() {
         .catch(err => console.error(err));
 }
 </script>
+<div id="toast" class="toast" aria-live="polite"></div>
+
     <h3>
       <div class="container">
         <span>
@@ -935,7 +1273,9 @@ function downloadMessages() {
           {% endif %}
 -->
           \(mkGroupPullDown())
+<!--
 <option value="debug">debug</option>
+-->
         </select>
       </div>
       <div>
@@ -1651,7 +1991,152 @@ fetchMessages();
         return "message_\(timestamp).html"
     }
 
+    func getMessageIDList() -> [String] {
+        do {
+            let msgs = try self.db.list(limit: 500, after: nil)
+            var result: [String] = []
+            for msg in msgs {
+                print(msg.userMessageID)
+                result.append(msg.userMessageID)
+            }
+            return result
+        } catch {
+            print("Error: \(error)")
+            return []
+        }
+    }
+    
+    func countID(userMessageID: String) -> Int {
+        let baseID = getBaseID(id: userMessageID)
+        let messageIDList = getMessageIDList()
+        var count = 0
+        
+        for messageID in messageIDList {
+            if messageID.contains(baseID) {
+                count += 1
+            }
+        }
+        
+        return count
+        
+    }
+    
+    func getBaseID(id: String) -> String {
 
+        if let index = id.firstIndex(of: "(") {
+            let prefix = String(id[..<index])
+            print(prefix)   // XXX-0L
+            return prefix
+        } else {
+            return id
+        }
+    }
+
+    func insertMessageToStore(userMessageItem: UserMessageItem) {
+        print("WebServerManager.insertMessageToStore is called")
+        
+        let userMessageID = userMessageItem.userMessageID
+        var message = userMessageItem.userMessageText
+        let IDparts = userMessageID.split(separator: "-")
+        let date = String(IDparts[0])
+        let userID = String(IDparts[2])
+        // NAMI側で作成されたメッセージには、groupNameがないので、Web側のdefaultareaを設定する必要がある
+        let fname = "config.json"
+        let config = loadConfigFromDocuments(fname: fname)
+        var groupName = config.defaultarea
+        if message.contains("#official") {
+            groupName = "official"
+        } else {
+            message += " #\(groupName)"
+        }
+        
+        do {
+            try self.db.insert(
+                userMessageID: userMessageID,
+                message: message,
+                userID: userID,
+                date: date,
+                groupName: groupName
+            )
+            print("insertMessage \(userMessageItem.userMessageID) success")
+        } catch {
+            print("error in insertMessage. \(error)")
+        }
+    }
+    
+    func getMessageFromStore(userMessageID: String) -> [Message] {
+        do {
+            let out = try self.db.getMessage(userMessageID: userMessageID)
+            return out
+        } catch {
+            print("error in WebServerManager.getMessageFromStore \(error)")
+            return []
+        }
+    }
+    
+    /// userMessageID例（想定）: YYYYMMDDHHMMSS.xxx-...-USERID-XXXX(0)
+    /// Flask: date_string + "000"（マイクロ秒合わせ）→ datetime.strptime("%Y%m%d%H%M%S.%f")
+    /// Swift: まず date 部分 + "000" してから Dateへ → ISO文字列へ
+    func parseAndIncrement(userMessageID: String) throws -> ParsedID {
+
+        // 1) date と userID を抜く（Flaskの rex 相当）
+        // (?P<date>[^-]*)-([^-]*)-(?P<userID>[^-]*)-([\w]*)\(([\w]*)\)
+        let pattern = #"^([^-]*)-([^-]*)-([^-]*)-([\w]*)\((\d+)\)$"#
+        let re = try NSRegularExpression(pattern: pattern)
+
+        let range = NSRange(userMessageID.startIndex..<userMessageID.endIndex, in: userMessageID)
+        guard let m = re.firstMatch(in: userMessageID, range: range) else {
+            throw NSError(domain: "sendMessage", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: "userMessageID format invalid"])
+        }
+
+        func group(_ i: Int) -> String {
+            let r = m.range(at: i)
+            guard let sr = Range(r, in: userMessageID) else { return "" }
+            return String(userMessageID[sr])
+        }
+
+        let datePart = group(1)   // date
+        let userID   = group(3)   // userID
+        let hopStr   = group(5)
+        let hop      = Int(hopStr) ?? 0
+
+        // 2) hop + 1 して userMessageID の "(n)" を置換
+        let newHop = hop + 1
+        let incremented = re.stringByReplacingMatches(in: userMessageID, range: range,
+                                                      withTemplate: "$1-$2-$3-$4(\(newHop))")
+
+        // 3) date文字列 → Date → ISO文字列
+        // Flask: date_string = m.group('date'); date_string += "000"
+        // "%Y%m%d%H%M%S.%f" なので、datePart は "YYYYMMDDHHMMSS.SSS" みたいな想定
+        // ここでは末尾に "000" を付けてマイクロ秒 6桁にする
+        let dateString = datePart + "000"
+
+        let df = DateFormatter()
+        df.calendar = Calendar(identifier: .gregorian)
+        df.locale = Locale(identifier: "en_US_POSIX")
+        df.timeZone = TimeZone(secondsFromGMT: 0) // Flaskと一致させたいならUTC推奨（必要なら変更）
+        df.dateFormat = "yyyyMMddHHmmss.SSSSSS"
+
+        guard let date = df.date(from: dateString) else {
+            throw NSError(domain: "sendMessage", code: 2,
+                          userInfo: [NSLocalizedDescriptionKey: "date parse failed: \(dateString)"])
+        }
+
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let dateISO = iso.string(from: date)
+
+        return ParsedID(userID: userID, dateISO: dateISO, incrementedUserMessageID: incremented)
+    }
+}
+
+// statusコードを付ける小ヘルパ（無ければそのまま setStatusCode でもOK）
+private extension GCDWebServerResponse {
+    func withStatus(_ code: Int) -> GCDWebServerResponse {
+        self.statusCode = Int(code)
+        return self
+    }
 }
 
 enum QRSaveError: Error {
@@ -1726,6 +2211,143 @@ final class QRCodeUtil {
     }
 }
 
+final class SyncManager: ObservableObject {
+
+    @Published var userMessage: UserMessage
+    private let server: WebServerManager
+
+
+    init(userMessage: UserMessage, server: WebServerManager) {
+        self.userMessage = userMessage
+        self.server = server
+    }
+    
+    @MainActor func debug() {
+        print("SyncManager debug2")
+        print(userMessage.uploadfname)
+        print(server.getURL())
+        
+        // userMessageからUserMessageIDを取得する
+        var appUserMessageIDList = [] as [String]
+        for userMessageItem in userMessage.userMessageList {
+            print(userMessageItem.userMessageID)
+            appUserMessageIDList.append(userMessageItem.userMessageID)
+        }
+        print(appUserMessageIDList)
+        
+        // WebStoreから取得
+        var storeUserMessageIDList = server.getMessageIDList()
+        print(storeUserMessageIDList)
+        
+        // app to Web
+        for appUserMessageID in appUserMessageIDList {
+            print("check \(appUserMessageID)")
+            var foundflag = false
+            for storeUserMessageID in storeUserMessageIDList {
+                print("storeUserMessageID \(storeUserMessageID)")
+                if getBaseID(id: appUserMessageID) == getBaseID(id: storeUserMessageID) {
+                    print("found: \(appUserMessageID)")
+                    foundflag = true
+                    break;
+                } else {
+                    print("not found \(appUserMessageID), \(storeUserMessageID)")
+                }
+            }
+            if !foundflag {
+                print("not found in store: \(appUserMessageID)")
+                print("need to copy from \(appUserMessageID) app to store")
+                let userMessageItem = getMessageFromApp(userMessageID: appUserMessageID)
+                if userMessageItem == nil {
+                    print("error to find \(appUserMessageID)")
+                } else {
+                    server.insertMessageToStore(userMessageItem: userMessageItem!)
+                }
+            }
+        }
+        
+        // Web to app
+        for storeUserMessageID in storeUserMessageIDList {
+            print("check storeUserMessageID \(storeUserMessageID)")
+            var foundflag = false
+            for appUserMessageID in appUserMessageIDList {
+                print("appUserMessageID \(appUserMessageID)")
+                if getBaseID(id: appUserMessageID) == getBaseID(id: storeUserMessageID) {
+                    print("found: \(appUserMessageID)")
+                    foundflag = true
+                    break;
+                } else {
+                    print("not found \(appUserMessageID), \(storeUserMessageID)")
+                }
+            }
+            if !foundflag {
+                print("not found in App: \(storeUserMessageID)")
+                print("need to copy \(storeUserMessageID) from store to app")
+                
+                let out = getMessageFromStore(userMessageID: storeUserMessageID)
+                for message in out {
+                    print(message)
+                    insertMessageToApp(message: message)
+                    print("insertToApp \(message)")
+                }
+                /*
+                if userMessageItem == nil {
+                    print("error to find \(appUserMessageID)")
+                } else {
+                    server.insertMessage(userMessageItem: userMessageItem!)
+                }
+                 */
+            }
+        }
+        
+
+    }
+    
+    func insertMessageToApp(message: Message) {
+        let userMessageItem = UserMessageItem(userMessageID: message.userMessageID, userMessageText: message.message)
+      
+        userMessage.userMessageList.append(userMessageItem)
+        // message.txt に追加
+        let path = FileManager.default.urls(
+            for: .documentDirectory,
+            in: .userDomainMask)[0].appendingPathComponent(userMessage.uploadfname)
+        do {
+            try userMessage.appendUserMessage(
+                message: userMessageItem,
+                to: path
+            )
+        } catch {
+            print("append error:", error)
+        }
+    }
+    func getMessageFromApp(userMessageID: String) -> UserMessageItem? {
+        for userMessageItem in userMessage.userMessageList {
+            print(userMessageItem.userMessageID)
+            if userMessageItem.userMessageID == userMessageID {
+                return userMessageItem
+            }
+        }
+        return nil
+    }
+
+    @MainActor func getMessageFromStore(userMessageID: String) -> [Message] {
+        let out = server.getMessageFromStore(userMessageID: userMessageID)
+        return out
+    }
+
+    func getBaseID(id: String) -> String {
+
+        if let index = id.firstIndex(of: "(") {
+            let prefix = String(id[..<index])
+            print(prefix)   // XXX-0L
+            return prefix
+        } else {
+            return id
+        }
+    }
+    
+}
+
+
 // ------------------------------
 // SwiftUI App (demo UI)
 // ------------------------------
@@ -1740,9 +2362,24 @@ struct LocalBBSServerApp: App {
 }
 */
 
+// userMessageが２ヶ所あるけど、とりあえず両方ないと動かないのでそのままにしておく
 struct ServerControlView: View {
-    @StateObject private var server = WebServerManager()
+    @StateObject private var server : WebServerManager
+    @EnvironmentObject var userMessage : UserMessage
+    @StateObject private var syncManager: SyncManager
 
+    init(userMessage: UserMessage) {
+        let serverInstance = WebServerManager()
+        _server = StateObject(wrappedValue: serverInstance)
+
+        _syncManager = StateObject(
+            wrappedValue: SyncManager(
+                userMessage: userMessage,
+                server: serverInstance
+            )
+        )
+    }
+    
     var body: some View {
         VStack(spacing: 12) {
             Text("Server Status").font(.headline)
@@ -1752,6 +2389,10 @@ struct ServerControlView: View {
                 Button("Start :8080") { server.start(port: 8080) }
                 Button("Stop") { server.stop() }
             }
+            Button("Sync") {
+                syncManager.debug()
+            }
+            Text(userMessage.uploadfname)
         }
         .padding()
     }

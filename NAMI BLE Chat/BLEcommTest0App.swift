@@ -10,9 +10,13 @@ import SwiftUI
 @main
 struct BLEcommTest0App: App {
     @StateObject private var server = WebServerManager()
+    @StateObject private var userMessage =
+        UserMessage(store: MessageStore())
+    
     var body: some Scene {
         WindowGroup {
-            MainView(userMessage: UserMessage(store: MessageStore()))
+            MainView()
+                .environmentObject(userMessage)
 //                .environmentObject(User())
                 .environmentObject(Log())
                 .environmentObject(Devices())

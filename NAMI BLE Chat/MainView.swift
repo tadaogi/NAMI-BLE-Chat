@@ -8,20 +8,23 @@
 import SwiftUI
 
 struct MainView: View {
-    @State var userMessage: UserMessage
-    @StateObject private var vm: UserMessage
+//    @State var userMessage: UserMessage
+//    @StateObject private var vm: UserMessage
+    @EnvironmentObject var userMessage: UserMessage
     
-    init(userMessage: UserMessage) {
-        self.userMessage = userMessage
+    init() {
+        //self.userMessage = userMessage
         let url = FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("message.txt")
-
-        _vm = StateObject(
+/*
+        _userMessage = StateObject(
             wrappedValue: UserMessage(
                 store: MessageStore()
             )
         )
+ */
+ 
     }
     
     var body: some View {
@@ -49,11 +52,11 @@ struct MainView: View {
                 .tabItem{Text("WiFi")}
             ThreeCsView()
                 .tabItem{Text("3Cs")}
-            ServerControlView()
+            ServerControlView(userMessage: userMessage)
                 .tabItem{Text("WebServer")}
             
         }
-        .environmentObject(UserMessage(store: MessageStore()))
+        //.environmentObject(UserMessage(store: MessageStore()))
         .environmentObject(UserDefine())
         .environmentObject(FileID())
         .environmentObject(WiFi())
@@ -67,12 +70,17 @@ struct MainView: View {
     }
 }
 
+/*
 struct MainView_Previews: PreviewProvider {
+    @StateObject private var userMessage =
+        UserMessage(store: MessageStore())
+    
     static var previews: some View {
-        MainView(userMessage: UserMessage(store: MessageStore()))
+        MainView()
             .environmentObject(User())
             .environmentObject(Log())
             .environmentObject(Devices())
-            //.environmentObject(UserMessage())
+            .environmentObject(userMessage)
     }
 }
+*/
