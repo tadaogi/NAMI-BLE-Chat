@@ -663,13 +663,19 @@ final class WebServerManager: ObservableObject {
                 // spllitの処理が抜けている
                 // ＊ 要修正 ＊
                 // UserMessage.addItemからコピペして修正
-                //let mtu = 512 // ここは相手が決まっていないので、MTUを知ることが出来ない。なので、決め打ちで512にしておく。
-                let mtu = 100
+                let mtu = 512 // ここは相手が決まっていないので、MTUを知ることが出来ない。なので、決め打ちで512にしておく。
+                //let mtu = 100 // debug用に小さくしてみた
                 let headerLength = userMessageIDformat.count + 3 // シーケンス番号が３桁までとしておく
                 var sequence = 0 // シーケンス番号、０から始まる
                 var index = 0 // データを、どこから送るか
                 var restToSend = message.data(using: .utf8)!.count - index // 日本語の時に、count だとずれるので、data にして長さを知る
                 var dataToSend = message.data(using: .utf8)
+                guard let dataToSend = dataToSend else {
+                    print("dataToSend is nil")
+                    return GCDWebServerDataResponse(jsonObject: ["ok": false, "error": "dataToSend is nil"])
+
+                    //return
+                }
                 
                 let IDparts = userMessageIDformat.split(separator: "-")
                 var userMessageID: String = ""
@@ -702,14 +708,27 @@ final class WebServerManager: ObservableObject {
                 // ここから下が、Splitのロジック
                 while (restToSend>0) {
                     var amountToSend = min(restToSend,mtu-headerLength) // 今回送るデータ長
-                    print("amountToSend=", amountToSend)
+                    print("amountToSend(initial)=", amountToSend)
                     print("restToSend=\(restToSend)")
                     print("mtu=\(mtu)")
                     print("headerLength=\(headerLength)")
                     
-                    var chunk = dataToSend?.subdata(in: index..<(index + amountToSend)) // 今回送るデータ
+                    //var chunk = dataToSend?.subdata(in: index..<(index + amountToSend)) // 今回送るデータ
+                    let maxPayload = mtu - headerLength
+                    guard maxPayload > 0 else {
+                        print("maxPayload <= 0")
+                        return GCDWebServerDataResponse(jsonObject: ["ok": false, "error": "maxPayload <= 0"])
+                    }
+                    guard let chunk = nextUTF8Chunk(from: dataToSend, start: index, maxLength: maxPayload) else {
+                        print("Failed to split UTF-8 safely at index \(index)")
+                        break
+                    }
+                    amountToSend = chunk.count
+                    print("amountToSend(actual)=", amountToSend)
+
+                    
                     var userMessageID : String = ""
-                    if (index + amountToSend < dataToSend!.count) {
+                    if (index + amountToSend < dataToSend.count) {
                         print("sequence=",sequence)
                         userMessageID = String(format: userMessageIDformat, String(sequence))
                     } else {
@@ -719,6 +738,25 @@ final class WebServerManager: ObservableObject {
                     }
                     print("userMessageID=", userMessageID)
                     // print("debugMessageFlag:",self.debugMessageFlag) // メッセージ長さが変わってしまうので、とりあえずここでは使わない
+                    
+                    /*
+                     guard let data = chunk else {
+                        print("chunk is nil")
+                        //return
+                        return GCDWebServerDataResponse(jsonObject: ["ok": false, "error": "chunk is nil"])
+                    }
+                     */
+                    let data = chunk
+
+                    print("chunk count =", data.count)
+                    print("chunk hex =", data.map { String(format: "%02X", $0) }.joined(separator: " "))
+
+                    if let text = String(data: data, encoding: .utf8) {
+                        print("decoded text =", text)
+                    } else {
+                        print("UTF-8 decode failed")
+                    }
+                    // 以下で落ちるので、デバッグ用ロジック（上）を入れる
                     var UserMessageTextString = String(data:chunk ?? Data(), encoding: .utf8)! // encodeした送るテキスト
                     print(UserMessageTextString)
 
@@ -740,8 +778,8 @@ final class WebServerManager: ObservableObject {
                     print("message.count = \(message.count)")
                     print("(before) restToSend = \(restToSend)")
                     print("message.count = \(message.count)")
-                    print("dataToSend!.count = \(dataToSend!.count)")
-                    restToSend = dataToSend!.count - index // ここはなぜか UserMessageTextString だとだめ
+                    print("dataToSend!.count = \(dataToSend.count)")
+                    restToSend = dataToSend.count - index // ここはなぜか UserMessageTextString だとだめ
                     print("(after) restToSend = \(restToSend)")
 
                     sequence = sequence + 1
@@ -929,6 +967,25 @@ final class WebServerManager: ObservableObject {
         }
     }
 
+    // chunkを作る時に、UTF8境界になるようにする
+    func nextUTF8Chunk(from data: Data, start: Int, maxLength: Int) -> Data? {
+        guard start < data.count else { return nil }
+        guard maxLength > 0 else { return nil }
+
+        let maxEnd = min(start + maxLength, data.count)
+        var end = maxEnd
+
+        while end > start {
+            let chunk = data.subdata(in: start..<end)
+            if String(data: chunk, encoding: .utf8) != nil {
+                return chunk
+            }
+            end -= 1
+        }
+
+        return nil
+    }
+    
     func getURL() -> String {
         guard let server = self.webServer else { return "not started" }
                 
@@ -1453,7 +1510,8 @@ async function sendRowMessage(){
 }
 
 document.getElementById("send").addEventListener("click", sendRowMessage);
-document.getElementById("message").addEventListener("keydown", (e)=>{ if(e.key==="Enter") sendRowMessage(); });
+//document.getElementById("message").addEventListener("keydown", (e)=>{ if(e.key==="Enter") sendRowMessage(); });
+// 上があると改行で送られてしまうので除く
 
 //setInterval(fetchMessages, 1500);
 fetchMessages();

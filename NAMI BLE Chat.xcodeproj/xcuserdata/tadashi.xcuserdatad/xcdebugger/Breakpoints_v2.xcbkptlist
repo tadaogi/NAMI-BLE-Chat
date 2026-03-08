@@ -94,8 +94,8 @@
             filePath = "NAMI BLE Chat/ServerControlView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1968"
-            endingLineNumber = "1968"
+            startingLineNumber = "2026"
+            endingLineNumber = "2026"
             landmarkName = "formatDate(_:inputFormatter:outputFormatter:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -110,8 +110,8 @@
             filePath = "NAMI BLE Chat/ServerControlView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1966"
-            endingLineNumber = "1966"
+            startingLineNumber = "2024"
+            endingLineNumber = "2024"
             landmarkName = "formatDate(_:inputFormatter:outputFormatter:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -126,8 +126,8 @@
             filePath = "NAMI BLE Chat/ServerControlView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1965"
-            endingLineNumber = "1965"
+            startingLineNumber = "2023"
+            endingLineNumber = "2023"
             landmarkName = "formatDate(_:inputFormatter:outputFormatter:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -142,8 +142,8 @@
             filePath = "NAMI BLE Chat/ServerControlView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1967"
-            endingLineNumber = "1967"
+            startingLineNumber = "2025"
+            endingLineNumber = "2025"
             landmarkName = "formatDate(_:inputFormatter:outputFormatter:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -158,13 +158,13 @@
             filePath = "NAMI BLE Chat/ServerControlView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1930"
-            endingLineNumber = "1930"
+            startingLineNumber = "1988"
+            endingLineNumber = "1988"
             landmarkName = "makemsgfile()"
             landmarkType = "7">
             <Locations>
                <Location
-                  uuid = "D3988FA8-7FF8-445D-9C53-BBD2D2A1F1F4 - e20f3911fc27d237"
+                  uuid = "D3988FA8-7FF8-445D-9C53-BBD2D2A1F1F4 - e20f3911fc27dabd"
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
@@ -174,11 +174,11 @@
                   urlString = "file:///Users/tadashi/Dropbox/test/NAMI-BLE-Chat/NAMI%20BLE%20Chat/ServerControlView.swift"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "1930"
-                  endingLineNumber = "1930">
+                  startingLineNumber = "1988"
+                  endingLineNumber = "1988">
                </Location>
                <Location
-                  uuid = "D3988FA8-7FF8-445D-9C53-BBD2D2A1F1F4 - e20f3911fc27d237"
+                  uuid = "D3988FA8-7FF8-445D-9C53-BBD2D2A1F1F4 - e20f3911fc27dabd"
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
@@ -188,8 +188,8 @@
                   urlString = "file:///Users/tadashi/Dropbox/test/NAMI-BLE-Chat/NAMI%20BLE%20Chat/ServerControlView.swift"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "1930"
-                  endingLineNumber = "1930">
+                  startingLineNumber = "1988"
+                  endingLineNumber = "1988">
                </Location>
             </Locations>
          </BreakpointContent>
@@ -204,8 +204,8 @@
             filePath = "NAMI BLE Chat/ServerControlView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1863"
-            endingLineNumber = "1863"
+            startingLineNumber = "1921"
+            endingLineNumber = "1921"
             landmarkName = "makemsgfile()"
             landmarkType = "7">
          </BreakpointContent>
@@ -220,8 +220,8 @@
             filePath = "NAMI BLE Chat/ServerControlView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1848"
-            endingLineNumber = "1848"
+            startingLineNumber = "1906"
+            endingLineNumber = "1906"
             landmarkName = "saveMessagesHTML(limit:after:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -236,8 +236,8 @@
             filePath = "NAMI BLE Chat/ServerControlView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1843"
-            endingLineNumber = "1843"
+            startingLineNumber = "1901"
+            endingLineNumber = "1901"
             landmarkName = "saveMessagesHTML(limit:after:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -252,8 +252,8 @@
             filePath = "NAMI BLE Chat/ServerControlView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1611"
-            endingLineNumber = "1611"
+            startingLineNumber = "1669"
+            endingLineNumber = "1669"
             landmarkName = "removeGPSHeaderIfNeeded(_:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -268,8 +268,8 @@
             filePath = "NAMI BLE Chat/ServerControlView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "2233"
-            endingLineNumber = "2233"
+            startingLineNumber = "2291"
+            endingLineNumber = "2291"
             landmarkName = "debug()"
             landmarkType = "7">
          </BreakpointContent>
@@ -284,8 +284,8 @@
             filePath = "NAMI BLE Chat/ServerControlView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1012"
-            endingLineNumber = "1012"
+            startingLineNumber = "1069"
+            endingLineNumber = "1069"
             landmarkName = "mkGroupPullDown()"
             landmarkType = "7">
          </BreakpointContent>
@@ -300,8 +300,8 @@
             filePath = "NAMI BLE Chat/ServerControlView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1000"
-            endingLineNumber = "1000"
+            startingLineNumber = "1057"
+            endingLineNumber = "1057"
             landmarkName = "mkGroupPullDown()"
             landmarkType = "7">
          </BreakpointContent>
@@ -316,8 +316,8 @@
             filePath = "NAMI BLE Chat/ServerControlView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "997"
-            endingLineNumber = "997"
+            startingLineNumber = "1054"
+            endingLineNumber = "1054"
             landmarkName = "mkGroupPullDown()"
             landmarkType = "7">
          </BreakpointContent>
@@ -342,7 +342,7 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "DDCE2AC9-888C-4823-B04B-58683950106A"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "NAMI BLE Chat/ServerControlView.swift"
@@ -350,6 +350,38 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "630"
             endingLineNumber = "630"
+            landmarkName = "start(port:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "7EEEB55D-BEC0-4BA2-B7C2-306C18FF7A3E"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "NAMI BLE Chat/ServerControlView.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "742"
+            endingLineNumber = "742"
+            landmarkName = "start(port:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "A40C347A-DBDD-45AD-996F-DA9CBCCFC13A"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "NAMI BLE Chat/ServerControlView.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "749"
+            endingLineNumber = "749"
             landmarkName = "start(port:)"
             landmarkType = "7">
          </BreakpointContent>
