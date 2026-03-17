@@ -822,7 +822,7 @@ public class UserMessage: ObservableObject {
         }
         
         // wifitestからコピペ、引数だけ修正
-        func obsolute_connect(ssid:String, pass:String) {
+        func obsolete_connect(ssid:String, pass:String) {
             print("connect")
             print(ssid)
             print(pass)

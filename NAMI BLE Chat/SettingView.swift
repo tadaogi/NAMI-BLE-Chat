@@ -143,7 +143,7 @@ struct SettingView: View {
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                 }
                 HStack {
-                    Text("ObsoluteInterval")
+                    Text("ObsoleteInterval")
                     Spacer()
                     TextField("", text: $user.obsoleteInterval,
                               onCommit: {
@@ -250,7 +250,7 @@ struct SettingView: View {
                 print(user.UUID)
 
                 UserDefaults.standard.set(user.timerInterval, forKey: "timerInterval")
-                UserDefaults.standard.set(user.obsoleteInterval, forKey: "obsoluteInterval")
+                UserDefaults.standard.set(user.obsoleteInterval, forKey: "obsoleteInterval")
                 UserDefaults.standard.set(user.iPhoneMode, forKey: "iPhoneMode")
                 UserDefaults.standard.set(user.debugLogMode, forKey: "debugLogMode")
                 UserDefaults.standard.set(user.AutoMode, forKey: "AutoMode")

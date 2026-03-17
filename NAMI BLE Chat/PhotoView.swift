@@ -406,7 +406,7 @@ struct PhotoView: View {
     
     // 動作確認用 本体はwifi.swiftへ移動
     /*
-    func obsolute_uploadtest(fileName: String) {
+    func obsolete_uploadtest(fileName: String) {
         print("uploadtest")
         //let fileName = "DSCF0085.JPG"
         let fileNameWithoutExt = (fileName as NSString).deletingPathExtension
