@@ -396,11 +396,17 @@ struct MessageTestView: View {
         print("startMessage")
         MessageTestTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(message_interval), repeats: true, block: {(timer) in
             print("startMessageTimer")
+            
+            var location = globalgps?.getLastLocation()
+            let latitude = String(format: "%.6f", location?.latitude ?? 0.0)
+            let longitude = String(format: "%.6f", location?.longitude ?? 0.0)
+            let locationTxt = "[GPS,\(latitude),\(longitude)]"
+            
             let date = Date()
             let formatter = DateFormatter()
             formatter.dateFormat = " HH:mm:ss"
             let strDate = formatter.string(from: date)
-            userMessage.addItem(userMessageText: "[DEBUG] repeated message at \(strDate)")
+            userMessage.addItem(userMessageText: "\(locationTxt)[DEBUG] repeated message at \(strDate)")
         })
     }
 

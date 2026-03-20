@@ -21,7 +21,7 @@ class GPS: NSObject, CLLocationManagerDelegate{
     
     override init(){
         super.init()
-        print("GPS.init()")
+        print("GPS.init() \(ObjectIdentifier(self))")
         
         locationManager = CLLocationManager()
         
@@ -50,10 +50,13 @@ class GPS: NSObject, CLLocationManagerDelegate{
     
     func locationManager(_ manager: CLLocationManager,
                 didUpdateLocations locations: [CLLocation]) {
-        print("didUpdateLocations")
+        
+        print("didUpdateLocations \(ObjectIdentifier(self))")
         
         if let glog = GlobalVar.shared.gLog {
-            glog.addItem(logText: "didUpdateLocations")
+            Task { @MainActor in
+                glog.addItem(logText: "didUpdateLocations")
+            }
             print("didUpdateLocations with glob != nil")
         } else {
             print("didUpdateLocations with glog = nil")
@@ -74,9 +77,11 @@ class GPS: NSObject, CLLocationManagerDelegate{
         print("longitude: \(longitude!)")
         
         if let glog = GlobalVar.shared.gLog {
-            glog.addItem(logText: "didUpdateLocations, GPS, 0000, , \(latitude!), \(longitude!)")
+            Task { @MainActor in
+                glog.addItem(logText: "didUpdateLocations, GPS, 0000, , \(latitude!), \(longitude!)")
+            }
         }
-        //locationManager.stopUpdatingLocation() // 何故か繰り返しになってしまうので止める -> １回になった。なぜか不明
+        locationManager.stopUpdatingLocation() // 何故か繰り返しになってしまうので止める -> １回になった。なぜか不明
 
     }
     
@@ -84,16 +89,20 @@ class GPS: NSObject, CLLocationManagerDelegate{
         print("didFailWithError: \(error)")
         
         if let glog = GlobalVar.shared.gLog {
-            glog.addItem(logText: "didUpdateLocations(error), GPS, 0000, , -1, -1, \(error)")
+            Task { @MainActor in
+                glog.addItem(logText: "didUpdateLocations(error), GPS, 0000, , -1, -1, \(error)")
+            }
         }
 
     }
     
     
     func timerStart (timerInterval: Int) {
-        print("GPS.timerStart()")
+        print("GPS.timerStart() \(ObjectIdentifier(self))")
         if let glog = GlobalVar.shared.gLog {
-            glog.addItem(logText: "GPStimerStart, GPS, 0000,")
+            Task { @MainActor in
+                glog.addItem(logText: "GPStimerStart, GPS, 0000,")
+            }
         }
         
         // 動いていたら止めておく
@@ -105,9 +114,12 @@ class GPS: NSObject, CLLocationManagerDelegate{
     }
     
     func timerStop () {
-        print("GPS.timerStop()")
+
+        print("GPS timerStop called \(ObjectIdentifier(self))")
         if let glog = GlobalVar.shared.gLog {
-            glog.addItem(logText: "GPStimerStop, GPS, 0000,")
+            Task { @MainActor in
+                glog.addItem(logText: "GPStimerStop, GPS, 0000,")
+            }
         }
 
         timer?.invalidate()

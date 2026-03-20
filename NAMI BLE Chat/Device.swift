@@ -233,9 +233,11 @@ class Devices : ObservableObject {
         closeLongDeviceScore = calcCloseLongDeviceScore(closeLongDeviceCount: closeLongDeviceCount, closeMiddleDeviceCount: closeMiddleDeviceCount)
 
         if let glog = GlobalVar.shared.gLog {
-            glog.addItem(logText: "DeviceCount, Alarm, 0000, \(devicecount)")
-            glog.addItem(logText: "CloseDeviceCount, Alarm, 0000, \(closeDeviceCount), \(closeDeviceScore)")
-            glog.addItem(logText: "CloseLongDeviceCount, Alarm, 0000, \(closeMiddleDeviceCount), \(closeLongDeviceCount), \(closeLongDeviceScore)")
+            Task { @MainActor in
+                glog.addItem(logText: "DeviceCount, Alarm, 0000, \(devicecount)")
+                glog.addItem(logText: "CloseDeviceCount, Alarm, 0000, \(closeDeviceCount), \(closeDeviceScore)")
+                glog.addItem(logText: "CloseLongDeviceCount, Alarm, 0000, \(closeMiddleDeviceCount), \(closeLongDeviceCount), \(closeLongDeviceScore)")
+            }
         }
         
         // for debug
@@ -256,7 +258,9 @@ class Devices : ObservableObject {
         }
         
         if let glog = GlobalVar.shared.gLog {
-            glog.addItem(logText: "iPhoneCount, Debug, 0000, \(iPhoneCount)")
+            Task { @MainActor in
+                glog.addItem(logText: "iPhoneCount, Debug, 0000, \(iPhoneCount)")
+            }
         }
         return iPhoneCount
     }

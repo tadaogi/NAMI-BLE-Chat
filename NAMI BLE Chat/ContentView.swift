@@ -224,7 +224,7 @@ struct ContentView: View {
                             buttontext = "running"
                             runflag = true
                             //gps.timerStart(timerInterval: 60)
-                            self.user.gps.timerStart(timerInterval: 60)
+                            //self.user.gps.timerStart(timerInterval: 60) // GPS() は初期化されれば自動でタイマーが動くので、ここで呼ばなくて良い。
                             
                             self.log.addItem(logText: "wifi debug")
                             wifi.setlog(log: self.log)

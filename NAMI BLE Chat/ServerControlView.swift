@@ -997,11 +997,11 @@ final class WebServerManager: ObservableObject {
         webServer = nil
         status = "stopped"
     }
-    
+    /*
     func sync() {
         print("server.sync() is called")
     }
-
+    */
     private func logHead(_ path: String) {
         do {
             let data = try Data(contentsOf: URL(fileURLWithPath: path))
@@ -2273,6 +2273,8 @@ final class SyncManager: ObservableObject {
 
     @Published var userMessage: UserMessage
     private let server: WebServerManager
+    var checkedAppIndex = 0
+    var checkedWebIndex = 0
 
 
     init(userMessage: UserMessage, server: WebServerManager) {
@@ -2280,22 +2282,33 @@ final class SyncManager: ObservableObject {
         self.server = server
     }
     
-    @MainActor func debug() {
+    @MainActor func sync() {
+        var copiedAppCount: Int = 0
+        var copiedWebCount: Int = 0
         print("SyncManager debug2")
         print(userMessage.uploadfname)
         print(server.getURL())
         
         // userMessageからUserMessageIDを取得する
         var appUserMessageIDList = [] as [String]
-        for userMessageItem in userMessage.userMessageList {
+//        for userMessageItem in userMessage.userMessageList {
+        // 前回チェックした後だけリストにする
+        print("checkedAppIndex: \(checkedAppIndex)")
+        for userMessageItem in userMessage.userMessageList.suffix(from: checkedAppIndex) {
             print(userMessageItem.userMessageID)
             appUserMessageIDList.append(userMessageItem.userMessageID)
         }
         print(appUserMessageIDList)
+        checkedAppIndex = checkedAppIndex + appUserMessageIDList.count
+        print("new checkedAppIndex: \(checkedAppIndex)")
         
         // WebStoreから取得
-        var storeUserMessageIDList = server.getMessageIDList()
+        // 前回チェックした後だけリストにする
+        print("checkedWebIndex: \(checkedWebIndex)")
+        var storeUserMessageIDList = server.getMessageIDList().suffix(from: checkedWebIndex)
         print(storeUserMessageIDList)
+        checkedWebIndex = checkedWebIndex + storeUserMessageIDList.count
+        print("new checkedWebIndex: \(checkedWebIndex)")
         
         // app to Web
         for appUserMessageID in appUserMessageIDList {
@@ -2320,6 +2333,7 @@ final class SyncManager: ObservableObject {
                 } else {
                     server.insertMessageToStore(userMessageItem: userMessageItem!)
                 }
+                copiedWebCount = copiedWebCount + 1
             }
         }
         
@@ -2346,6 +2360,8 @@ final class SyncManager: ObservableObject {
                     print(message)
                     insertMessageToApp(message: message)
                     print("insertToApp \(message)")
+                    copiedAppCount = copiedAppCount + 1
+                    
                 }
                 /*
                 if userMessageItem == nil {
@@ -2357,7 +2373,41 @@ final class SyncManager: ObservableObject {
             }
         }
         
+        // syncが終了した時点で checkedIndex を更新する
+        checkedAppIndex = checkedAppIndex + copiedAppCount
+        checkedWebIndex = checkedWebIndex + copiedWebCount
+        print("after sync")
+        print("copiedAppCount: \(copiedAppCount)")
+        print("checkedAppIndex: \(checkedAppIndex)")
+        print("copiedWebCount: \(copiedWebCount)")
+        print("checkedWebIndex: \(checkedWebIndex)")
 
+        
+
+    }
+    
+    private var timer: Timer?
+    
+    func startSyncTimer() {
+        // すでに動いていたら一旦止める
+        stopSyncTimer()
+
+        // 必要なら開始直後に1回実行
+        //sync()
+
+        // 5分ごとに実行
+        timer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
+            self?.sync()
+        }
+    }
+
+    func stopSyncTimer() {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    deinit {
+        stopSyncTimer()
     }
     
     func insertMessageToApp(message: Message) {
@@ -2447,8 +2497,15 @@ struct ServerControlView: View {
                 Button("Start :8080") { server.start(port: 8080) }
                 Button("Stop") { server.stop() }
             }
-            Button("Sync") {
-                syncManager.debug()
+            Button("Sync Once") {
+                syncManager.sync()
+            }
+            Button("Start Sync Period") {
+                syncManager.startSyncTimer()
+            }
+
+            Button("Stop Sync Period") {
+                syncManager.stopSyncTimer()
             }
             Text(userMessage.uploadfname)
         }

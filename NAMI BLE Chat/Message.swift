@@ -10,6 +10,8 @@ import Combine
 import CoreBluetooth
 import NetworkExtension
 
+var availableperiod = 3600 * 24 * 7 // 古いメッセージをどこまで処理するか。元々１時間だったけど短すぎるので１週間にしてみる。
+
 class DateUtils {
     class func dateFromString(string: String, format: String) -> Date {
         let formatter: DateFormatter = DateFormatter()
@@ -327,7 +329,10 @@ public class UserMessage: ObservableObject {
     public func startTransfer(connectedPeripheral: CBPeripheral) {
         
         if self.blePeripheral.log != nil { // なぜかここで log = nil になった
-            self.blePeripheral.log.addItem(logText: "enter startTransfer, \(connectedPeripheral.name), \(connectedPeripheral.identifier.uuidString) ")
+            Task { @MainActor in
+                
+                self.blePeripheral.log.addItem(logText: "enter startTransfer, \(connectedPeripheral.name), \(connectedPeripheral.identifier.uuidString) ")
+            }
         }
         print("startTransfer is called")
         if pStatus == "|" {
@@ -343,29 +348,44 @@ public class UserMessage: ObservableObject {
             transferCList.append(transferC)
             print("transfer list \(transferCList)")
 
-            self.blePeripheral.log.addItem(logText: "call transferC.start(), \( connectedPeripheral.name ), \( connectedPeripheral.identifier.uuidString) ")
+            Task { @MainActor in
+                
+                self.blePeripheral.log.addItem(logText: "call transferC.start(), \( connectedPeripheral.name ), \( connectedPeripheral.identifier.uuidString) ")
+            }
 
             transferC.start()
         } else {
-            self.blePeripheral.log.addItem(logText: "not runnning in transferC.start()")
+            Task { @MainActor in
+                
+                self.blePeripheral.log.addItem(logText: "not runnning in transferC.start()")
+            }
 
         }
     }
     
+    func logaddItem(logText: String) {
+        Task { @MainActor in
+            self.blePeripheral.log.addItem(logText: logText)
+        }
+    }
     // Peripheral側のロジック
     // 本当はすべて transferP の中のほうが良い気がする
     public func analyzeText(protocolMessageText: String) {
         print("message.analyzeText is called")
         let command:[String] = protocolMessageText.components(separatedBy:"\n")
-        self.blePeripheral.log.addItem(logText:"command \(command[0]),")
+        Task { @MainActor in
+            
+            self.blePeripheral.log.addItem(logText:"command \(command[0]),")
+        }
         switch command[0] {
         case "BEGIN0":
             print("BEGIN0")
-            self.blePeripheral.log.addItem(logText:"BEGIN0 before PmessageLoopLock.lock()")
+            //            self.blePeripheral.log.addItem(logText:"BEGIN0 before PmessageLoopLock.lock()")
+            logaddItem(logText:"BEGIN0 before PmessageLoopLock.lock()")
             if (PmessageLoopLock.lock(before:Date().addingTimeInterval(1))==false) {
                 // P を stop した直後にBegin0がくると、ここでlockに失敗する。
                 // C側をエラーにするためにエラーを返したい。この方法で返るのか怪しい。
-                self.blePeripheral.log.addItem(logText:"BEGIN0 PmessageLoopLock.lock() failed")
+                logaddItem(logText:"BEGIN0 PmessageLoopLock.lock() failed")
                 
                 transferP = TransferP(blePeripheral: self.blePeripheral)
                 transferP?.write2C(writeData: "error")
@@ -374,7 +394,7 @@ public class UserMessage: ObservableObject {
             }
             //self.blePeripheral.log.addItem(logText:"BEGIN0 after PmessageLoopLock.lock()")
             
-            self.blePeripheral.log.addItem(logText:"P: MessageLoop start")
+            logaddItem(logText:"P: MessageLoop start")
             transferP = TransferP(blePeripheral: self.blePeripheral)
             // ここで transferPがnilということはない
             transferP?.begin0()
@@ -382,7 +402,7 @@ public class UserMessage: ObservableObject {
         case "IHAVE":
             // error check が必要か？
             if transferP == nil {
-                self.blePeripheral.log.addItem(logText:"protocolErro (analyzeText:IHAVE)")
+                logaddItem(logText:"protocolErro (analyzeText:IHAVE)")
                 return
             }
             transferP!.ihave(userMessageID: command[1])
@@ -393,11 +413,11 @@ public class UserMessage: ObservableObject {
             addItemExternal(protocolMessageCommand: command)
             
             if transferP == nil {
-                self.blePeripheral.log.addItem(logText:"protocolErro (analyzeText:MSG)")
+                logaddItem(logText:"protocolErro (analyzeText:MSG)")
                 return
             }
             transferP!.ack()
-            self.blePeripheral.log.addItem(logText:"P send ACK for MSG,")
+            logaddItem(logText:"P send ACK for MSG,")
             print("P sent ACK for MSG")
 
             
@@ -405,23 +425,23 @@ public class UserMessage: ObservableObject {
             print("receive BEGIN1")
             
             if transferP == nil {
-                self.blePeripheral.log.addItem(logText:"protocolErro (analyzeText:BEGIN1)")
+                logaddItem(logText:"protocolErro (analyzeText:BEGIN1)")
                 return
             }
 
             transferP!.begin1()
             // この時点で、ループは終了なので、transferPをnilにしていいはず
-            self.blePeripheral.log.addItem(logText:"after BEGIN1, finish loop,")
+            logaddItem(logText:"after BEGIN1, finish loop,")
             transferP = nil // ここで、nil にしてしまうと、まだ相手がメッセージを読んでないのでエラーになる。-> 修正した（はず）
             PmessageLoopLock.unlock()
-            self.blePeripheral.log.addItem(logText:"after BEGIN1, unlock PmessageLoopLock,")
+            logaddItem(logText:"after BEGIN1, unlock PmessageLoopLock,")
 
             
         case "ACK":
             print("P receive ACK")
             
             if transferP == nil {
-                self.blePeripheral.log.addItem(logText:"protocolError (analyzeText:ACK)")
+                logaddItem(logText:"protocolError (analyzeText:ACK)")
                 return
             }
 
@@ -431,20 +451,20 @@ public class UserMessage: ObservableObject {
             print("P receive INEED")
             
             if transferP == nil {
-                self.blePeripheral.log.addItem(logText:"protocolErro (analyzeText:INEED)")
+                logaddItem(logText:"protocolErro (analyzeText:INEED)")
                 return
             }
 
             transferP!.appendReceiveMessage(receiveProtocolMessage: protocolMessageText)
             
         case "DEBUG":
-            self.blePeripheral.log.addItem(logText:"DEBUG analyzeText \(protocolMessageText),")
+            logaddItem(logText:"DEBUG analyzeText \(protocolMessageText),")
             
         default:
             print("OTHER COMMAND (ERROR)")
             transferP = nil
             PmessageLoopLock.unlock()
-            self.blePeripheral.log.addItem(logText:"protocol error, unlock PmessageLoopLock,")
+            logaddItem(logText:"protocol error, unlock PmessageLoopLock,")
 
 
         }
@@ -455,7 +475,8 @@ public class UserMessage: ObservableObject {
     // これらをどうするかちゃんと決めないといけない
     // とりあえずそのまま表示
     func addItemExternal(protocolMessageCommand: [String]) {
-        DispatchQueue.main.async {
+        //DispatchQueue.main.async {
+        Task { @MainActor in
             self.bleCentral.log.addItem(logText: "async addItemExternal")
             //self.messageIDLock.lock() // original
             
@@ -508,7 +529,7 @@ public class UserMessage: ObservableObject {
             let diffsec = now.timeIntervalSince(date)
             print(diffsec)
             
-            if diffsec > 3600 { // 1hour
+            if diffsec > Double(availableperiod) { // 1hour -> 1 week
                 print("too old userMessageID")
                 self.bleCentral.log.addItem(logText: "too old userMessageID in addItemExternal")
                 
@@ -620,7 +641,7 @@ public class UserMessage: ObservableObject {
         // 思ったより長くなっている
         func mergeSplitData(messageID: String) {
             var lastfound = false
-            self.bleCentral.log.addItem(logText: "mergeSplitData called messageID=\(messageID)")
+            logaddItem(logText: "mergeSplitData called messageID=\(messageID)")
 
             print("mergeSplitData with ", messageID)
             var regex3 = /^(?<IDbody>.*)-(?<sequence>\w*)\((?<hop>\d*)\)$/
@@ -710,7 +731,7 @@ public class UserMessage: ObservableObject {
             // その時は、base64のdecodeで失敗するので、そのまま return するはず
             // と思ったが、成功する時もあるらしい。なので、lastfoundを確認する
             if (itemCount >= n+1) && lastfound {
-                self.bleCentral.log.addItem(logText: "mergeSplitData find all splits (maybe)")
+                logaddItem(logText: "mergeSplitData find all splits (maybe)")
 
                 print("find all split")
                 var AllMessage = ""
@@ -779,7 +800,7 @@ public class UserMessage: ObservableObject {
                 // 見つからなかった。エラー処理が必要か？
                 // エラーの原因が不明なので、対応方法も不明
                 // 全部揃ってから、手作業でマージできる方法を残しておくのが良いかも
-                self.bleCentral.log.addItem(logText: "mergeSplitData something is missing for \(messageID)")
+                logaddItem(logText: "mergeSplitData something is missing for \(messageID)")
                 for i in 0..<n+1 { // 実際には n は最後なので抜けていることはない
                     if UserMessageList[i] == nil {
                         print("UserMessageList[",i,"] is missing")
@@ -798,13 +819,13 @@ public class UserMessage: ObservableObject {
             if commands[0]=="command" {
                 if commands.count == 1 {
                     print("command syntax error: \(commands)")
-                    self.bleCentral.log.addItem(logText: "command syntax error: \(commands)")
+                    logaddItem(logText: "command syntax error: \(commands)")
                 } else {
                     if commands[1]=="wifi" {
                         if !user.EdgeMode {
                             if commands.count != 5 {
                                 print("command[wifi] syntax error: \(commands)")
-                                self.bleCentral.log.addItem(logText: "command[wifi] syntax error: \(commands)")
+                                logaddItem(logText: "command[wifi] syntax error: \(commands)")
                             } else {
                                 let ssid = commands[2]
                                 let pass = commands[3]
@@ -989,6 +1010,7 @@ public class UserMessage: ObservableObject {
 // 実際には、ほとんど１つしか使わないと思うが、複数できるようにしておかないと
 // 後で問題が発生するかもしれないので、そういう感じにしておく。
 var transferCList: [TransferC] = []
+var maxmessagestosend = 5
 
 class TransferC {
     var connectedPeripheral: CBPeripheral
@@ -1016,7 +1038,9 @@ class TransferC {
         // Warningが出るので、QoSクラスを変えてみた。あっているかどうか不明 2024/5/30
         queue.async {
             print("transfer.start is called")
-            self.bleCentral.log.addItem(logText: "in transferC.start() before lock, \( self.connectedPeripheral.name ?? "unknown"), \( self.connectedPeripheral.identifier.uuidString) ")
+            Task { @MainActor in
+                self.bleCentral.log.addItem(logText: "in transferC.start() before lock, \( self.connectedPeripheral.name ?? "unknown"), \( self.connectedPeripheral.identifier.uuidString) ")
+            }
             //self.loopLock.lock() // この lock は何のため？ -> CtoP の時に、転送途中の処理を待つため。
             
             if (self.loopLock.lock(before:Date().addingTimeInterval(1))==false) {
@@ -1029,7 +1053,9 @@ class TransferC {
                 
                 
                 //self.bleCentral.log.addItem(logText: "in transferC.start() after lock, \( self.connectedPeripheral.name ?? "unknown"), \( self.connectedPeripheral.identifier.uuidString) ")
-                self.bleCentral.log.addItem(logText: "C: MessageLoop start, \( self.connectedPeripheral.name ?? "unknown"), \( self.connectedPeripheral.identifier.uuidString) ")
+                Task { @MainActor in
+                    self.bleCentral.log.addItem(logText: "C: MessageLoop start, \( self.connectedPeripheral.name ?? "unknown"), \( self.connectedPeripheral.identifier.uuidString) ")
+                }
 
                 // send BEGIN0
                 self.bleCentral.writeData("BEGIN0\n", peripheral: self.connectedPeripheral)
@@ -1057,7 +1083,8 @@ class TransferC {
             //self.bleCentral.connectedPeripheral = nil
 
             print("end of TransferC.start.async 1")
-            self.bleCentral.log.addItem(logText: "end of TransferC.start.async 1")
+            print("skip log in TransferC.start.async 1")
+            //self.bleCentral.log.addItem(logText: "end of TransferC.start.async 1")
 
             // ここで無条件に restatScan してしまうと、stop ボタンが効かないのでやめる。
             //self.bleCentral.restartScan()
@@ -1072,16 +1099,21 @@ class TransferC {
         //self.bleCentral.connectedPeripheral = nil
     }
     
+    func logaddItem(logText: String) {
+        //Task { @MainActor in
+            self.bleCentral.log.addItem(logText: logText)
+        //}
+    }
     func sendMessageLoop(){
         print("sendMessageLoop")
-        self.bleCentral.log.addItem(logText:"C: enter sendMessageLoop")
+        logaddItem(logText:"C: enter sendMessageLoop")
 
-        for userMessage in bleCentral.userMessage.userMessageList {
+        for userMessage in bleCentral.userMessage.userMessageList.suffix(maxmessagestosend) { // たくさん送らない 2026/3/19
             print(userMessage.userMessageID,userMessage.userMessageText)
             
             // Time check
-            if messageIDTimeCompare(messageID:userMessage.userMessageID, limit: 3600)==false {
-                self.bleCentral.log.addItem(logText:"C:message \(userMessage.userMessageID) is too old")
+            if messageIDTimeCompare(messageID:userMessage.userMessageID, limit: availableperiod)==false {
+                logaddItem(logText:"C:message \(userMessage.userMessageID) is too old")
                 continue
             }
             
@@ -1091,7 +1123,7 @@ class TransferC {
             let match = userMessage.userMessageID.firstMatch(of: regex)
             if match == nil {
                 print("illeagal userMessageID(hop)")
-                self.bleCentral.log.addItem(logText: "illeagal userMessageID(hop) in sendMessageLoop")
+                logaddItem(logText: "illeagal userMessageID(hop) in sendMessageLoop")
                 continue
             }
             let originalhopStr = match?.1 ?? "0"
@@ -1099,7 +1131,7 @@ class TransferC {
             print(hop)
             if hop > 10 {
                 print("too many hops ")
-                self.bleCentral.log.addItem(logText: "too many hops in sendMessageLoop")
+                logaddItem(logText: "too many hops in sendMessageLoop")
                 continue
             }
             
@@ -1135,7 +1167,7 @@ class TransferC {
     
     func receiveMessageLoop() {
         print("receiveMessageLoop")
-        self.bleCentral.log.addItem(logText: "C: enter receiveMessageLoop")
+        logaddItem(logText: "C: enter receiveMessageLoop")
         
         // send BEGIN1
         self.bleCentral.writeData("BEGIN1\n", peripheral: self.connectedPeripheral)
@@ -1150,12 +1182,12 @@ class TransferC {
             switch receiveCommand[0] {
             case "END1":
                 print("end of receiveMessageLoop")
-                self.bleCentral.log.addItem(logText: "C: receiveMessageLoop END1, \( self.connectedPeripheral.name ?? "unknown"), \( self.connectedPeripheral.identifier.uuidString) ")
+                logaddItem(logText: "C: receiveMessageLoop END1, \( self.connectedPeripheral.name ?? "unknown"), \( self.connectedPeripheral.identifier.uuidString) ")
                 return
             
             case "IHAVE":
                 print("C receive IHAVE \(receiveCommand[1])")
-                self.bleCentral.log.addItem(logText: "C: receiveMessageLoop IHAVE \(receiveCommand[1])")
+                logaddItem(logText: "C: receiveMessageLoop IHAVE \(receiveCommand[1])")
                 
                 var ihave: Bool = false
                 for userMessage in bleCentral.userMessage.userMessageList {
@@ -1183,7 +1215,7 @@ class TransferC {
 
             case "MSG":
                 print("receive MSG (not implemented yet) \(receiveCommand[1])")
-                self.bleCentral.log.addItem(logText:"C: receiveMessageLoop MSG, \(receiveCommand[1])")
+                logaddItem(logText:"C: receiveMessageLoop MSG, \(receiveCommand[1])")
 
                 self.bleCentral.userMessage.addItemExternal(protocolMessageCommand: receiveCommand)
                 // for debug
@@ -1193,7 +1225,7 @@ class TransferC {
                 
             default:
                 print("receiveMessageLoopError \(receiveCommand[0])")
-                self.bleCentral.log.addItem(logText:"C: receiveMessageLoop Error, \(receiveCommand[0])")
+                logaddItem(logText:"C: receiveMessageLoop Error, \(receiveCommand[0])")
                 errorReset()
                 return
             }
@@ -1210,21 +1242,21 @@ class TransferC {
     func appendMessage(protocolMessage:String) {
         // 本当はここでLockをかけるべき
         self.protocolMessageQueue.append(protocolMessage)
-        self.bleCentral.log.addItem(logText:"appendMessage before signal")
+        logaddItem(logText:"appendMessage before signal")
         self.semaphore.signal()
-        self.bleCentral.log.addItem(logText:"appendMessage after signal")
+        logaddItem(logText:"appendMessage after signal")
     }
     
     // 本当はロックを使って、正しいメッセージを読むべき
     // wait()を入れると全体が止まってしまう
     // start() を async にした。とりあえず、動いている
     func getProtocolMessage()-> String {
-        switch (self.semaphore.wait(timeout: .now() + 30)) {
+        switch (self.semaphore.wait(timeout: .now() + 3)) { // 30 -> 3
         case .success:
-            self.bleCentral.log.addItem(logText:"wait in getProtocolMessage succeed, \( self.connectedPeripheral.name ), \( self.connectedPeripheral.identifier.uuidString ) ")
+            logaddItem(logText:"wait in getProtocolMessage succeed, \( self.connectedPeripheral.name ), \( self.connectedPeripheral.identifier.uuidString ) ")
             
         case .timedOut:
-            self.bleCentral.log.addItem(logText:"wait in getProtocolMessage failed, \( self.connectedPeripheral.name ), \( self.connectedPeripheral.identifier.uuidString ) ")
+            logaddItem(logText:"wait in getProtocolMessage failed, \( self.connectedPeripheral.name ), \( self.connectedPeripheral.identifier.uuidString ) ")
             return("getProtocolMessageTimedOut")
             
         }
@@ -1270,8 +1302,14 @@ class TransferP {
         self.receiveMessageSemaphore = DispatchSemaphore(value: 0)
     }
     
+    func logaddItem(logText: String) {
+        //Task { @MainActor in
+            self.blePeripheral.log.addItem(logText:logText)
+        //}
+    }
+    
     func begin0(){
-        self.blePeripheral.log.addItem(logText:"transferP.begin0,")
+        logaddItem(logText:"transferP.begin0,")
         write2C(writeData: "ACK\n")
     }
     
@@ -1294,14 +1332,15 @@ class TransferP {
             print("QoS : user initiated")
         }
 
-        switch(self.protocolMessageSyncSemaphore.wait(timeout: .now() + 30)) {
+        print("wait for 3 seconds in write2C")
+        switch(self.protocolMessageSyncSemaphore.wait(timeout: .now() + 3)) { //  本質的には変えてないけど、30を3に減らしたので、もしここで待っているなら少し改善する
         case .success:
             print("success in write2C")
             
         case .timedOut:
             print("timedout in write2C")
 
-            self.blePeripheral.log.addItem(logText:"timedOut in write2C")
+            logaddItem(logText:"timedOut in write2C")
             
         }
 
@@ -1315,13 +1354,13 @@ class TransferP {
     
     func getProtocolMessageP()-> String {
         print("before protocol wait") // ここでブロックしてしまう
-        switch (self.protocolMessageSemaphore.wait(timeout: .now() + 30)) { // どこで書いている？
+        switch (self.protocolMessageSemaphore.wait(timeout: .now() + 3)) { // どこで書いている？ // 30 -> 3
         case .success:
             print("success in getProtocolMessageP")
-            self.blePeripheral.log.addItem(logText: "success to wait in getProtocolMessageP")
+            logaddItem(logText: "success to wait in getProtocolMessageP")
         case .timedOut:
             print("timedOut in getProtocolMessageP")
-            self.blePeripheral.log.addItem(logText: "fail to wait in getProtocolMessageP")
+            logaddItem(logText: "fail to wait in getProtocolMessageP")
             return("timedOut")
         }
         if self.protocolMessageQueue.count <= self.protocolMessageIndex {
@@ -1336,13 +1375,13 @@ class TransferP {
     
     func getReceiveProtocolMessage()-> String {
         print("before receive wait")
-        switch (self.receiveMessageSemaphore.wait(timeout: .now() + 30)) { // どこで書いている？
+        switch (self.receiveMessageSemaphore.wait(timeout: .now() + 30)) { // どこで書いている？ // 30 -> 3
         case .success:
             print("success in getReceiveProtocolMessage")
-            self.blePeripheral.log.addItem(logText: "success to wait in getReceiveProtocolMessage")
+            logaddItem(logText: "success to wait in getReceiveProtocolMessage")
         case .timedOut:
             print("timedOut in getReceiveProtocolMessage")
-            self.blePeripheral.log.addItem(logText: "fail to wait in getReceiveProtocolMessage")
+            logaddItem(logText: "fail to wait in getReceiveProtocolMessage")
             return("timedOut")
         }
         if self.receiveMessageQueue.count <= self.receiveMessageIndex {
@@ -1354,7 +1393,7 @@ class TransferP {
     }
     
     func ihave(userMessageID: String) {
-        self.blePeripheral.log.addItem(logText:"transferP.ihave, \(userMessageID),")
+        logaddItem(logText:"transferP.ihave, \(userMessageID),")
         
         for userMessage in blePeripheral.userMessage.userMessageList {
             // hopを消す
@@ -1379,14 +1418,14 @@ class TransferP {
     }
     
     func begin1() {
-        self.blePeripheral.log.addItem(logText:"transferP.begin1,")
+        logaddItem(logText:"transferP.begin1,")
 
-        for userMessage in blePeripheral.userMessage.userMessageList {
+        for userMessage in blePeripheral.userMessage.userMessageList.suffix(2 * maxmessagestosend) { // たくさん送らない
             print("I(P) have \(userMessage.userMessageID)")
             
             // Time check
-            if messageIDTimeCompare(messageID:userMessage.userMessageID, limit: 3600)==false {
-                self.blePeripheral.log.addItem(logText:"P:message \(userMessage.userMessageID) is too old")
+            if messageIDTimeCompare(messageID:userMessage.userMessageID, limit: availableperiod)==false {
+                logaddItem(logText:"P:message \(userMessage.userMessageID) is too old")
                 continue
             }
             
@@ -1411,14 +1450,14 @@ class TransferP {
         }
         
         write2C(writeData: "END1\n")
-        self.blePeripheral.log.addItem(logText:"P: MessageLoop end")
+        logaddItem(logText:"P: MessageLoop end")
 
 
     }
     
     func begin1_sendmsg(userMessageID: String){
         print("begin1_sendmsg \(userMessageID)")
-        self.blePeripheral.log.addItem(logText:"transferP.begin1_sendmsg \(userMessageID),")
+        logaddItem(logText:"transferP.begin1_sendmsg \(userMessageID),")
     
         for userMessage in blePeripheral.userMessage.userMessageList {
             if userMessage.userMessageID == userMessageID {
@@ -1430,7 +1469,7 @@ class TransferP {
         }
         
         print("Protocol error in begin1_sendmsg")
-        self.blePeripheral.log.addItem(logText:"Protocol error in begin1_sendmsg,")
+        logaddItem(logText:"Protocol error in begin1_sendmsg,")
 
     }
 }
@@ -1454,3 +1493,4 @@ func messageIDTimeCompare(messageID:String, limit: Int) -> Bool { // now() か�
     }
     
 }
+

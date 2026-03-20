@@ -28,6 +28,7 @@ struct LogItem {
 var versiontext:String = ""
 var UploadResultMessage = "test"
 
+//@MainActor
 class Log : ObservableObject {
     //@Published var logtext: String = "initial\n1\n2\n3\n4\n5\n6\n"
     //@Published var loglist : [LogItem] = [
@@ -75,21 +76,26 @@ class Log : ObservableObject {
         logcountlock.unlock()
         
         // デバッグのために、10件ごとにログを消す
-        if logcount%100 == 0 {
-            loglistlock.lock()
-            loglist = [
-                LogItem(logtext: "--- log deleted ---"),
-            ]
-            loglistlock.unlock()
+        if logcount%10 == 0 { // 100 -> 10 に小さくしてみる
+            Task { @MainActor in
+                //loglistlock.lock() // @MainActorにしたのでlock不要
+                loglist = [
+                    LogItem(logtext: "--- log deleted ---"),
+                ]
+                //loglistlock.unlock()
+            }
         }
         
         let text = "\(currenttime), [\(self.logcount)], \(logText)"
         
-        DispatchQueue.main.async {
-            self.loglistlock.lock()
+        // @Mainactor にしたので不要
+        //DispatchQueue.main.async {
+        Task { @MainActor in
+            //self.loglistlock.lock() // @MainActorにしたのでlock不要
             self.loglist.append(LogItem(logtext: text))
-            self.loglistlock.unlock()
+            //self.loglistlock.unlock()
         }
+        //}
         
         appendlocal(fname: "NAMI.log", text: text+"\n")
 

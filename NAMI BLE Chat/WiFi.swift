@@ -32,7 +32,9 @@ public class WiFi: ObservableObject {
     var namitaskList:[NamiTask] = []
     var mainsemaphore = DispatchSemaphore(value: 0)
     var loopstatus = false
-    @Published var message = "wifimessage\n"
+    //@Published var message = "wifimessage\n" // 文字列だと重くなるかも？
+    @Published var messages: [String] = []
+
     let TaskListLock = NSLock()
     @Published var edgeIP = "10.0.0.99"
     
@@ -127,16 +129,26 @@ public class WiFi: ObservableObject {
     
     // 画面に表示されているメッセージを更新するので、main とする必要がある。
     func addmessage(msg: String) {
+        // どこでもひょうじされていないが、ここではんぐするので一旦コメントアウトする
+        /*
+        messages.append(msg)
+        if messages.count > 300 {
+            messages.removeFirst(messages.count - 300)
+        }
+         */
+        /*
         DispatchQueue.main.async {
             self.message = self.message + msg + "\n"
         }
+         */
     }
     
     // mainのloopを開始する
     // stop 出来ないか試したが、非同期の処理が終わるのを待たないといけないので
     // 難しそうなのでとりあえずやめた。普通は stop しなくて良いはず。
     func start() -> Bool {
-        self.message = self.message + "start\n"
+        addmessage(msg: "start")
+        //self.message = self.message + "start\n"
         if self.loopstatus != true {
             self.loopstatus = true // loopは１回だけ起動される。厳密にはLockしないといけないけど、まあいいか。
             DispatchQueue.global().async {
@@ -226,14 +238,15 @@ public class WiFi: ObservableObject {
                     }
                      */
                     // timeout を入れているのは、ロジックがおかしくなっても止まらないように。
-                    switch self.mainsemaphore.wait(timeout: .now() + 10.0) {
+                    switch self.mainsemaphore.wait(timeout: .now() + 3.0) {
                     case .success:
                         print("success")
-                        self.addmessage(msg: "success")
+                        //self.addmessage(msg: "success")
                         
                     case .timedOut:
-                        print("timedOut")
-                        self.addmessage(msg: "timedOut")
+                        print("timedOut in WiFi")
+                        //self.addmessage(msg: "timedOut")
+                        //self.mainsemaphore.signal() // signalを入れてみる
                     }
                 }
             }
@@ -245,6 +258,7 @@ public class WiFi: ObservableObject {
         return self.loopstatus
     }
     
+    // この関数はどこからも呼ばれない。
     func setStatus(status: Bool) {
         print("WiFi.setStatus:", status)
         wifistatus = status

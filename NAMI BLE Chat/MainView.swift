@@ -60,7 +60,7 @@ struct MainView: View {
         .environmentObject(UserDefine())
         .environmentObject(FileID())
         .environmentObject(WiFi())
-        .environmentObject(User())
+        //.environmentObject(User())
         .onAppear {
             movingEdgeInit(userMessage: userMessage)
             movingEdgeFlag = UserDefaults.standard.bool(forKey: "movingEdgeFlag")
