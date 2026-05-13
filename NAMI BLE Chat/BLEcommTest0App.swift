@@ -17,6 +17,9 @@ struct BLEcommTest0App: App {
     @StateObject private var params = Params()
     @StateObject private var user = User()
 
+    init() {
+        checkDebugMark()
+    }
     
     var body: some Scene {
         WindowGroup {
@@ -33,6 +36,19 @@ struct BLEcommTest0App: App {
 //                .environmentObject(Params())
                 .environmentObject(params)
                 .environmentObject(server)
+        }
+    }
+    
+    func checkDebugMark() {
+        let ud = UserDefaults.standard
+        if let label = ud.string(forKey: "debug_reached_label"),
+           let time = ud.string(forKey: "debug_reached_time") {
+
+            print("前回停止位置: \(label) at \(time)")
+
+            // 必要なら消す
+            //ud.removeObject(forKey: "debug_reached_label")
+            //ud.removeObject(forKey: "debug_reached_time")
         }
     }
 }

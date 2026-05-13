@@ -124,9 +124,17 @@ struct ContentView: View {
             //log.addItem(logText: "CtoP")
             bleCentral.stopCentral()
             user.CentralMode = false
-            blePeripheral.startPeripheral(log: log, userMessage: userMessage)
-            user.PeripheralMode = true
-            blePeripheral.peripheralMode = true
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                print("5秒後")
+                blePeripheral.startPeripheral(log: log, userMessage: userMessage)
+                user.PeripheralMode = true
+                blePeripheral.peripheralMode = true
+
+            }
+            //blePeripheral.startPeripheral(log: log, userMessage: userMessage)
+            //user.PeripheralMode = true
+            //blePeripheral.peripheralMode = true
             
             //let randomInt = Int.random(in: 5..<8)
             let randomInt = Int.random(in: 0..<3)
@@ -152,8 +160,15 @@ struct ContentView: View {
             blePeripheral.stopPeripheral(log: log)
             user.PeripheralMode = false
             blePeripheral.peripheralMode = false
-            bleCentral.startCentral(log: log, devices: devices, user: user)
-            user.CentralMode = true
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                print("5秒後")
+                bleCentral.startCentral(log: log, devices: devices, user: user)
+                user.CentralMode = true
+            }
+
+            //bleCentral.startCentral(log: log, devices: devices, user: user)
+            //user.CentralMode = true
             
             let randomInt = Int.random(in: 0..<5)
             var randomwaitTime:Double = 0.0

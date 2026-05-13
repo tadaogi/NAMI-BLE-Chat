@@ -261,8 +261,9 @@ struct MessageView: View {
                 // [GPS,xxx,xxx] は表示しない
                 let reg = /^\[[^\]]*\](?<message>.*)$/
                 if let match=messageitem.userMessageText.firstMatch(of: reg) {
-                    print(match.0)
-                    print(match.message)
+                    //print(match.0)
+                    //print(match.message)
+                    // 多分ここで画面表示されるメッセージが全部printされていた
                     message = String(match.message)
                 }
                 tmptext = "[\(usrID)] " + message

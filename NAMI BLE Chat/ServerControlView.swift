@@ -2119,7 +2119,18 @@ fetchMessages();
             print("insertMessage \(userMessageItem.userMessageID) success")
         } catch {
             print("error in insertMessage. \(error)")
+            markAndStop("error in insertMessageToStore. \(error)")
         }
+    }
+    
+//    func markAndStop(_ label: String = "reached target") -> Never {
+    func markAndStop(_ label: String = "reached target") {
+        UserDefaults.standard.set(Date().description, forKey: "debug_reached_time")
+        UserDefaults.standard.set(label, forKey: "debug_reached_label")
+        UserDefaults.standard.synchronize()
+
+        // ログだけ残して死なないようにしておく
+        //fatalError("DEBUG STOP: \(label)")
     }
     
     func getMessageFromStore(userMessageID: String) -> [Message] {
@@ -2269,12 +2280,16 @@ final class QRCodeUtil {
     }
 }
 
+@MainActor
 final class SyncManager: ObservableObject {
 
     @Published var userMessage: UserMessage
     private let server: WebServerManager
     var checkedAppIndex = 0
     var checkedWebIndex = 0
+    var syncCount: Int = 0
+    
+    private var loopTask: Task<Void, Never>?
 
 
     init(userMessage: UserMessage, server: WebServerManager) {
@@ -2282,10 +2297,10 @@ final class SyncManager: ObservableObject {
         self.server = server
     }
     
-    @MainActor func sync() {
+    func sync() async {
         var copiedAppCount: Int = 0
         var copiedWebCount: Int = 0
-        print("SyncManager debug2")
+        print("SyncManager.sync start (\(syncCount))")
         print(userMessage.uploadfname)
         print(server.getURL())
         
@@ -2293,8 +2308,14 @@ final class SyncManager: ObservableObject {
         var appUserMessageIDList = [] as [String]
 //        for userMessageItem in userMessage.userMessageList {
         // 前回チェックした後だけリストにする
+        let appList = userMessage.userMessageList
+        let safeCheckedAppIndex = min(max(checkedAppIndex, 0), appList.count)
+
         print("checkedAppIndex: \(checkedAppIndex)")
-        for userMessageItem in userMessage.userMessageList.suffix(from: checkedAppIndex) {
+        print("safeCheckedAppIndex: \(safeCheckedAppIndex)")
+        print("appList.count: \(appList.count)")
+
+        for userMessageItem in appList.suffix(from: safeCheckedAppIndex) {
             print(userMessageItem.userMessageID)
             appUserMessageIDList.append(userMessageItem.userMessageID)
         }
@@ -2304,8 +2325,16 @@ final class SyncManager: ObservableObject {
         
         // WebStoreから取得
         // 前回チェックした後だけリストにする
+        
+        let storeList = server.getMessageIDList()
+        let safeCheckedWebIndex = min(max(checkedWebIndex, 0), storeList.count)
+
         print("checkedWebIndex: \(checkedWebIndex)")
-        var storeUserMessageIDList = server.getMessageIDList().suffix(from: checkedWebIndex)
+        print("safeCheckedWebIndex: \(safeCheckedWebIndex)")
+        print("storeList.count: \(storeList.count)")
+
+        print("checkedWebIndex: \(checkedWebIndex)")
+        var storeUserMessageIDList = storeList.suffix(from: safeCheckedWebIndex)
         print(storeUserMessageIDList)
         checkedWebIndex = checkedWebIndex + storeUserMessageIDList.count
         print("new checkedWebIndex: \(checkedWebIndex)")
@@ -2357,9 +2386,9 @@ final class SyncManager: ObservableObject {
                 
                 let out = getMessageFromStore(userMessageID: storeUserMessageID)
                 for message in out {
-                    print(message)
+                    //print(message)
                     insertMessageToApp(message: message)
-                    print("insertToApp \(message)")
+                    //print("insertToApp \(message)")
                     copiedAppCount = copiedAppCount + 1
                     
                 }
@@ -2374,8 +2403,9 @@ final class SyncManager: ObservableObject {
         }
         
         // syncが終了した時点で checkedIndex を更新する
-        checkedAppIndex = checkedAppIndex + copiedAppCount
-        checkedWebIndex = checkedWebIndex + copiedWebCount
+        // 本当は、コピーでエラーを確認しないといけない
+        checkedAppIndex = min(checkedAppIndex + copiedAppCount,userMessage.userMessageList.count)
+        checkedWebIndex = min(checkedWebIndex + copiedWebCount,server.getMessageIDList().count)
         print("after sync")
         print("copiedAppCount: \(copiedAppCount)")
         print("checkedAppIndex: \(checkedAppIndex)")
@@ -2383,10 +2413,50 @@ final class SyncManager: ObservableObject {
         print("checkedWebIndex: \(checkedWebIndex)")
 
         
-
+        print("SyncManager.sync end \(syncCount)")
+        syncCount = syncCount + 1
     }
     
+    
+    func start() {
+        guard loopTask == nil else { return }
+        
+        loopTask = Task {
+            while !Task.isCancelled {
+                await sync()
+                try? await Task.sleep(for: .seconds(300)) // ５分を１分に減らす。５分に戻す。
+            }
+        }
+    }
+    
+    func stop() {
+        loopTask?.cancel()
+        loopTask = nil
+    }
+    
+    func startSyncTimer() {
+        start()
+    }
+    
+    func stopSyncTimer() {
+        stop()
+    }
+    
+    func syncOnce(){
+        if loopTask != nil {
+            print("loopTask is running.")
+            return
+        }
+        Task {
+            print("syncOnce")
+            await sync()
+        }
+    }
+    // Timerだと、時間内に終了しない時に２重起動になるので、上の方法に修正
+    /*
+    
     private var timer: Timer?
+    
     
     func startSyncTimer() {
         // すでに動いていたら一旦止める
@@ -2409,6 +2479,7 @@ final class SyncManager: ObservableObject {
     deinit {
         stopSyncTimer()
     }
+     */
     
     func insertMessageToApp(message: Message) {
         let userMessageItem = UserMessageItem(userMessageID: message.userMessageID, userMessageText: message.message)
@@ -2425,8 +2496,10 @@ final class SyncManager: ObservableObject {
             )
         } catch {
             print("append error:", error)
+            markAndStop("insertMessageToApp error \(error)")
         }
     }
+    
     func getMessageFromApp(userMessageID: String) -> UserMessageItem? {
         for userMessageItem in userMessage.userMessageList {
             print(userMessageItem.userMessageID)
@@ -2437,7 +2510,8 @@ final class SyncManager: ObservableObject {
         return nil
     }
 
-    @MainActor func getMessageFromStore(userMessageID: String) -> [Message] {
+    //@MainActor
+    func getMessageFromStore(userMessageID: String) -> [Message] {
         let out = server.getMessageFromStore(userMessageID: userMessageID)
         return out
     }
@@ -2451,6 +2525,16 @@ final class SyncManager: ObservableObject {
         } else {
             return id
         }
+    }
+    
+//    func markAndStop(_ label: String = "reached target") -> Never {
+    func markAndStop(_ label: String = "reached target") {
+        UserDefaults.standard.set(Date().description, forKey: "debug_reached_time")
+        UserDefaults.standard.set(label, forKey: "debug_reached_label")
+        UserDefaults.standard.synchronize()
+
+        // stop しない
+        //fatalError("DEBUG STOP: \(label)")
     }
     
 }
@@ -2498,7 +2582,7 @@ struct ServerControlView: View {
                 Button("Stop") { server.stop() }
             }
             Button("Sync Once") {
-                syncManager.sync()
+                syncManager.syncOnce()
             }
             Button("Start Sync Period") {
                 syncManager.startSyncTimer()
