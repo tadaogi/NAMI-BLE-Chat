@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 /*
 struct UserMessage: Codable {
@@ -14,7 +15,7 @@ struct UserMessage: Codable {
 }
 */
 
-final class MessageStore {
+final class MessageStore: ObservableObject {
 
     private let fileURL: URL
 

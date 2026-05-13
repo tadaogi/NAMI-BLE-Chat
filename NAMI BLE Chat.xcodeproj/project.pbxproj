@@ -29,6 +29,8 @@
 		329CE6162B86D09E00B0141C /* WiFi.swift in Sources */ = {isa = PBXBuildFile; fileRef = 329CE6152B86D09E00B0141C /* WiFi.swift */; };
 		329D39BA2BBA2A4A00EBDE53 /* WiFiView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 329D39B92BBA2A4A00EBDE53 /* WiFiView.swift */; };
 		329D39BC2BBA303100EBDE53 /* WiFiCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 329D39BB2BBA303100EBDE53 /* WiFiCheck.swift */; };
+		329EEEEE2FB4687400F3739B /* BodyTemperature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 329EEEED2FB4687400F3739B /* BodyTemperature.swift */; };
+		329EEEF02FB4688800F3739B /* Sensors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 329EEEEF2FB4688800F3739B /* Sensors.swift */; };
 		32A7EE3F2F45E7EC004989F4 /* mydownload.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 32A7EE3E2F45E7EC004989F4 /* mydownload.jpg */; };
 		32A7EE412F45E80D004989F4 /* myqrcode.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 32A7EE402F45E80D004989F4 /* myqrcode.jpg */; };
 		32A7EE432F45E81B004989F4 /* myhome.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 32A7EE422F45E81B004989F4 /* myhome.jpg */; };
@@ -73,6 +75,8 @@
 		329CE6152B86D09E00B0141C /* WiFi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFi.swift; sourceTree = "<group>"; };
 		329D39B92BBA2A4A00EBDE53 /* WiFiView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiView.swift; sourceTree = "<group>"; };
 		329D39BB2BBA303100EBDE53 /* WiFiCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiCheck.swift; sourceTree = "<group>"; };
+		329EEEED2FB4687400F3739B /* BodyTemperature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyTemperature.swift; sourceTree = "<group>"; };
+		329EEEEF2FB4688800F3739B /* Sensors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sensors.swift; sourceTree = "<group>"; };
 		32A7EE3E2F45E7EC004989F4 /* mydownload.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = mydownload.jpg; sourceTree = "<group>"; };
 		32A7EE402F45E80D004989F4 /* myqrcode.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = myqrcode.jpg; sourceTree = "<group>"; };
 		32A7EE422F45E81B004989F4 /* myhome.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = myhome.jpg; sourceTree = "<group>"; };
@@ -122,6 +126,8 @@
 		32626E9225B2421B00BEE892 /* NAMI BLE Chat */ = {
 			isa = PBXGroup;
 			children = (
+				329EEEED2FB4687400F3739B /* BodyTemperature.swift */,
+				329EEEEF2FB4688800F3739B /* Sensors.swift */,
 				32A7EE3E2F45E7EC004989F4 /* mydownload.jpg */,
 				32A7EE402F45E80D004989F4 /* myqrcode.jpg */,
 				32A7EE422F45E81B004989F4 /* myhome.jpg */,
@@ -262,8 +268,10 @@
 			files = (
 				321DC427275D833400497385 /* AlarmSettingView.swift in Sources */,
 				329D39BA2BBA2A4A00EBDE53 /* WiFiView.swift in Sources */,
+				329EEEF02FB4688800F3739B /* Sensors.swift in Sources */,
 				326DA13E2696C65A004F0442 /* GPS.swift in Sources */,
 				328C353726C0ADCF007EA122 /* ThreeCsView.swift in Sources */,
+				329EEEEE2FB4687400F3739B /* BodyTemperature.swift in Sources */,
 				327CD3FA2AFFA0D600045659 /* PhotoView.swift in Sources */,
 				32626EA725B24FB300BEE892 /* SettingView.swift in Sources */,
 				329D39BC2BBA303100EBDE53 /* WiFiCheck.swift in Sources */,

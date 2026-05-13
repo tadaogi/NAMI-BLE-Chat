@@ -10,15 +10,19 @@ import SwiftUI
 @main
 struct BLEcommTest0App: App {
     @StateObject private var server = WebServerManager()
-    @StateObject private var userMessage =
-        UserMessage(store: MessageStore())
+//    @StateObject private var userMessage =  UserMessage(store: MessageStore())
+    @StateObject private var userMessage: UserMessage
     @StateObject private var log = Log()
     @StateObject private var devices = Devices()
     @StateObject private var params = Params()
     @StateObject private var user = User()
-
+    @StateObject private var store = MessageStore()
+    
     init() {
-        checkDebugMark()
+        //checkDebugMark()
+        let store = MessageStore()
+        _store = StateObject(wrappedValue: store)
+        _userMessage = StateObject(wrappedValue: UserMessage(store: store))
     }
     
     var body: some Scene {
@@ -36,6 +40,7 @@ struct BLEcommTest0App: App {
 //                .environmentObject(Params())
                 .environmentObject(params)
                 .environmentObject(server)
+                .environmentObject(store)
         }
     }
     

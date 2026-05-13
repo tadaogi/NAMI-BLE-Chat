@@ -9,23 +9,10 @@ import SwiftUI
 
 struct MainView: View {
 //    @State var userMessage: UserMessage
-//    @StateObject private var vm: UserMessage
+//    @EnvironmentObject var vm: MessageViewModel
+    @EnvironmentObject var store: MessageStore
     @EnvironmentObject var userMessage: UserMessage
-    
-    init() {
-        //self.userMessage = userMessage
-        let url = FileManager.default
-            .urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("message.txt")
-/*
-        _userMessage = StateObject(
-            wrappedValue: UserMessage(
-                store: MessageStore()
-            )
-        )
- */
- 
-    }
+
     
     var body: some View {
         TabView {
@@ -52,15 +39,14 @@ struct MainView: View {
                 .tabItem{Text("WiFi")}
             ThreeCsView()
                 .tabItem{Text("3Cs")}
-            ServerControlView(userMessage: userMessage)
-                .tabItem{Text("WebServer")}
-            
+            BloodPressureView()
+                .tabItem{Text("Health Care Data")}
         }
-        //.environmentObject(UserMessage(store: MessageStore()))
+//        .environmentObject(UserMessage(store: store))
         .environmentObject(UserDefine())
         .environmentObject(FileID())
         .environmentObject(WiFi())
-        //.environmentObject(User())
+        .environmentObject(User())
         .onAppear {
             movingEdgeInit(userMessage: userMessage)
             movingEdgeFlag = UserDefaults.standard.bool(forKey: "movingEdgeFlag")
@@ -71,16 +57,14 @@ struct MainView: View {
 }
 
 /*
-struct MainView_Previews: PreviewProvider {
-    @StateObject private var userMessage =
-        UserMessage(store: MessageStore())
-    
-    static var previews: some View {
-        MainView()
-            .environmentObject(User())
-            .environmentObject(Log())
-            .environmentObject(Devices())
-            .environmentObject(userMessage)
-    }
-}
-*/
+ struct MainView_Previews: PreviewProvider {
+ 
+ static var previews: some View {
+ MainView(userMessage: UserMessage(vm: vm))
+ .environmentObject(User())
+ .environmentObject(Log())
+ .environmentObject(Devices())
+ //.environmentObject(UserMessage())
+ }
+ }
+ */
