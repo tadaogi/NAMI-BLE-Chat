@@ -54,6 +54,8 @@ struct MainView: View {
                 .tabItem{Text("3Cs")}
             ServerControlView(userMessage: userMessage)
                 .tabItem{Text("WebServer")}
+            BloodPressureView()
+                .tabItem{Text("Health Care Data")}
             
         }
         //.environmentObject(UserMessage(store: MessageStore()))

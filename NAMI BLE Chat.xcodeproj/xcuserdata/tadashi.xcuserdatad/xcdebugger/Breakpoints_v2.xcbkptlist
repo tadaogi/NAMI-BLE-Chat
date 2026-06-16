@@ -510,7 +510,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "2288"
             endingLineNumber = "2288"
-            landmarkName = "debug()"
+            landmarkName = "sync()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -526,7 +526,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "2379"
             endingLineNumber = "2379"
-            landmarkName = "debug()"
+            landmarkName = "sync()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -542,7 +542,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "2296"
             endingLineNumber = "2296"
-            landmarkName = "debug()"
+            landmarkName = "sync()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -558,7 +558,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "2303"
             endingLineNumber = "2303"
-            landmarkName = "debug()"
+            landmarkName = "sync()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -574,7 +574,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "2336"
             endingLineNumber = "2336"
-            landmarkName = "debug()"
+            landmarkName = "sync()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
