@@ -59,7 +59,7 @@ class Log : ObservableObject {
         addItem(logText: "NAMI BLE Chat (ver.\(versiontext)) started,")
     }
     
-    func addItem(logText: String) {
+    func OldaddItem(logText: String) {
         // logが化けることがあった（2022/1/19のログ）
         // ここでlockをかけて大丈夫か？
         //loglock.lock() // ここで止まっていたので、やめる。
@@ -70,13 +70,15 @@ class Log : ObservableObject {
         let currenttime = dateFormatter.string(from: now) // -> 2021/01/20 19:57:17.234
         print(currenttime + " " + logText)
         
+        let currentCount: Int
         logcountlock.lock() // 共有変数を変更する場所だけにしてみる
         // 本当なら、３つ変数があるので（変数２つとファイル）３つのlockで良いはず
         logcount = logcount + 1
+        currentCount = logcount
         logcountlock.unlock()
         
         // デバッグのために、10件ごとにログを消す
-        if logcount%10 == 0 { // 100 -> 10 に小さくしてみる
+        if currentCount%10 == 0 { // 100 -> 10 に小さくしてみる
             Task { @MainActor in
                 //loglistlock.lock() // @MainActorにしたのでlock不要
                 loglist = [
@@ -86,7 +88,7 @@ class Log : ObservableObject {
             }
         }
         
-        let text = "\(currenttime), [\(self.logcount)], \(logText)"
+        let text = "\(currenttime), [\(currentCount)], \(logText)"
         
         // @Mainactor にしたので不要
         //DispatchQueue.main.async {
@@ -101,6 +103,39 @@ class Log : ObservableObject {
 
     }
     
+    private let logQueue = DispatchQueue(label: "nami.log.queue")
+
+    func addItem(logText: String) {
+        logQueue.async {
+            let now = Date()
+            let dateFormatter = DateFormatter()
+            dateFormatter.locale = Locale(identifier: "ja_JP")
+            dateFormatter.dateFormat = "yyyy/MM/dd HH:mm:ss.SSS"
+            let currenttime = dateFormatter.string(from: now)
+
+            print(currenttime + " " + logText)
+
+            self.logcount += 1
+            let currentCount = self.logcount
+
+            let text = "\(currenttime), [\(currentCount)], \(logText)"
+
+            if currentCount % 10 == 0 {
+                Task { @MainActor in
+                    self.loglist = [
+                        LogItem(logtext: "--- log deleted ---"),
+                    ]
+                }
+            }
+
+            Task { @MainActor in
+                self.loglist.append(LogItem(logtext: text))
+            }
+
+            self.appendlocal(fname: "NAMI.log", text: text + "\n")
+        }
+    }
+    
     func appendlocal(fname: String, text: String) {
         do {
             let fileManager = FileManager.default
@@ -112,17 +147,31 @@ class Log : ObservableObject {
 
             print(path)
             
+            // この近くで落ちたので、念の為にlock()を修正。もともと if の中にあった。2026/4/3
+            logfilelock.lock()
+            defer { logfilelock.unlock() }
+            
             if fileManager.fileExists(atPath: path.path) {
                     print("exists")
-                logfilelock.lock()
+                //logfilelock.lock()
                 let fileHandle = try FileHandle(forWritingTo: path)
-                fileHandle.seekToEndOfFile()
-                fileHandle.write(data)
-                fileHandle.closeFile()
-                logfilelock.unlock()
+                defer { try? fileHandle.close() } // 追加
+                
+                try fileHandle.seekToEnd()
+                try fileHandle.write(contentsOf: data)
+                //fileHandle.seekToEndOfFile()
+                //fileHandle.write(data)
+                //fileHandle.closeFile()
+                //logfilelock.unlock()
             } else {
+                /*
                 fileManager.createFile(atPath: path.path,
                                    contents: data, attributes: nil)
+                 */
+                let created = fileManager.createFile(atPath: path.path,
+                                                     contents: data,
+                                                     attributes: nil)
+                print("createFile result = \(created)")
             }
         } catch {
             print(error)

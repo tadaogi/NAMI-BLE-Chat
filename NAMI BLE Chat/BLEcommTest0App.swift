@@ -10,13 +10,20 @@ import SwiftUI
 @main
 struct BLEcommTest0App: App {
     @StateObject private var server = WebServerManager()
-    @StateObject private var userMessage =
-        UserMessage(store: MessageStore())
+//    @StateObject private var userMessage =  UserMessage(store: MessageStore())
+    @StateObject private var userMessage: UserMessage
     @StateObject private var log = Log()
     @StateObject private var devices = Devices()
     @StateObject private var params = Params()
     @StateObject private var user = User()
-
+    @StateObject private var store = MessageStore()
+    
+    init() {
+        //checkDebugMark()
+        let store = MessageStore()
+        _store = StateObject(wrappedValue: store)
+        _userMessage = StateObject(wrappedValue: UserMessage(store: store))
+    }
     
     var body: some Scene {
         WindowGroup {
@@ -33,6 +40,20 @@ struct BLEcommTest0App: App {
 //                .environmentObject(Params())
                 .environmentObject(params)
                 .environmentObject(server)
+                .environmentObject(store)
+        }
+    }
+    
+    func checkDebugMark() {
+        let ud = UserDefaults.standard
+        if let label = ud.string(forKey: "debug_reached_label"),
+           let time = ud.string(forKey: "debug_reached_time") {
+
+            print("前回停止位置: \(label) at \(time)")
+
+            // 必要なら消す
+            //ud.removeObject(forKey: "debug_reached_label")
+            //ud.removeObject(forKey: "debug_reached_time")
         }
     }
 }

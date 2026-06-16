@@ -75,6 +75,52 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         self.state = BLECentralState.stop
         iPhoneMode = UserDefaults.standard.bool(forKey: "iPhoneMode")
         print("BLECentral init is called")
+        
+        super.init()
+        
+        // スリープして再起動した時に見つける
+        // 本当は Peripheral 側にも入れるべき
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appDidBecomeActive),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
+        
+    }
+    
+    @objc func appDidBecomeActive() {
+        print("Central App became active")
+        reconnectBLE()
+    }
+
+    @objc func appWillEnterForeground() {
+        print("Central App will enter foreground")
+    }
+
+    func reconnectBLE() {
+        print("Central reconnect BLE is not implemented yet")
+        // 再接続処理
+        // どういう状態化か分からないので、とりあえず scan を停めて、再度起動しておく
+        // できない
+        // どうも起動直後も呼ばれるらしい
+        if self.centralManager != nil {
+            print("centralManager is not nil")
+            // start した後は not nil
+            stopScan()
+            startScan()
+        } else {
+            // 起動直後は nil
+            print("centralManager is nil")
+        }
+
     }
     
     public func myinit(userMessage: UserMessage) {
@@ -509,7 +555,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
                                 
                                 self.log.addItem(logText: "requestConnect, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(LocalName),")
                             }
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 30.0) { // connect 失敗がわからないので、タイムアウトにした。
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { // connect 失敗がわからないので、タイムアウトにした。
                                 self.connect_semaphore.signal()
                                 self.log.addItem(logText: "signalSemaphore, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(LocalName),")
 
@@ -900,14 +946,14 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     */
 
     // writeDataのロジックを参考に書き換える 2021/12/15
-    public func readfromP(peripheral: CBPeripheral){
+    public func readfromP(peripheral: CBPeripheral)->Bool {
         print("enter readfromP")
         //peripheral.readValue(for: foundCharacteristicR)
         
         // ここからが書き換えた後
         if (peripheral.services == nil) {
             print("error: peripheral.services is nil (reeadfromP)")
-            return
+            return false
         }
         // 他にもエラーがあると思うが、それは発見してから修正する。
 
@@ -918,14 +964,14 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
                 print("find UUID_Service (reeadfromP)")
                 if (service.characteristics == nil) {
                     print("error: service.characteristics is nil (reeadfromP)")
-                    return
+                    return false
                 }
 
                 for characteristic in service.characteristics! {
                      if characteristic.uuid == UUID_Read {
                         print("find UUID_Read  (reeadfromP)")
                         peripheral.readValue(for: characteristic)
-                        return
+                        return true
                      }
                 }
                 print("error: characteristic UUID_Read is not found (reeadfromP)")
@@ -933,6 +979,8 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             }
         }
         print("error: service UUID_Service is not found (reeadfromP)")
+        
+        return false
     }
     
     // 値を読みに行った結果の到着
@@ -968,7 +1016,7 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
                 transferMessage = "MESSAGEERROR\n"
             }
             
-            print(transferMessage)
+            //print(transferMessage)
             //print("length \(username.length)")
             Task { @MainActor in
                 
@@ -1034,10 +1082,10 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
                 readMessage = "MESSAGEERROR\n"
             }
             
-            print(readMessage)
+            //print(readMessage)
             readMessage = readMessage.replacingOccurrences(of: "\0", with: "")
             readMessage = readMessage.replacingOccurrences(of: ",", with: ".")
-            print(readMessage)
+            //print(readMessage)
             Task { @MainActor in
                 
                 self.log.addItem(logText: "didUpdateValueFor, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(characteristic.uuid), \(readMessage)")
@@ -1056,10 +1104,10 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
                 readMessage = "MESSAGEERROR\n"
             }
             
-            print(readMessage)
+            //print(readMessage)
             readMessage = readMessage.replacingOccurrences(of: "\0", with: "")
             readMessage = readMessage.replacingOccurrences(of: ",", with: ".")
-            print(readMessage)
+            //print(readMessage)
             Task { @MainActor in
                 
                 self.log.addItem(logText: "didUpdateValueFor, \(peripheral.name ?? "unknown"), \(peripheral.identifier.uuidString), \(characteristic.uuid), \(readMessage)")
@@ -1152,6 +1200,35 @@ public class BLECentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     
     }
     
+    // 性能標柱に見つかった不具合対応でまず動作確認
+    func peripheralManager(_ peripheral: CBPeripheral,
+                           central: CBCentral,
+                           didSubscribeTo characteristic: CBCharacteristic) {
+        print("didSubscribeTo called")
+        Task { @MainActor in
+            self.log.addItem(logText: "didSubscribeTo called")
+        }
+    }
+
+    func peripheralManager(_ peripheral: CBPeripheral,
+                           central: CBCentral,
+                           didUnSubscribeTo characteristic: CBCharacteristic) {
+        print("didUnSubscribeTo called")
+        Task { @MainActor in
+            self.log.addItem(logText: "didUnSubscribeTo called")
+        }
+    }
+    
+    func peripheralManager(_ peripheral: CBPeripheral,
+                           central: CBCentral,
+                           didDisconnectPeripheral error: Error?) {
+        print("didDisconnecPeripheral called")
+        Task { @MainActor in
+            self.log.addItem(logText: "didDisconnected called")
+        }
+    }
+
+    
     // この処理はいらないのではないか？
     // 同じデバイスもscanで見つかっているように見える
     // peripheralとcentralを切り替える時はいるかもしれない
@@ -1230,6 +1307,45 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
     var log : Log!
     var userMessage: UserMessage!
     
+    override init() {
+        super.init()
+        
+        
+        // スリープして再起動した時に見つける
+        // 本当は Peripheral 側にも入れるべき
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(PeripheralappDidBecomeActive),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(PeripheralappWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
+        
+        
+    }
+    
+    @objc func PeripheralappDidBecomeActive() {
+        print("Peripheral App became active")
+        PeripheralreconnectBLE()
+    }
+
+    @objc func PeripheralappWillEnterForeground() {
+        print("Peripheral App will enter foreground")
+    }
+
+    func PeripheralreconnectBLE() {
+        print("Peripheral reconnect BLE is not implemented yet")
+        // 再接続処理
+
+    }
+    
+    
     public func myinit(userMessage: UserMessage) {
         print("BLEPeripheral myinit is called")
         self.userMessage = userMessage
@@ -1266,7 +1382,8 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
         // 取り敢えずアドバタイズ開始 2021/12/28 stop が出ているのに、 start が１回しか出ないので、試しに出してみる。
         //if (peripheralMode) {
         if (true) { // for debug 2025/5/15 // 戻しても良いような気もするが、２回読んでも大丈夫みたいなのでそのままにしておく。
-            startAdvertise()
+            publishservice() // add serviceが成功するとその中で startAdvertise() が呼ばれる
+            //startAdvertise()
         }
         
         print("Peripheral Manager State: \(self.peripheralManager.state)")
@@ -1297,7 +1414,7 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
         stopAdvertise()
         
         //self.userMessage.PmessageLoopLock.lock() // lockが取れたなら、transferP は nil になっている
-        if self.userMessage.PmessageLoopLock.lock(before: Date().addingTimeInterval(60))==false {
+        if self.userMessage.PmessageLoopLock.lock(before: Date().addingTimeInterval(3))==false { // 60->3 に減らす 2026/4/6
             Task { @MainActor in
                 
                 self.log.addItem(logText: "lock in stop Peripheral failed.")
@@ -1308,7 +1425,7 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
     // この辺は、BLETest2 からコピー
     
     public func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
-        print("peripheralManagerDidUpdateState is not implemented yet.")
+        print("peripheralManagerDidUpdateState is called")
         Task { @MainActor in
             
             self.log.addItem(logText:"peripheralManagerDidUpdateState")
@@ -1425,7 +1542,7 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
                 
                 self.log.addItem(logText:"startAdvertising")
             }
-
+            // publishservice() // 2026/3/31 追加 // ここで呼ぶとループになる
             peripheralManager.startAdvertising(advertisementData);
         }
     }
@@ -1440,6 +1557,7 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
 
         if (peripheralMode) {
             peripheralManager.stopAdvertising();
+            peripheralManager.removeAllServices() // 2026.3.31 追加
         }
     }
 
@@ -1543,7 +1661,7 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
                     //var username: NSString
                 
                     if let writedata = NSString(data: request.value!, encoding: String.Encoding.utf8.rawValue) as String? {
-                        print(writedata)
+                        //print(writedata)
                         print("skip didReceiveWriterequest \(writedata)")
                         //self.log.addItem(logText:"didReceiveWriterequest \(writedata)")
                         // message に追加
@@ -1560,6 +1678,33 @@ public class BLEPeripheral: NSObject, CBPeripheralManagerDelegate, ObservableObj
         
     }
     
+    // 性能標柱に見つかった不具合対応でまず動作確認
+    // これは notify の時しか呼ばれないのでは？
+    public func peripheralManager(_ central: CBCentral,
+                           didSubscribeTo characteristic: CBCharacteristic) {
+        print("didSubscribeTo called (BLEPeripheral)")
+        Task { @MainActor in
+            self.log.addItem(logText: "didSubscribeTo called (BLEPeripheral)")
+        }
+    }
+
+    public func peripheralManager(_ central: CBCentral,
+                           didUnSubscribeTo characteristic: CBCharacteristic) {
+        print("didUnSubscribeTo called (BLEPeripheral)")
+        Task { @MainActor in
+            self.log.addItem(logText: "didUnSubscribeTo called (BLEPeripheral)")
+        }
+    }
+    
+    public func peripheralManager(_ peripheral: CBPeripheral,
+                           central: CBCentral,
+                           didDisconnectPeripheral error: Error?) {
+        print("didDisconnecPeripheral called")
+        Task { @MainActor in
+            self.log.addItem(logText: "didDisconnected called")
+        }
+    }
+
     // これは呼ばれないのではないか？
     /*
     func analyzeText(messageText: String) {

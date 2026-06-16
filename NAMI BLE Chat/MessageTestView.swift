@@ -16,6 +16,7 @@ struct JsonMessageItem: Codable {
 struct MessageTestView: View {
     @EnvironmentObject var user: User
     @State var message_interval: Int = 600
+    @State var message_count: Int = 1000
     @State var buttonText = "tmp"
     @State var testflag = false
     @State var userMessage: UserMessage
@@ -68,6 +69,17 @@ struct MessageTestView: View {
                     })
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                 }
+                HStack {
+                    Text("Message Count")
+                    Spacer()
+                    TextField("", value: $message_count, formatter: NumberFormatter(),
+                              onCommit: {
+                        print("message_count")
+                        print(message_count)
+                    })
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                }
+
                 Button (action: {
                     print("action")
                     if ( user.testMessageFlag == false ) {
@@ -170,7 +182,9 @@ struct MessageTestView: View {
             }
             uploadfname = UserDefaults.standard.string(forKey: "uploadfname") ?? "message.txt"
             userMessage.uploadfname = uploadfname
-
+            
+            message_interval = UserDefaults.standard.integer(forKey: "message_interval")
+            message_count = UserDefaults.standard.integer(forKey: "message_count")
 
         })
         .onDisappear(perform: {
@@ -181,6 +195,8 @@ struct MessageTestView: View {
             UserDefaults.standard.set(user.latitude, forKey: "latitude")
             UserDefaults.standard.set(user.longitude, forKey: "longitude")
             UserDefaults.standard.set(uploadfname, forKey: "uploadfname")
+            UserDefaults.standard.set(message_interval, forKey: "message_interval")
+            UserDefaults.standard.set(message_count, forKey: "message_count")
             // 以下をやると、現在の値に上書きされてしまう。
             /*
             if globalgps != nil {
@@ -393,6 +409,7 @@ struct MessageTestView: View {
 
     
     func startMessage() {
+        var count = 1
         print("startMessage")
         MessageTestTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(message_interval), repeats: true, block: {(timer) in
             print("startMessageTimer")
@@ -406,13 +423,25 @@ struct MessageTestView: View {
             let formatter = DateFormatter()
             formatter.dateFormat = " HH:mm:ss"
             let strDate = formatter.string(from: date)
-            userMessage.addItem(userMessageText: "\(locationTxt)[DEBUG] repeated message at \(strDate)")
+            userMessage.addItem(userMessageText: "\(locationTxt)[DEBUG] repeated message at \(strDate) (\(count))")
+            count += 1
+            if count > message_count {
+                print("message test reached max")
+                stopMessage()
+                buttonText = "Start"
+                user.testMessageFlag = false
+            }
         })
+        
+        // 明示的に1回実行
+        MessageTestTimer.fire()
     }
 
     func stopMessage() {
         print("stopMessage")
         MessageTestTimer.invalidate()
+        buttonText = "Start"
+        user.testMessageFlag = false
     }
 }
 

@@ -113,14 +113,14 @@ public class UserMessage: ObservableObject {
             let longitude = String(format: "%.6f", location.longitude)
             let locationTxt = "[GPS,\(latitude),\(longitude)]"
             sendText = locationTxt + userMessageText
-            print(sendText)
+            //print(sendText)
         } else {
             var location = globalgps?.getLastLocation()
             let latitude = String(format: "%.6f", location?.latitude ?? 0.0)
             let longitude = String(format: "%.6f", location?.longitude ?? 0.0)
             let locationTxt = "[GPS,\(latitude),\(longitude)]"
             sendText = locationTxt + userMessageText
-            print(sendText)
+            //print(sendText)
         }
 
         addItem(userMessageText: sendText)
@@ -170,7 +170,7 @@ public class UserMessage: ObservableObject {
                 print("userMessageID=", userMessageID)
                 // print("debugMessageFlag:",self.debugMessageFlag) // メッセージ長さが変わってしまうので、とりあえずここでは使わない
                 var UserMessageTextString = String(data:chunk ?? Data(), encoding: .utf8)! // encodeした送るテキスト
-                print(UserMessageTextString)
+                //print(UserMessageTextString)
                 self.userMessageCount = self.userMessageCount + 1
 
                 self.userMessageList.append(UserMessageItem(userMessageID: userMessageID, userMessageText: "\(UserMessageTextString)"))
@@ -224,10 +224,10 @@ public class UserMessage: ObservableObject {
         } else {
             dateString = "20250127055900.123"
         }
-        print(dateString)
+        //print(dateString)
         
         let userID = IDcomponents[2]
-        print(userID)
+        //print(userID)
         
         /*
         let now = Date() // 現在日時の取得
@@ -237,7 +237,7 @@ public class UserMessage: ObservableObject {
         let currenttime = dateFormatter.string(from: now) // -> 2021/01/20 19:57:17.234
         */
         let currenttime = dateString
-        print(currenttime + " " + userMessageText)
+        //print(currenttime + " " + userMessageText)
         
         /*
         let iValue = Int.random(in: 1 ... 0xffff)
@@ -282,7 +282,7 @@ public class UserMessage: ObservableObject {
                 print("userMessageID=", userMessageID)
                 // print("debugMessageFlag:",self.debugMessageFlag) // メッセージ長さが変わってしまうので、とりあえずここでは使わない
                 var UserMessageTextString = String(data:chunk ?? Data(), encoding: .utf8)! // encodeした送るテキスト
-                print(UserMessageTextString)
+                //print(UserMessageTextString)
                 self.userMessageCount = self.userMessageCount + 1
 
                 self.userMessageList.append(UserMessageItem(userMessageID: userMessageID, userMessageText: "\(UserMessageTextString)"))
@@ -379,7 +379,7 @@ public class UserMessage: ObservableObject {
         }
         switch command[0] {
         case "BEGIN0":
-            print("BEGIN0")
+            print("P receive BEGIN0")
             //            self.blePeripheral.log.addItem(logText:"BEGIN0 before PmessageLoopLock.lock()")
             logaddItem(logText:"BEGIN0 before PmessageLoopLock.lock()")
             if (PmessageLoopLock.lock(before:Date().addingTimeInterval(1))==false) {
@@ -401,6 +401,7 @@ public class UserMessage: ObservableObject {
         
         case "IHAVE":
             // error check が必要か？
+            print("P receive IHAVE \(command[1])")
             if transferP == nil {
                 logaddItem(logText:"protocolErro (analyzeText:IHAVE)")
                 return
@@ -422,7 +423,7 @@ public class UserMessage: ObservableObject {
 
             
         case "BEGIN1":
-            print("receive BEGIN1")
+            print("P receive BEGIN1")
             
             if transferP == nil {
                 logaddItem(logText:"protocolErro (analyzeText:BEGIN1)")
@@ -461,7 +462,7 @@ public class UserMessage: ObservableObject {
             logaddItem(logText:"DEBUG analyzeText \(protocolMessageText),")
             
         default:
-            print("OTHER COMMAND (ERROR)")
+            print("P receive OTHER COMMAND (ERROR)")
             transferP = nil
             PmessageLoopLock.unlock()
             logaddItem(logText:"protocol error, unlock PmessageLoopLock,")
@@ -480,7 +481,7 @@ public class UserMessage: ObservableObject {
             self.bleCentral.log.addItem(logText: "async addItemExternal")
             //self.messageIDLock.lock() // original
             
-            if (self.messageIDLock.lock(before:Date().addingTimeInterval(30)) == false) {
+            if (self.messageIDLock.lock(before:Date().addingTimeInterval(30)) == false) { // 大きいけど、ここでのエラーは発生していない
                 if self.bleCentral != nil {
                     self.bleCentral.log.addItem(logText: "messageIDLock failed in addItemExternal")
                 }
@@ -523,11 +524,11 @@ public class UserMessage: ObservableObject {
             }
             let IDdateString = String(IDarray[0])
             let date = DateUtils.dateFromString(string: IDdateString , format: "yyyyMMddHHmmss.SSS")
-            print(date)
+            //print(date)
             let now = Date() // 現在日時の取得
-            print(now)
+            //print(now)
             let diffsec = now.timeIntervalSince(date)
-            print(diffsec)
+            //print(diffsec)
             
             if diffsec > Double(availableperiod) { // 1hour -> 1 week
                 print("too old userMessageID")
@@ -695,7 +696,7 @@ public class UserMessage: ObservableObject {
                     ItemIDbody = String(matchItem.IDbody)
                     ItemSequence = String(matchItem.sequence)
                 }
-                print(ItemIDbody)
+                //print(ItemIDbody)
                 if IDbody == ItemIDbody { // 分割のパートを見つけた時
                     print("find the part of split")
                     
@@ -743,26 +744,26 @@ public class UserMessage: ObservableObject {
                         return
                     }
                 }
-                print(AllMessage)
+                //print(AllMessage)
                 
                 let reg = /^\[base64,fname=(?<fname>[^\]]*)\](?<data>.*)$/
                 let match = AllMessage.firstMatch(of: reg)
                 if let res = match { // 見つかった場合
-                    print(res.fname)
-                    print(res.data.count)
+                    //print(res.fname)
+                    //print(res.data.count)
                     let base64data = String(res.data.utf8)
-                    print(base64data)
+                    //print(base64data)
                     let fname = String(res.fname)
                     
                     let decodebase64String = Data(base64Encoded: base64data!)
                     if decodebase64String == nil {
                         return
                     }
-                    print(decodebase64String!)
+                    //print(decodebase64String!)
                     let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
                     let decodepath = fname
                     let decodefileURL = documentsURL.appendingPathComponent(decodepath)
-                    print(decodefileURL)
+                    //print(decodefileURL)
                     
                     //DispatchQueue.global(qos: .userInitiated).async {
                     DispatchQueue.global(qos: .default).async { // warningが出るので、変えてみた。2024/5/30
@@ -788,7 +789,7 @@ public class UserMessage: ObservableObject {
                     if (self.movingEdgeFlag) {
                         let userMessageText = AllMessage
                         let userMessageID = IDbody + "-0L(0)"
-                        print(userMessageText)
+                        //print(userMessageText)
                         DispatchQueue.main.async {
                             sendMessage(userMessageID:userMessageID, userMessageText:userMessageText)
                         }
@@ -810,11 +811,11 @@ public class UserMessage: ObservableObject {
         }
         
         func MessageCommandCheck(MessageCommand: String) {
-            print(MessageCommand)
+            //print(MessageCommand)
             // MessageCommand = "command,wifi,<SSID>,<PASS>,<edgeIP>"
         
             let commands:[String] = MessageCommand.components(separatedBy:",")
-            print(commands)
+            //print(commands)
             
             if commands[0]=="command" {
                 if commands.count == 1 {
@@ -906,8 +907,8 @@ public class UserMessage: ObservableObject {
                 for line in lines {
                     let data = Data(line.utf8)
                     let message = try decoder.decode(JsonMessageItem.self, from: data)
-                    print(message.userMessageID)
-                    print(message.userMessageText)
+                    //print(message.userMessageID)
+                    //print(message.userMessageText)
                     self.userMessageList.append(
                         UserMessageItem(userMessageID: message.userMessageID, userMessageText: message.userMessageText)
                     )
@@ -935,8 +936,8 @@ public class UserMessage: ObservableObject {
         //var jsonArray:[Data] = []
         var jsonArray : [Dictionary<String, Any>] = []
         for userMessageItem in self.userMessageList {
-            print(userMessageItem.userMessageID)
-            print(userMessageItem.userMessageText)
+            //print(userMessageItem.userMessageID)
+            //print(userMessageItem.userMessageText)
             
             do {
                 try appendUserMessage(
@@ -951,7 +952,7 @@ public class UserMessage: ObservableObject {
             jsonDic["userMessageID"] = userMessageItem.userMessageID
             jsonDic["userMessageText"] = userMessageItem.userMessageText
 
-            print(jsonDic)
+            //print(jsonDic)
             jsonArray.append(jsonDic)
  */
         }
@@ -1010,7 +1011,7 @@ public class UserMessage: ObservableObject {
 // 実際には、ほとんど１つしか使わないと思うが、複数できるようにしておかないと
 // 後で問題が発生するかもしれないので、そういう感じにしておく。
 var transferCList: [TransferC] = []
-var maxmessagestosend = 5
+var maxmessagestosend = 200 // 5->500 ハングしたら減らす 50
 
 class TransferC {
     var connectedPeripheral: CBPeripheral
@@ -1059,16 +1060,25 @@ class TransferC {
 
                 // send BEGIN0
                 self.bleCentral.writeData("BEGIN0\n", peripheral: self.connectedPeripheral)
-                self.bleCentral.readfromP(peripheral: self.connectedPeripheral) // とりあえず、readが出来るかの確認
-                // 値をどうやってもらうか？
-                let returnProtocolMessage = self.getProtocolMessage()
-                print("returnMessage \(returnProtocolMessage)")
-                
-                // send message loop
-                self.sendMessageLoop()
-                
-                // receive message loop
-                self.receiveMessageLoop()
+                if (self.bleCentral.readfromP(peripheral: self.connectedPeripheral) == true) { // 失敗だったら disconnect に行く
+                    
+                    // とりあえず、readが出来るかの確認
+                    // 値をどうやってもらうか？
+                    let returnProtocolMessage = self.getProtocolMessage()
+                    print("returnMessage \(returnProtocolMessage)")
+                    
+                    if (returnProtocolMessage != "getProtocolMessageTimedOut") { // timeoutの時はエラーにする
+                        // send message loop
+                        if (self.sendMessageLoop() == true) {
+                            
+                            // receive message loop
+                            self.receiveMessageLoop()
+                        }
+                    }
+                    // １回のメッセージのやりとりは終了したので、終了処理をする。
+                    
+                    //self.loopLock.unlock()
+                }
                 
                 // １回のメッセージのやりとりは終了したので、終了処理をする。
                 
@@ -1104,12 +1114,12 @@ class TransferC {
             self.bleCentral.log.addItem(logText: logText)
         //}
     }
-    func sendMessageLoop(){
+    func sendMessageLoop()->Bool{
         print("sendMessageLoop")
         logaddItem(logText:"C: enter sendMessageLoop")
 
         for userMessage in bleCentral.userMessage.userMessageList.suffix(maxmessagestosend) { // たくさん送らない 2026/3/19
-            print(userMessage.userMessageID,userMessage.userMessageText)
+            //print(userMessage.userMessageID,userMessage.userMessageText)
             
             // Time check
             if messageIDTimeCompare(messageID:userMessage.userMessageID, limit: availableperiod)==false {
@@ -1138,10 +1148,17 @@ class TransferC {
             
             // send IHAVE
             self.bleCentral.writeData("IHAVE\n\(userMessage.userMessageID)\n", peripheral: self.connectedPeripheral)
-            self.bleCentral.readfromP(peripheral: self.connectedPeripheral) // read
+            if (self.bleCentral.readfromP(peripheral: self.connectedPeripheral) != true) { // read
+                print("TransferC: readfromP failed")
+                break
+            }
             // 値をもらう
             let returnProtocolMessage = self.getProtocolMessage()
             print("returnMessage \(returnProtocolMessage)")
+            if (returnProtocolMessage == "getProtocolMessageTimedOut") {
+                print("sendMessageLoop: getProtocolMessageTimedOut")
+                return false
+            }
             // INEEDかどうかの確認
             let receiveCommand = getCommand(protocolMessageText: returnProtocolMessage)
             if receiveCommand[0] == "INEED" {
@@ -1149,20 +1166,30 @@ class TransferC {
                 let sendMessage = "MSG\n" + userMessage.userMessageID + "\n" + userMessage.userMessageText // + "\n" // Do I need the last '\n' ?
                 self.bleCentral.writeData(sendMessage, peripheral: self.connectedPeripheral)
                 print("C send MSG")
-                self.bleCentral.readfromP(peripheral: self.connectedPeripheral)
+                if (self.bleCentral.readfromP(peripheral: self.connectedPeripheral) != true) {
+                    print("TransferC: readfromP failed 2")
+                    break
+                }
                 // 値をもらう
                 let returnProtocolMessage2 = self.getProtocolMessage()
                 print("returnMessage for MSG \(returnProtocolMessage2)")
+                if (returnProtocolMessage2 == "getProtocolMessageTimedOut") {
+                    print("sendMessageLoop: getProtocolMessageTimedOut 2")
+                    return false
+                }
+
             } else { // should be ACK
                 print("receive \(receiveCommand)")
                 if receiveCommand[0] != "ACK" {
-                    print("sendMessageLoop error")
+                    print("sendMessageLoop: command error")
+                    return false
                 }
             }
 
 
         }
         print("sendMessageLoopEnd")
+        return true
     }
     
     func receiveMessageLoop() {
@@ -1173,10 +1200,18 @@ class TransferC {
         self.bleCentral.writeData("BEGIN1\n", peripheral: self.connectedPeripheral)
         
         while true {
-            self.bleCentral.readfromP(peripheral: self.connectedPeripheral)
+            if (self.bleCentral.readfromP(peripheral: self.connectedPeripheral) != true) {
+                print("TransferC: readfromP error 3")
+                return
+            }
             // 値をもらう
             let returnProtocolMessage = self.getProtocolMessage()
             print("receiveMessageLoop \(returnProtocolMessage)")
+            if (returnProtocolMessage == "getProtocolMessageTimedOut") {
+                print("receiveMessageLoop: getProtocolMessageTimedOut")
+                return
+            }
+
             // END1 かどうかの確認
             let receiveCommand = getCommand(protocolMessageText: returnProtocolMessage)
             switch receiveCommand[0] {
@@ -1257,7 +1292,10 @@ class TransferC {
             
         case .timedOut:
             logaddItem(logText:"wait in getProtocolMessage failed, \( self.connectedPeripheral.name ), \( self.connectedPeripheral.identifier.uuidString ) ")
-            return("getProtocolMessageTimedOut")
+            /* 読み飛ばしたメッセージは、もう読まない 2026/4/1 */
+            self.protocolMessageIndex = self.protocolMessageIndex + 1
+            
+            return("getProtocolMessageTimedOut") // 上位でこの文字列を見ているので変更しない
             
         }
         
@@ -1289,6 +1327,7 @@ class TransferP {
     var receiveMessageQueue:[String]
     var receiveMessageIndex: Int
     var receiveMessageSemaphore: DispatchSemaphore
+    var sendMessageList:[UserMessageItem] = [] // begin1の後に送るリスト。
     
     init(blePeripheral: BLEPeripheral){
         self.status = .phase0
@@ -1310,6 +1349,9 @@ class TransferP {
     
     func begin0(){
         logaddItem(logText:"transferP.begin0,")
+        sendMessageList = blePeripheral.userMessage.userMessageList.suffix( maxmessagestosend)
+//        for userMessage in blePeripheral.userMessage.userMessageList.suffix(2 * maxmessagestosend) { // たくさん送らない
+
         write2C(writeData: "ACK\n")
     }
     
@@ -1317,7 +1359,7 @@ class TransferP {
         write2C(writeData: "ACK\n")
     }
     
-    func write2C(writeData: String) {
+    func write2C(writeData: String) -> Bool {
         // messageをキュー（？）入れる
         // read request が来たら読める（はず）
         // notify する？
@@ -1336,11 +1378,13 @@ class TransferP {
         switch(self.protocolMessageSyncSemaphore.wait(timeout: .now() + 3)) { //  本質的には変えてないけど、30を3に減らしたので、もしここで待っているなら少し改善する
         case .success:
             print("success in write2C")
+            return true // 2026.4.2
             
         case .timedOut:
             print("timedout in write2C")
 
             logaddItem(logText:"timedOut in write2C")
+            return false // 2026.4.2 Timeoutしていたら、上位でエラー処理に行くようにする。
             
         }
 
@@ -1361,6 +1405,10 @@ class TransferP {
         case .timedOut:
             print("timedOut in getProtocolMessageP")
             logaddItem(logText: "fail to wait in getProtocolMessageP")
+            
+            /* 読み飛ばしたメッセージは、もう読まない 2026/4/1 */
+            self.protocolMessageIndex = self.protocolMessageIndex + 1
+
             return("timedOut")
         }
         if self.protocolMessageQueue.count <= self.protocolMessageIndex {
@@ -1375,7 +1423,7 @@ class TransferP {
     
     func getReceiveProtocolMessage()-> String {
         print("before receive wait")
-        switch (self.receiveMessageSemaphore.wait(timeout: .now() + 30)) { // どこで書いている？ // 30 -> 3
+        switch (self.receiveMessageSemaphore.wait(timeout: .now() + 3)) { // どこで書いている？ // 30 -> 3
         case .success:
             print("success in getReceiveProtocolMessage")
             logaddItem(logText: "success to wait in getReceiveProtocolMessage")
@@ -1406,13 +1454,13 @@ class TransferP {
             let ID1nohop = arr1[0]
 
             if ID0nohop == ID1nohop {
-                print("I already have \(userMessageID)")
+                print("P already has \(userMessageID)")
                 write2C(writeData: "ACK\n")
                 return
             }
         }
         
-        print("I don't have \(userMessageID)")
+        print("P doesn't have \(userMessageID)")
         write2C(writeData: "INEED\n\(userMessageID)\n")
 
     }
@@ -1420,7 +1468,8 @@ class TransferP {
     func begin1() {
         logaddItem(logText:"transferP.begin1,")
 
-        for userMessage in blePeripheral.userMessage.userMessageList.suffix(2 * maxmessagestosend) { // たくさん送らない
+        //for userMessage in blePeripheral.userMessage.userMessageList.suffix(2 * maxmessagestosend) { // たくさん送らない
+        for userMessage in sendMessageList { // sendmessagelist は *2 はない
             print("I(P) have \(userMessage.userMessageID)")
             
             // Time check
@@ -1430,7 +1479,12 @@ class TransferP {
             }
             
             // send IHAVE
-            write2C(writeData: "IHAVE\n\(userMessage.userMessageID)\n")
+            if (write2C(writeData: "IHAVE\n\(userMessage.userMessageID)\n") != true) {
+                // errorだった break するように修正 2026/4/6
+                print("write2C in TransferP.begin1() write error")
+                logaddItem(logText:"P: write2C in TransferP.begin1() write error")
+                break
+            }
             
             // get reply
             let protocolMessageText = getReceiveProtocolMessage()
@@ -1445,7 +1499,11 @@ class TransferP {
                 begin1_sendmsg(userMessageID: command[1])
                 
             default:
-                print("protocol error in begin1")
+                // errorだった break するように修正 2026/4/6
+                print("P: protocol error in TransferP.begin1()")
+                logaddItem(logText:"P: protocol error in TransferP.begin1()")
+                break
+
             }
         }
         
