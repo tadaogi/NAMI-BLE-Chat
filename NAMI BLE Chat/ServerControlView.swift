@@ -663,7 +663,8 @@ final class WebServerManager: ObservableObject {
                 // spllitの処理が抜けている
                 // ＊ 要修正 ＊
                 // UserMessage.addItemからコピペして修正
-                let mtu = 512 // ここは相手が決まっていないので、MTUを知ることが出来ない。なので、決め打ちで512にしておく。
+                let mtu = 51200000 // split しないように 512 から増やしてみる。
+                // ここは相手が決まっていないので、MTUを知ることが出来ない。なので、決め打ちで512にしておく。
                 //let mtu = 100 // debug用に小さくしてみた
                 let headerLength = userMessageIDformat.count + 3 // シーケンス番号が３桁までとしておく
                 var sequence = 0 // シーケンス番号、０から始まる
@@ -2104,6 +2105,9 @@ fetchMessages();
         var groupName = config.defaultarea
         if message.contains("#official") {
             groupName = "official"
+        } else if let match = message.firstMatch(of: /\ #([^\s]+)$/) {
+            // message の最後が #XXX で終わっていたらそれをgroupNameとする。
+            groupName = String(match.1)
         } else {
             message += " #\(groupName)"
         }
@@ -2309,8 +2313,11 @@ final class SyncManager: ObservableObject {
 //        for userMessageItem in userMessage.userMessageList {
         // 前回チェックした後だけリストにする
         let appList = userMessage.userMessageList
-        let safeCheckedAppIndex = min(max(checkedAppIndex, 0), appList.count)
+        var safeCheckedAppIndex = min(max(checkedAppIndex, 0), appList.count)
 
+        // debug用に全部チェックにする 後で戻すこと
+        safeCheckedAppIndex = 0
+        
         print("checkedAppIndex: \(checkedAppIndex)")
         print("safeCheckedAppIndex: \(safeCheckedAppIndex)")
         print("appList.count: \(appList.count)")
@@ -2327,7 +2334,9 @@ final class SyncManager: ObservableObject {
         // 前回チェックした後だけリストにする
         
         let storeList = server.getMessageIDList()
-        let safeCheckedWebIndex = min(max(checkedWebIndex, 0), storeList.count)
+        var safeCheckedWebIndex = min(max(checkedWebIndex, 0), storeList.count)
+        // debug用に全部チェックにする 後で戻すこと
+        safeCheckedWebIndex = 0
 
         print("checkedWebIndex: \(checkedWebIndex)")
         print("safeCheckedWebIndex: \(safeCheckedWebIndex)")
@@ -2345,7 +2354,7 @@ final class SyncManager: ObservableObject {
             var foundflag = false
             for storeUserMessageID in storeUserMessageIDList {
                 print("storeUserMessageID \(storeUserMessageID)")
-                if getBaseID(id: appUserMessageID) == getBaseID(id: storeUserMessageID) {
+                if getBaseID2(id: appUserMessageID) == getBaseID2(id: storeUserMessageID) {
                     print("found: \(appUserMessageID)")
                     foundflag = true
                     break;
@@ -2354,15 +2363,74 @@ final class SyncManager: ObservableObject {
                 }
             }
             if !foundflag {
-                print("not found in store: \(appUserMessageID)")
-                print("need to copy from \(appUserMessageID) app to store")
-                let userMessageItem = getMessageFromApp(userMessageID: appUserMessageID)
-                if userMessageItem == nil {
-                    print("error to find \(appUserMessageID)")
+                // split data かどうかを確認する
+                print(getBaseID(id: appUserMessageID).suffix(2))
+                if getBaseID(id: appUserMessageID).suffix(2) != "0L" {
+                    // splitの場合
+                    print("split file")
+                    // 全IDがあるかどうか数える
+                    var IDlist:[String] = []
+                    
+                    var numOfmsg = -2
+                    for id in appUserMessageIDList {
+                        if getBaseID2(id: appUserMessageID) == getBaseID2(id: id) {
+                            if !IDlist.contains(id) {
+                                IDlist.append(id)
+                            }
+                            
+                            let baseID = getBaseID(id: id)
+
+                            if baseID.suffix(1) == "L" {
+                                if let match = baseID.firstMatch(of: /-(\d+)L$/) {
+                                    numOfmsg = Int(String(match.1)) ?? -2
+                                    print(numOfmsg)   // "123"
+                                }
+                            }
+                        }
+                    }
+                    print("IDlist: \(IDlist)")
+                    print("count: \(IDlist.count)")
+                    if IDlist.count == numOfmsg + 1 {
+                        print("All message is found")
+                        print("need to merge and copy NOT IMPLEMENTED YET")
+                        IDlist.sort()
+                        print(IDlist)
+                        var numofget = 0
+                        var message = ""
+                        for id in IDlist {
+                            let userMessageItem = getMessageFromApp(userMessageID: id)
+                            if userMessageItem == nil {
+                                print("error to find \(appUserMessageID)")
+                            } else {
+                                message = message + (userMessageItem?.userMessageText ?? "NONE-MESSAGE")
+                                numofget = numofget + 1
+                            }
+                        }
+                        if numofget == IDlist.count {
+                            print("success in merge")
+                            var newID = getBaseID2(id: appUserMessageID) + "-0L(0)"
+                            print(newID)
+                            let newuserMessageItem = UserMessageItem(userMessageID: newID, userMessageText: message)
+                            server.insertMessageToStore(userMessageItem: newuserMessageItem)
+                            copiedWebCount = copiedWebCount + 1
+                            
+                            // 繰り返してコピーしないようにする
+                            storeUserMessageIDList.append(newID)
+                        }
+                        
+                    }
                 } else {
-                    server.insertMessageToStore(userMessageItem: userMessageItem!)
+                    // split でない場合は、そのままコピーする
+                    print("not found in store: \(appUserMessageID)")
+                    print("need to copy from \(appUserMessageID) app to store")
+                    let userMessageItem = getMessageFromApp(userMessageID: appUserMessageID)
+                    if userMessageItem == nil {
+                        print("error to find \(appUserMessageID)")
+                    } else {
+                        server.insertMessageToStore(userMessageItem: userMessageItem!)
+                    }
+                    copiedWebCount = copiedWebCount + 1
                 }
-                copiedWebCount = copiedWebCount + 1
             }
         }
         
@@ -2372,9 +2440,42 @@ final class SyncManager: ObservableObject {
             var foundflag = false
             for appUserMessageID in appUserMessageIDList {
                 print("appUserMessageID \(appUserMessageID)")
-                if getBaseID(id: appUserMessageID) == getBaseID(id: storeUserMessageID) {
-                    print("found: \(appUserMessageID)")
-                    foundflag = true
+                if getBaseID2(id: appUserMessageID) == getBaseID2(id: storeUserMessageID) {
+                    // split data かどうかを確認する
+                    print(getBaseID(id: appUserMessageID).suffix(2))
+                    if getBaseID(id: appUserMessageID).suffix(2) != "0L" {
+                        // splitの場合
+                        print("split file")
+                        // 全IDがあるかどうか数える
+                        var IDlist:[String] = []
+                        
+                        var numOfmsg = -2
+                        for id in appUserMessageIDList {
+                            if getBaseID2(id: appUserMessageID) == getBaseID2(id: id) {
+                                if !IDlist.contains(id) {
+                                    IDlist.append(id)
+                                }
+                                
+                                let baseID = getBaseID(id: id)
+
+                                if baseID.suffix(1) == "L" {
+                                    if let match = baseID.firstMatch(of: /-(\d+)L$/) {
+                                        numOfmsg = Int(String(match.1)) ?? -2
+                                        print(numOfmsg)   // "123"
+                                    }
+                                }
+                            }
+                        }
+                        print("IDlist: \(IDlist)")
+                        print("count: \(IDlist.count)")
+                        if IDlist.count == numOfmsg + 1 {
+                            print("All message is found")
+                            foundflag = true
+                        }
+                    } else {
+                        print("found: \(appUserMessageID)")
+                        foundflag = true
+                    }
                     break;
                 } else {
                     print("not found \(appUserMessageID), \(storeUserMessageID)")
@@ -2387,9 +2488,9 @@ final class SyncManager: ObservableObject {
                 let out = getMessageFromStore(userMessageID: storeUserMessageID)
                 for message in out {
                     //print(message)
-                    insertMessageToApp(message: message)
+                    let copycount = insertMessageToApp(message: message)
                     //print("insertToApp \(message)")
-                    copiedAppCount = copiedAppCount + 1
+                    copiedAppCount = copiedAppCount + copycount
                     
                 }
                 /*
@@ -2481,11 +2582,149 @@ final class SyncManager: ObservableObject {
     }
      */
     
-    func insertMessageToApp(message: Message) {
-        let userMessageItem = UserMessageItem(userMessageID: message.userMessageID, userMessageText: message.message)
+    // chunkを作る時に、UTF8境界になるようにする
+    // 同じ関数が上にもある
+    func nextUTF8Chunk(from data: Data, start: Int, maxLength: Int) -> Data? {
+        guard start < data.count else { return nil }
+        guard maxLength > 0 else { return nil }
+
+        let maxEnd = min(start + maxLength, data.count)
+        var end = maxEnd
+
+        while end > start {
+            let chunk = data.subdata(in: start..<end)
+            if String(data: chunk, encoding: .utf8) != nil {
+                return chunk
+            }
+            end -= 1
+        }
+
+        return nil
+    }
+
+    func insertMessageToApp(message: Message) -> Int {
+//        let userMessageItem = UserMessageItem(userMessageID: message.userMessageID, userMessageText: message.message)
+        
+        // splitの処理を追加 2026/6/22
+        // count を return することが必要
+        // start
+        // ここから下が、Splitのロジック
+        var messageText = message.message
+        var index = 0
+        var restToSend = messageText.data(using: .utf8)!.count - index // 日本語の時に、count だとずれるので、data にして長さを知る
+        var dataToSend = messageText.data(using: .utf8)!
+        let mtu = 512
+        var userMessageIDformat = getBaseID2(id: message.userMessageID) + "-%@(0)"
+        let headerLength = userMessageIDformat.count + 3 // シーケンス番号が３桁までとしておく
+        var sequence = 0 // シーケンス番号、０から始まる
+
+        while (restToSend>0) {
+            var amountToSend = min(restToSend,mtu-headerLength) // 今回送るデータ長
+            print("amountToSend(initial)=", amountToSend)
+            print("restToSend=\(restToSend)")
+            print("mtu=\(mtu)")
+            print("headerLength=\(headerLength)")
+            
+            //var chunk = dataToSend?.subdata(in: index..<(index + amountToSend)) // 今回送るデータ
+            let maxPayload = mtu - headerLength
+            guard maxPayload > 0 else {
+                print("maxPayload <= 0 error")
+                return -1
+            }
+            guard let chunk = nextUTF8Chunk(from: dataToSend, start: index, maxLength: maxPayload) else {
+                print("Failed to split UTF-8 safely at index \(index)")
+                break
+            }
+            amountToSend = chunk.count
+            print("amountToSend(actual)=", amountToSend)
+
+            
+            var userMessageID : String = ""
+            if (index + amountToSend < dataToSend.count) {
+                print("sequence=",sequence)
+                userMessageID = String(format: userMessageIDformat, String(sequence))
+            } else {
+                print("sequence=",sequence)
+                print("last")
+                userMessageID = String(format: userMessageIDformat, String(sequence)+"L")
+            }
+            print("userMessageID=", userMessageID)
+            // print("debugMessageFlag:",self.debugMessageFlag) // メッセージ長さが変わってしまうので、とりあえずここでは使わない
+            
+            /*
+             guard let data = chunk else {
+                print("chunk is nil")
+                //return
+                return GCDWebServerDataResponse(jsonObject: ["ok": false, "error": "chunk is nil"])
+            }
+             */
+            let data = chunk
+
+            print("chunk count =", data.count)
+            print("chunk hex =", data.map { String(format: "%02X", $0) }.joined(separator: " "))
+
+            if let text = String(data: data, encoding: .utf8) {
+                print("decoded text =", text)
+            } else {
+                print("UTF-8 decode failed")
+            }
+            // 以下で落ちるので、デバッグ用ロジック（上）を入れる
+            var UserMessageTextString = String(data:chunk ?? Data(), encoding: .utf8)! // encodeした送るテキスト
+            print(UserMessageTextString)
+
+            let IDparts = userMessageID.split(separator: "-")
+            let date = String(IDparts[0])
+            //let groupName = "DEBUGofficial"
+            
+            let userMessageItem = UserMessageItem(userMessageID: userMessageID, userMessageText: UserMessageTextString)
+
+            userMessage.userMessageList.append(userMessageItem)
+            
+            // message.txt に追加
+            let path = FileManager.default.urls(
+                for: .documentDirectory,
+                in: .userDomainMask)[0].appendingPathComponent(userMessage.uploadfname)
+            do {
+                try userMessage.appendUserMessage(
+                    message: userMessageItem,
+                    to: path
+                )
+            } catch {
+                print("append error:", error)
+                markAndStop("insertMessageToApp error \(error)")
+            }
+
+            /*
+            try self.db.insert(
+                userMessageID: userMessageID,
+                message: UserMessageTextString,
+                userID: userID,
+                date: dateISO,
+                groupName: groupName
+            )
+             */
+            
+            print("(before)index=\(index)")
+            print("amountToSend=\(amountToSend)")
+            index = index + amountToSend
+            print("(after)index=\(index)")
+//            print("message.count = \(message.count)")
+            print("(before) restToSend = \(restToSend)")
+//            print("message.count = \(message.count)")
+            print("dataToSend!.count = \(dataToSend.count)")
+            restToSend = dataToSend.count - index // ここはなぜか UserMessageTextString だとだめ
+            print("(after) restToSend = \(restToSend)")
+
+            sequence = sequence + 1
+            
+        }
+
+        // end
       
-        userMessage.userMessageList.append(userMessageItem)
+        // 以下はオリジナル
+        //userMessage.userMessageList.append(userMessageItem)
         // message.txt に追加
+        /*
         let path = FileManager.default.urls(
             for: .documentDirectory,
             in: .userDomainMask)[0].appendingPathComponent(userMessage.uploadfname)
@@ -2498,6 +2737,8 @@ final class SyncManager: ObservableObject {
             print("append error:", error)
             markAndStop("insertMessageToApp error \(error)")
         }
+         */
+        return sequence
     }
     
     func getMessageFromApp(userMessageID: String) -> UserMessageItem? {
@@ -2521,6 +2762,17 @@ final class SyncManager: ObservableObject {
         if let index = id.firstIndex(of: "(") {
             let prefix = String(id[..<index])
             print(prefix)   // XXX-0L
+            return prefix
+        } else {
+            return id
+        }
+    }
+    
+    func getBaseID2(id: String) -> String {
+
+        if let index = id.lastIndex(of: "-") {
+            let prefix = String(id[..<index])
+            print(prefix)   // XXX     -0L(0) を削除
             return prefix
         } else {
             return id
