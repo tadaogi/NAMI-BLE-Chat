@@ -370,6 +370,24 @@ final class WebServerManager: ObservableObject {
 
         // --- UI (settings) ---
         server.addHandler(forMethod: "GET", path: "/settings", request: GCDWebServerRequest.self) { [weak self] req in
+            print("GET /settings called")
+            
+            guard let self = self else {
+                return GCDWebServerDataResponse(html: "<html><body>self is nil</body></html>")
+            }
+            
+            //            let savedFlag = req.url.query?.contains("saved=1") == true
+            let savedFlag = URLComponents(url: req.url, resolvingAgainstBaseURL: false)?
+                            .queryItems?
+                            .contains { $0.name == "saved" && $0.value == "1" } == true
+            print("savedFlag: \(savedFlag)")
+            let html = self.makeSettingsHTML(savedFlag: savedFlag)
+            
+            return GCDWebServerDataResponse(html: html)
+        }
+        
+        // 以前は下で動いていたけど動かなくなったので、上に修正
+        server.addHandler(forMethod: "GET", path: "/XXXsettings", request: GCDWebServerRequest.self) { [weak self] req in
             // クエリ ?saved=1 を判定
             let savedFlag = (req.query?["saved"] as? String) == "1"
             let settingshtml = self?.makeSettingsHTML(savedFlag: savedFlag)

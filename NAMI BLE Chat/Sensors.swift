@@ -29,6 +29,13 @@ struct BloodPressureView: View {
     }
 }
 
+struct BPData: Codable {
+    let datetime: String
+    let sys: Int
+    let dia: Int
+    let pulse: Int
+}
+
 struct BloodPressureInnerView: View {
     @StateObject var vm: BloodPressureViewModel
 //    @StateObject private var vm = BloodPressureViewModel()
@@ -48,6 +55,9 @@ struct BloodPressureInnerView: View {
         VStack(spacing: 12) {
             Text("Health Care Data")
                 .font(.title3)
+            Button("Send Summary") {
+                sendData()
+            }
             
             Picker("", selection: $historyType) {
                 Text("BP").tag(HistoryType.bloodPressure)
@@ -107,6 +117,104 @@ struct BloodPressureInnerView: View {
         }
     }
     
+    func sendData() {
+        // BParrayの準備
+        var BParray: [BPData] = []
+        
+        do {
+            let allBP = try BPStore.shared.loadAll()
+            
+            for onedata in allBP {
+                print(onedata.measuredAt)
+                print(onedata.diastolic)
+                
+                let dfdate = DateFormatter()
+                dfdate.dateFormat = "YYYYMMddHHmm"
+                
+                dfdate.timeZone = TimeZone(identifier: "Asia/Tokyo")
+                print(dfdate.string(from: onedata.measuredAt))
+                let datestr = dfdate.string(from: onedata.measuredAt)
+                
+                let BPitem = BPData(
+                    datetime: datestr,
+                    sys: Int(onedata.systolic),
+                    dia: Int(onedata.diastolic),
+                    pulse: Int(onedata.pulse ?? 0)
+                )
+                BParray.append(BPitem)
+            }
+            print(BParray)
+                
+            let data = try JSONEncoder().encode(BParray)
+            let jsonString = String(data: data, encoding: .utf8)!
+            print(jsonString)
+
+        } catch {
+            text = "load failed: \(error)"
+        }
+        
+    }
+    
+    func sendDataArray() {
+        // JSONの準備
+        var json = Dictionary<String, Any>()
+        
+        print("sendData()")
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        
+        do {
+            let allBP = try BPStore.shared.loadAll()
+            let weekBP = try BPStore.shared.loadSince(days: 7)
+            var text = allBP.map {
+                "\(f.string(from: $0.measuredAt))  SYS \(String(format:"%.0f",$0.systolic))  DIA \(String(format:"%.0f",$0.diastolic))  P \( $0.pulse.map{String(format:"%.0f",$0)} ?? "-" )"
+            }.joined(separator: "\n")
+            print(text)
+            
+            // WatchBLETestのHealthCare.swiftを参考にする
+            // json にするための変数
+            var itemsArray: Array<Dictionary<String, Any>> = [] //
+            var item = Dictionary<String, Any>()
+            
+            for onedata in allBP {
+                print(onedata.measuredAt)
+                print(onedata.diastolic)
+                
+                let dfdate = DateFormatter()
+                dfdate.dateFormat = "YYYYMMddHHmm"
+                
+                dfdate.timeZone = TimeZone(identifier: "Asia/Tokyo")
+                print(dfdate.string(from: onedata.measuredAt))
+                let datestr = dfdate.string(from: onedata.measuredAt)
+                
+                
+                item["date"] = datestr
+                item["dia"] = Int(onedata.diastolic)
+                item["sys"] = Int(onedata.systolic)
+                item["pulse"] = Int(onedata.pulse ?? 0)
+                itemsArray.append(item)
+            }
+            print(itemsArray) // これではjsonになっていない
+            json["BP"] = itemsArray
+
+
+        } catch {
+            text = "load failed: \(error)"
+        }
+        
+        // DictionaryをJSONデータに変換
+        do {
+            // DictionaryをJSONデータに変換
+            let jsonData = try JSONSerialization.data(withJSONObject: json)
+            // JSONデータを文字列に変換
+            let jsonStr = String(bytes: jsonData, encoding: .utf8)!
+            print(jsonStr)
+        } catch {
+            // error
+            print("error in HealthCare.readdata")
+        }
+
+    }
     func loadHistory() {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd HH:mm:ss"
