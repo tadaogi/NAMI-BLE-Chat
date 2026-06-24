@@ -44,6 +44,8 @@ struct BloodPressureInnerView: View {
     @StateObject var btvm: BodyTemperatureViewModel
     @State private var historyType: HistoryType = .bloodPressure
     @State private var displaytext: String = ""
+    @EnvironmentObject var user: User
+    var myID: String { user.myID }
 
     
     init(vm: BloodPressureViewModel, btvm: BodyTemperatureViewModel) {
@@ -83,6 +85,11 @@ struct BloodPressureInnerView: View {
             .onAppear {
                 loadHistory()
             }
+            .onReceive(vm.$historyRefreshToken) { _ in
+                if historyType == .bloodPressure {
+                    loadHistory()
+                }
+            }
              
 
         }
@@ -117,7 +124,15 @@ struct BloodPressureInnerView: View {
         }
     }
     
+    // encoderを使おうと思ったけど、最初に方が固定でないと難しいと分かった
+    /*
     func sendData() {
+        // jsonデータの準備
+        var jsonData: [String: Any] = [
+            "user":"tadashi"
+        ]
+        let data = try JSONEncoder().encode(jsonData)
+
         // BParrayの準備
         var BParray: [BPData] = []
         
@@ -144,8 +159,10 @@ struct BloodPressureInnerView: View {
                 BParray.append(BPitem)
             }
             print(BParray)
-                
-            let data = try JSONEncoder().encode(BParray)
+            var weekBP = ["weekBP" : BParray]
+            //jsonData["weekBP"] = BParray
+            
+            let data = try JSONEncoder().encode(jsonData)
             let jsonString = String(data: data, encoding: .utf8)!
             print(jsonString)
 
@@ -154,15 +171,24 @@ struct BloodPressureInnerView: View {
         }
         
     }
+    */
     
-    func sendDataArray() {
+    func sendData() {
+        print("sendData()")
+        
         // JSONの準備
         var json = Dictionary<String, Any>()
         
-        print("sendData()")
+        json["userID"] = myID
+        
+        let now = Date() // 現在日時の取得
+        
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        json["senddate"] = f.string(from: now)
         
+        // HCDataを作る
+        // とりあえずBPだけ
         do {
             let allBP = try BPStore.shared.loadAll()
             let weekBP = try BPStore.shared.loadSince(days: 7)
@@ -195,7 +221,7 @@ struct BloodPressureInnerView: View {
                 itemsArray.append(item)
             }
             print(itemsArray) // これではjsonになっていない
-            json["BP"] = itemsArray
+            json["weekbp"] = itemsArray
 
 
         } catch {
@@ -208,7 +234,12 @@ struct BloodPressureInnerView: View {
             let jsonData = try JSONSerialization.data(withJSONObject: json)
             // JSONデータを文字列に変換
             let jsonStr = String(bytes: jsonData, encoding: .utf8)!
-            print(jsonStr)
+            //print(jsonStr)
+            
+            let message = "[HCData,\(jsonStr)]"
+            print(message)
+            
+            self.userMessage.addItemWithGPS(userMessageText: message)
         } catch {
             // error
             print("error in HealthCare.readdata")
