@@ -86,11 +86,14 @@ struct BloodPressureInnerView: View {
                 loadHistory()
             }
             .onReceive(vm.$historyRefreshToken) { _ in
-                if historyType == .bloodPressure {
-                    loadHistory()
-                }
+                print(".onReceive(vm.$historyRefreshToken) ")
+                loadHistory()
             }
-             
+            .onReceive(btvm.$historyRefreshToken) { _ in
+                print(".onReceive(btvm.$historyRefreshToken) ")
+                loadHistory()
+            }
+
 
         }
         .padding()
@@ -192,7 +195,7 @@ struct BloodPressureInnerView: View {
         do {
             let allBP = try BPStore.shared.loadAll()
             let weekBP = try BPStore.shared.loadSince(days: 7)
-            var text = allBP.map {
+            var text = weekBP.map {
                 "\(f.string(from: $0.measuredAt))  SYS \(String(format:"%.0f",$0.systolic))  DIA \(String(format:"%.0f",$0.diastolic))  P \( $0.pulse.map{String(format:"%.0f",$0)} ?? "-" )"
             }.joined(separator: "\n")
             print(text)
@@ -202,7 +205,7 @@ struct BloodPressureInnerView: View {
             var itemsArray: Array<Dictionary<String, Any>> = [] //
             var item = Dictionary<String, Any>()
             
-            for onedata in allBP {
+            for onedata in weekBP {
                 print(onedata.measuredAt)
                 print(onedata.diastolic)
                 
@@ -215,17 +218,47 @@ struct BloodPressureInnerView: View {
                 
                 
                 item["date"] = datestr
-                item["dia"] = Int(onedata.diastolic)
-                item["sys"] = Int(onedata.systolic)
-                item["pulse"] = Int(onedata.pulse ?? 0)
+//                item["dia"] = Int(onedata.diastolic)
+//                item["sys"] = Int(onedata.systolic)
+//                item["pulse"] = Int(onedata.pulse ?? 0)
+                item["dia"] = String(format: "%d", Int(onedata.diastolic))
+                item["sys"] = String(format: "%d", Int(onedata.systolic))
+                item["pulse"] = String(format: "%d", Int(onedata.pulse ?? 0))
                 itemsArray.append(item)
+                item.removeAll()
             }
             print(itemsArray) // これではjsonになっていない
             json["weekbp"] = itemsArray
+            
+            // Tempを読む
+            itemsArray = []
+            let weekTemp = try TempStore.shared.loadSince(days: 7)
+
+            for onedata in weekTemp {
+                print(onedata.temperature)
+                print(onedata.measuredAt)
+                
+                let dfdate = DateFormatter()
+                dfdate.dateFormat = "YYYYMMddHHmm"
+                
+                dfdate.timeZone = TimeZone(identifier: "Asia/Tokyo")
+                print(dfdate.string(from: onedata.measuredAt))
+                let datestr = dfdate.string(from: onedata.measuredAt)
+  
+                item["date"] = datestr
+//                item["Temp"] = (onedata.temperature * 10).rounded() / 10
+                item["Temp"] = String(format: "%.1f", onedata.temperature)
+                itemsArray.append(item)
+                item.removeAll()
+
+            }
+            
+            print(itemsArray) // これではjsonになっていない
+            json["weektemp"] = itemsArray
 
 
         } catch {
-            text = "load failed: \(error)"
+            text = "HCData load failed: \(error)"
         }
         
         // DictionaryをJSONデータに変換
@@ -242,11 +275,12 @@ struct BloodPressureInnerView: View {
             self.userMessage.addItemWithGPS(userMessageText: message)
         } catch {
             // error
-            print("error in HealthCare.readdata")
+            print("error in BP HealthCare.readdata")
         }
 
     }
     func loadHistory() {
+        print("loadHistory")
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd HH:mm:ss"
 
