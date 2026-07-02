@@ -56,6 +56,10 @@ struct MainView: View {
                 .tabItem{Text("WebServer")}
             BloodPressureView()
                 .tabItem{Text("Health Care Data")}
+            CryptView()
+                .tabItem{Text("Crypt (Debug)")}
+                         
+                    
             
         }
         //.environmentObject(UserMessage(store: MessageStore()))

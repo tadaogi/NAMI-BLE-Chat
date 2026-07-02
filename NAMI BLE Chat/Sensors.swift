@@ -46,6 +46,8 @@ struct BloodPressureInnerView: View {
     @State private var displaytext: String = ""
     @EnvironmentObject var user: User
     var myID: String { user.myID }
+    
+    var crypt = NAMICrypt()
 
     
     init(vm: BloodPressureViewModel, btvm: BodyTemperatureViewModel) {
@@ -272,7 +274,12 @@ struct BloodPressureInnerView: View {
             let message = "[HCData,\(jsonStr)]"
             print(message)
             
-            self.userMessage.addItemWithGPS(userMessageText: message)
+            let encmessage = crypt.encrypt(inputText: message)
+            print(encmessage)
+            let messagetosend = "[EncData,\(encmessage)]"
+            
+//            self.userMessage.addItemWithGPS(userMessageText: message)
+            self.userMessage.addItemWithGPS(userMessageText: messagetosend)
         } catch {
             // error
             print("error in BP HealthCare.readdata")

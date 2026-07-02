@@ -82,6 +82,8 @@ final class BodyTemperatureViewModel: NSObject, ObservableObject {
     let temperatureMeasurementCBUUID = CBUUID(string: "2A1C")
     
     @Published var historyRefreshToken = UUID() // ← 追加
+    
+    private var crypt = NAMICrypt() // 暗号化・復号化用のクラス
 
     private let tempDateFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -269,6 +271,11 @@ extension BodyTemperatureViewModel: CBPeripheralDelegate {
                 // この時点で最近のデータを読む
                 let jsonstring = try makeTempJsonLast7Days()
                 print("last 7 days: \n\(jsonstring)")
+                
+                // 暗号化のテスト ここは呼ばれないみたい 2026/7/2 体温を測定すると、その流れで送っていたような記憶がある。
+                let retstring = crypt.encrypt(inputText: jsonstring)
+                print("retstring = \(retstring)")
+                
                 self.userMessage.addItemWithGPS(userMessageText: "[TEMPDATA]"+jsonstring)
 
             } catch {
