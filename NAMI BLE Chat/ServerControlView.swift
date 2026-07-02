@@ -1458,7 +1458,13 @@ console.log(m.userID);
 <strong style="margin-left: 20px;">${esc(m.groupName)}</strong>\
  <small>${formatDate(m.userMessageID)}</small>\
 <small style="margin-left: 10px;">${esc(m.userMessageID)}</small>\
-<p>${esc(showmessage)}</p>\
+<div style="\
+      margin: 0;\
+      padding: 0;\
+      white-space: pre-wrap;\
+      overflow-wrap: anywhere;\
+      word-break: break-all;\
+">${esc(showmessage)}</div>\
 </div>`;
 console.log(log.innerHTML);
 //                <strong> ${esc(m.userID)}</strong>\\n
@@ -1891,7 +1897,7 @@ fetchMessages();
             }
 
             html += """
-            <div style="background-color: white; margin: 10px; padding: 10px;">
+            <div style="background-color: white; margin: 10px; padding:5px 10px;">
             <strong>
             \(escapeHTML(message.userID))
             </strong>
@@ -1904,9 +1910,13 @@ fetchMessages();
             <small style="margin-left: 10px;">
             \(escapeHTML(message.userMessageID))
             </small>
-            <p>
-            \(escapeHTML(message.message))
-            </p>
+            <div style="
+                  margin: 0;
+                  padding: 0;
+                  white-space: pre-wrap;
+                  overflow-wrap: anywhere;
+                  word-break: break-all;
+            ">\(escapeHTML(message.message)) debug0</div>
             </div>
             """
         }
@@ -2020,9 +2030,14 @@ fetchMessages();
                 <small style="margin-left: 10px;">
                 \(message.userMessageID)
                 </small>
-                <p>
-                \(escapeHTML(message.message))
-                </p>
+                            <div style="
+                                  margin: 0;
+                                  padding: 0;
+                                  white-space: pre-wrap;
+                                  overflow-wrap: anywhere;
+                                  word-break: break-all;
+                            ">\(escapeHTML(message.message)) debug1</div>
+                            </div>
                 </div>
                 """
             }
