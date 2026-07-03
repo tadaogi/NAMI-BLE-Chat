@@ -88,6 +88,7 @@ struct CryptView: View {
                  Button("コピー") {
                  UIPasteboard.general.string = encryptedText
                  }
+                
                 /*
                  Button("暗号の共有") {
                  share(encryptedText)
@@ -96,17 +97,18 @@ struct CryptView: View {
                  Button("Delete Key") {
                  deleteClientPrivateKey()
                  }
+                 */
                  
-                 TextEditor(text: $inputJSON)
+                TextEditor(text: $crypt.inputJSON)
                  .frame(height: 160)
                  .border(.gray)
                  .padding()
                  Button("復号") {
-                 decrypted_message = ""
-                 run2()
+                     decrypted_message = ""
+                     decrypted_message = crypt.run2()
                  }
                  Text(decrypted_message)
-                 */
+                 
                 
             }
             .padding()
@@ -124,6 +126,8 @@ class NAMICrypt: ObservableObject {
     
     @Published var screenMessage: String = ""
     @Published var inputText: String = ""
+    
+    @Published var inputJSON: String = ""
 
     // 鍵の初期化を呼ぶ
     init() {
@@ -304,7 +308,143 @@ class NAMICrypt: ObservableObject {
 
 
     
-    func decrypt() {
+    func XXXdecrypt() {
         print("NAMICrypto.decrypt not implemented")
     }
+    
+    func run2() -> String {
+        return (decrypt(inputJSON: inputJSON))
+    }
+    
+    func decrypt(inputJSON: String) -> String {
+        guard let parsed = parsePayload(inputJSON) else {
+            print("JSON parse failed")
+            return("JSON parse failed")
+        }
+
+        print("nonce =", parsed.nonce)
+        print("ciphertext =", parsed.ciphertext)
+       
+        //let clientPrivateKeyBase64 = "sNkXAkJQVO8Hv5RGVPe3raYPAC36+yI/c9XM2NLBPE8="
+
+        do {
+            /*
+            guard let keyData = Data(base64Encoded: clientPrivateKeyBase64) else {
+                print("client private key base64 decode failed")
+                return
+            }
+
+            print("client private key len =", keyData.count)
+
+            let clientPrivateKey = try Curve25519.KeyAgreement.PrivateKey(
+                rawRepresentation: keyData
+            )
+             */
+            // クライアント鍵
+            let clientPrivateKey: Curve25519.KeyAgreement.PrivateKey = getPrivateKey()
+            print("PrivateKey \(clientPrivateKey.rawRepresentation.base64EncodedString())")
+
+            let message = try decryptFromServer(
+                nonceBase64: parsed.nonce,
+                ciphertextBase64: parsed.ciphertext,
+                serverPublicKeyBase64: serverPublicKeyBase64,
+                clientPrivateKey: clientPrivateKey
+            )
+
+            print("復号成功:", message)
+            return(message)
+
+        } catch {
+            print("復号エラー:", error)
+            return("error \(error)")
+        }
+    }
+    
+    func parsePayload(_ jsonString: String) -> Payload? {
+
+        guard let data = jsonString.data(using: .utf8) else {
+            return nil
+        }
+
+        do {
+            return try JSONDecoder().decode(Payload.self, from: data)
+        } catch {
+            print(error)
+            return nil
+        }
+    }
+    
+    func decryptFromServer(
+        nonceBase64: String,
+        ciphertextBase64: String,
+        serverPublicKeyBase64: String,
+        clientPrivateKey: Curve25519.KeyAgreement.PrivateKey
+    ) throws -> String {
+
+        //----------------------------------------------------
+        // サーバー公開鍵
+        //----------------------------------------------------
+
+        let serverPublicKeyData = Data(base64Encoded: serverPublicKeyBase64)!
+
+        let serverPublicKey = try Curve25519.KeyAgreement.PublicKey(
+            rawRepresentation: serverPublicKeyData
+        )
+
+        //----------------------------------------------------
+        // 共有鍵生成
+        //----------------------------------------------------
+
+        let sharedSecret = try clientPrivateKey.sharedSecretFromKeyAgreement(
+            with: serverPublicKey
+        )
+
+        let aesKey = deriveAESKey(sharedSecret: sharedSecret)
+
+        //----------------------------------------------------
+        // nonce
+        //----------------------------------------------------
+
+        let nonceData = Data(base64Encoded: nonceBase64)!
+        let nonce = try AES.GCM.Nonce(data: nonceData)
+
+        
+        
+        //----------------------------------------------------
+        // ciphertext + tag
+        //----------------------------------------------------
+
+        let encrypted = Data(base64Encoded: ciphertextBase64)!
+
+        // debug
+        print("server public key len =", serverPublicKeyData.count)
+        print("nonce len =", nonceData.count)
+        print("encrypted len =", encrypted.count)
+        
+        let tagLength = 16
+
+        let ciphertext = encrypted.dropLast(tagLength)
+        let tag = encrypted.suffix(tagLength)
+
+        let sealedBox = try AES.GCM.SealedBox(
+            nonce: nonce,
+            ciphertext: ciphertext,
+            tag: tag
+        )
+
+        //----------------------------------------------------
+        // 復号
+        //----------------------------------------------------
+
+        let plainData = try AES.GCM.open(
+            sealedBox,
+            using: aesKey
+        )
+
+        return String(decoding: plainData, as: UTF8.self)
+    }
+
+    
+    
+
 }

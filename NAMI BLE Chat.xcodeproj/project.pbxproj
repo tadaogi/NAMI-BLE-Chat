@@ -15,6 +15,7 @@
 		324BF7FD268AF46100BEC254 /* test.txt in Resources */ = {isa = PBXBuildFile; fileRef = 324BF7FC268AF46100BEC254 /* test.txt */; };
 		3254BA92277BDE3000A1D2D0 /* MessageTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3254BA91277BDE2F00A1D2D0 /* MessageTestView.swift */; };
 		3256A8682FF62B66001DC84A /* Crypt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3256A8672FF62B56001DC84A /* Crypt.swift */; };
+		3256A86B2FF7CEBE001DC84A /* Dialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3256A86A2FF7CEBE001DC84A /* Dialog.swift */; };
 		32626E9425B2421B00BEE892 /* BLEcommTest0App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32626E9325B2421B00BEE892 /* BLEcommTest0App.swift */; };
 		32626E9625B2421B00BEE892 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32626E9525B2421B00BEE892 /* ContentView.swift */; };
 		32626E9B25B2421C00BEE892 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 32626E9A25B2421C00BEE892 /* Preview Assets.xcassets */; };
@@ -59,6 +60,7 @@
 		324CC8072B194DC1003ECECB /* Todo.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = Todo.md; sourceTree = "<group>"; };
 		3254BA91277BDE2F00A1D2D0 /* MessageTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageTestView.swift; sourceTree = "<group>"; };
 		3256A8672FF62B56001DC84A /* Crypt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Crypt.swift; sourceTree = "<group>"; };
+		3256A86A2FF7CEBE001DC84A /* Dialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dialog.swift; sourceTree = "<group>"; };
 		32626E9025B2421B00BEE892 /* NAMI BLE Chat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "NAMI BLE Chat.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		32626E9325B2421B00BEE892 /* BLEcommTest0App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEcommTest0App.swift; sourceTree = "<group>"; };
 		32626E9525B2421B00BEE892 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -150,6 +152,7 @@
 				32BA44F32FE14411009ACF3A /* Sensors.swift */,
 				3256A8672FF62B56001DC84A /* Crypt.swift */,
 				32EBD21725CA08210032F3AF /* MessageView.swift */,
+				3256A86A2FF7CEBE001DC84A /* Dialog.swift */,
 				3254BA91277BDE2F00A1D2D0 /* MessageTestView.swift */,
 				32EBD21425CA03210032F3AF /* Hello.swift */,
 				32626EA625B24FB300BEE892 /* SettingView.swift */,
@@ -277,6 +280,7 @@
 				32BA44F22FE143FF009ACF3A /* BodyTemperature.swift in Sources */,
 				327CD3FA2AFFA0D600045659 /* PhotoView.swift in Sources */,
 				32626EA725B24FB300BEE892 /* SettingView.swift in Sources */,
+				3256A86B2FF7CEBE001DC84A /* Dialog.swift in Sources */,
 				329D39BC2BBA303100EBDE53 /* WiFiCheck.swift in Sources */,
 				32228A872C4F2BAD005BF24F /* MapView.swift in Sources */,
 				327CD3FC2B04AFC000045659 /* PhotoShow.swift in Sources */,

@@ -16,11 +16,15 @@ struct MessageView: View {
     @State private var active = false
     @EnvironmentObject var fileID: FileID
     @EnvironmentObject var user : User
+    @EnvironmentObject var log : Log
     
     @State private var ShowOfficial = true
     @State private var ShowLocal = true
     
     @EnvironmentObject var server: WebServerManager
+    
+    @StateObject private var dialog = Dialog.shared
+    private var crypt = NAMICrypt() // 暗号化・復号化用のクラス
     
     var body: some View {
         NavigationView {
@@ -80,6 +84,7 @@ struct MessageView: View {
                                     .padding([.leading], 5)
                                     .onTapGesture {
                                         print("tap")
+                                        tapAction(messageitem: messageitem)
                                     }
                                 // 行間が狭すぎるので、以下を入れた
                                 Rectangle()
@@ -95,6 +100,7 @@ struct MessageView: View {
                                     .padding([.leading], 5)
                                     .onTapGesture {
                                         print("tap")
+                                        tapAction(messageitem: messageitem)
                                     }
                                 // 行間が狭すぎるので、以下を入れた
                                 Rectangle()
@@ -226,6 +232,17 @@ struct MessageView: View {
                 // この時点で globalgps にアクセスできる事の確認
                 // できたのでコメントアウトした
             }
+            .alert(dialog.title,
+                   isPresented: $dialog.isShowing) {
+
+                Button("OK") {
+                    dialog.close()
+                }
+
+            } message: {
+
+                Text(dialog.message)
+            }
 
 
             
@@ -272,6 +289,201 @@ struct MessageView: View {
             }
         }
         return tmptext
+    }
+    
+    func tapAction(messageitem: UserMessageItem) {
+        print("tapAction")
+        print(messageitem.userMessageID)
+        print(messageitem.userMessageText)
+        
+        // ここで merge 処理が必要
+        let mergedmessage = mergeSplitDataOnly(messageID: messageitem.userMessageID)
+        print(mergedmessage)
+        //Dialog.shared.show(mergedmessage)
+        // GPSの扱いを考えること
+        
+        
+        /*
+        var str = messageitem.userMessageText
+        
+        str = """
+        [GPS,0,0][EncData,
+        {
+            "nonce": "5y5W4U24BthDUDkm",
+            "ciphertext": "Xz2beqTB1WharsndqrDoK6nsVcbLRc01crE07N1sXHJoZPcwBkk63BSh106VeKaXEQ=="
+        }]
+"""
+         */
+        print(mergedmessage)
+        if let json = extractJSON(from: mergedmessage) {
+            print(json)
+            let decryptedmessage = crypt.decrypt(inputJSON: json)
+            print(decryptedmessage)
+
+            Dialog.shared.show(decryptedmessage)
+        }
+        // extractJSONに失敗すると Dialog を表示しない。
+        
+    }
+    
+    func logaddItem(logText: String) {
+        Task { @MainActor in
+            self.log.addItem(logText: logText)
+        }
+    }
+    // 思ったより長くなっている
+    // Message.swiftからコピーして修正
+    // originalはファイルの拡張とかもしているが、mergeのみとする
+    func mergeSplitDataOnly(messageID: String)->String {
+        var lastfound = false
+        logaddItem(logText: "mergeSplitDataOnly called messageID=\(messageID)")
+
+        print("mergeSplitDataOnly with ", messageID)
+        var regex3 = /^(?<IDbody>.*)-(?<sequence>\w*)\((?<hop>\d*)\)$/
+
+        // 渡されたIDから、共通部分とｎを知る
+        var match3 = messageID.firstMatch(of:regex3)
+        var IDbody = ""
+        var sequence = ""
+        var last = ""
+        var n = 0
+        if let match3 {
+            print(match3.IDbody)
+            print(match3.sequence)
+            IDbody = String(match3.IDbody)
+            sequence = String(match3.sequence)
+            last = String(sequence.suffix(1))
+
+        }
+        print(IDbody)
+        print(sequence)
+        print(last)
+        
+        // Lを探す
+        for userMessageItem in self.userMessage.userMessageList {
+            let userMessageItemID = userMessageItem.userMessageID
+            print(userMessageItemID)
+            let matchItem = userMessageItemID.firstMatch(of:regex3)
+            var ItemIDbody = ""
+            var ItemSequence = ""
+            if let matchItem {
+                print(matchItem.IDbody)
+                print(matchItem.sequence)
+                ItemIDbody = String(matchItem.IDbody)
+                ItemSequence = String(matchItem.sequence)
+            }
+            //print(ItemIDbody)
+            if IDbody == ItemIDbody { // 分割のパートを見つけた時
+                print("find the part of split")
+                
+                last = String(ItemSequence.suffix(1))
+                var ItemSequenceNum = -1
+                if last=="L" {
+                    lastfound = true
+                    n = Int(ItemSequence.prefix(ItemSequence.count-1))!
+                    break
+                }
+            }
+        }
+        print("n=\(n)")
+        
+        // n+1個入る配列を準備する
+        var UserMessageList : [UserMessageItem?] = Array(repeating: nil, count: n+1)
+
+
+        var itemCount = 0 // 見つかった数
+        for userMessageItem in self.userMessage.userMessageList {
+            let userMessageItemID = userMessageItem.userMessageID
+            print(userMessageItemID)
+            let matchItem = userMessageItemID.firstMatch(of:regex3)
+            var ItemIDbody = ""
+            var ItemSequence = ""
+            if let matchItem {
+                print(matchItem.IDbody)
+                print(matchItem.sequence)
+                ItemIDbody = String(matchItem.IDbody)
+                ItemSequence = String(matchItem.sequence)
+            }
+            //print(ItemIDbody)
+            if IDbody == ItemIDbody { // 分割のパートを見つけた時
+                print("find the part of split")
+                
+                last = String(ItemSequence.suffix(1))
+                var ItemSequenceNum = -1
+                if last=="L" {
+                    lastfound = true
+                    ItemSequenceNum = Int(ItemSequence.prefix(ItemSequence.count-1))!
+                } else {
+                    ItemSequenceNum = Int(ItemSequence)!
+                }
+                print(ItemSequenceNum)
+                // 配列の大きさ（n+1)、indexはnまで、を超えていたら拡張する
+                if ItemSequenceNum >= n+1 {
+                    UserMessageList += Array(repeating: nil, count: ItemSequenceNum-n)
+                    n = ItemSequenceNum
+                }
+                // 同じメッセージがくる場合がある
+                // それ自体がバグではあるが、ここでも避ける 2024/7/24
+                if UserMessageList[ItemSequenceNum] == nil {
+                    UserMessageList[ItemSequenceNum] = userMessageItem
+                    
+                    itemCount = itemCount + 1
+                }
+            }
+            if itemCount >= n+1 {
+                break
+            }
+        }
+            
+        // ここで itemCount が n+1 だったら、全部見つかった。はず。
+        // と思ったけど、Lが来ていない状態で、すべて見つかる場合もある。
+        // その時は、base64のdecodeで失敗するので、そのまま return するはず
+        // と思ったが、成功する時もあるらしい。なので、lastfoundを確認する
+        if (itemCount >= n+1) && lastfound {
+            logaddItem(logText: "mergeSplitData find all splits (maybe)")
+
+            print("find all split")
+            var AllMessage = ""
+            for eachItem in UserMessageList {
+                if eachItem != nil {
+                    AllMessage.append(contentsOf: eachItem!.userMessageText)
+                } else { // 1個でもなかったら return する. ここにはこないはず？
+                    print("internal error")
+                    
+                    return("merge error: something missing [0]")
+                }
+            }
+            print(AllMessage)
+            return(AllMessage)
+            
+
+        } else {
+            print("something missing")
+            // 見つからなかった。エラー処理が必要か？
+            // エラーの原因が不明なので、対応方法も不明
+            // 全部揃ってから、手作業でマージできる方法を残しておくのが良いかも
+            logaddItem(logText: "mergeSplitData something is missing for \(messageID)")
+            for i in 0..<n+1 { // 実際には n は最後なので抜けていることはない
+                if UserMessageList[i] == nil {
+                    print("UserMessageList[",i,"] is missing")
+                }
+            }
+            return("merge error: something missing [1]")
+        }
+    }
+    
+    func extractJSON(from str: String) -> String? {
+        guard let start = str.range(of: "[EncData,") else {
+            return nil
+        }
+
+        let jsonStart = start.upperBound
+
+        guard let end = str.lastIndex(of: "]") else {
+            return nil
+        }
+
+        return String(str[jsonStart..<end])
     }
 }
 

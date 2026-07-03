@@ -1820,6 +1820,7 @@ fetchMessages();
         return data.base64EncodedString()
     }
     
+    // download する時に使われる
     func makeMessagesHTML(_ msgs: [Message]) -> String {
 
 //        let inputFormatter = ISO8601DateFormatter()
@@ -1916,7 +1917,7 @@ fetchMessages();
                   white-space: pre-wrap;
                   overflow-wrap: anywhere;
                   word-break: break-all;
-            ">\(escapeHTML(message.message)) debug0</div>
+            ">\(escapeHTML(message.message))</div>
             </div>
             """
         }
@@ -1946,7 +1947,7 @@ fetchMessages();
     }
 
 // 使っていない
-    func makemsgfile() {
+    func obsolete_makemsgfile() {
         do {
             let msgs = try self.db.list(limit: 500, after: nil)
             
@@ -2036,7 +2037,7 @@ fetchMessages();
                                   white-space: pre-wrap;
                                   overflow-wrap: anywhere;
                                   word-break: break-all;
-                            ">\(escapeHTML(message.message)) debug1</div>
+                            ">\(escapeHTML(message.message))</div>
                             </div>
                 </div>
                 """
@@ -2349,7 +2350,7 @@ final class SyncManager: ObservableObject {
         var safeCheckedAppIndex = min(max(checkedAppIndex, 0), appList.count)
 
         // debug用に全部チェックにする 後で戻すこと
-        safeCheckedAppIndex = 0
+        //safeCheckedAppIndex = 0
         
         print("checkedAppIndex: \(checkedAppIndex)")
         print("safeCheckedAppIndex: \(safeCheckedAppIndex)")
@@ -2369,7 +2370,7 @@ final class SyncManager: ObservableObject {
         let storeList = server.getMessageIDList()
         var safeCheckedWebIndex = min(max(checkedWebIndex, 0), storeList.count)
         // debug用に全部チェックにする 後で戻すこと
-        safeCheckedWebIndex = 0
+        //safeCheckedWebIndex = 0
 
         print("checkedWebIndex: \(checkedWebIndex)")
         print("safeCheckedWebIndex: \(safeCheckedWebIndex)")
